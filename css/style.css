@@ -1,0 +1,90 @@
+/* ===== TaniAdapt — token warna =====
+   Ganti nilai di sini untuk mengubah palet di semua halaman. */
+:root {
+  --ground: #F2F4EC;       /* latar halaman */
+  --ink: #13271D;          /* teks utama & panel gelap */
+  --green: #1E4D35;        /* hijau brand, tombol utama */
+  --sage: #E3E9D8;         /* latar sekunder */
+  --line: #CBD3BE;         /* garis tepi kartu */
+  --accent: #B8DB5A;       /* aksen limau (di atas latar gelap) */
+  --risk: #A85A12;         /* risiko tinggi */
+  --risk-strong: #8A470B;  /* teks "Tinggi" */
+  --risk-bg: #FBEFE2;      /* latar kartu risiko */
+  --muted: #4A5D51;        /* teks keterangan */
+  --text-2: #33463B;       /* teks paragraf sekunder */
+  --dark-2: #1E3A2B;       /* panel di dalam area gelap */
+  --dark-line: #36513F;    /* garis di area gelap */
+  --dark-muted: #C9D4C4;   /* teks keterangan di area gelap */
+  --field: #F8FAF4;        /* latar input */
+  --field-line: #A9B5A1;   /* garis input */
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--ground); color: var(--ink); font-family: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif; }
+a { color: var(--green); text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+a:hover { color: var(--ink); }
+
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+[hidden] { display: none !important; }
+
+/* Modal & Dialog Backdrop */
+.ta-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(19, 39, 29, 0.72);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.ta-modal-card {
+  background: #FFFFFF;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  max-width: 880px;
+  width: 100%;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 32px 64px -16px rgba(19, 39, 29, 0.45);
+}
+
+.ta-modal-body {
+  overflow-y: auto;
+  padding: 24px;
+}
+
+/* Tooltip */
+[data-tooltip] {
+  position: relative;
+  cursor: help;
+}
+
+/* Print styling */
+@media print {
+  aside, nav, button, .no-print {
+    display: none !important;
+  }
+  body, main {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    padding: 0 !important;
+  }
+  .ta-print-only {
+    display: block !important;
+  }
+}

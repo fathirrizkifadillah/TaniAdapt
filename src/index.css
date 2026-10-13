@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --field-bg: #f8f9f6;
+    --field-surface: #ffffff;
+    --field-text: #17221b;
+    --field-muted: #536459;
+    --field-border: #dde2da;
+    --field-header: #0f1d18;
+  }
+
+  .dark {
+    --field-bg: #0b120e;
+    --field-surface: #121c16;
+    --field-text: #e6ede8;
+    --field-muted: #8ca193;
+    --field-border: #1d2d23;
+    --field-header: #f4fbf6;
+  }
+
+  /* High contrast sunlight mode for farmers in the field */
+  .high-contrast {
+    --field-bg: #ffffff;
+    --field-surface: #ffffff;
+    --field-text: #000000;
+    --field-muted: #1a1a1a;
+    --field-border: #000000;
+    --field-header: #000000;
+  }
+
+  body {
+    background-color: var(--field-bg);
+    color: var(--field-text);
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  #root {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+/* Print styling for official agronomic field reports */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .page-break {
+    page-break-before: always;
+  }
+}
