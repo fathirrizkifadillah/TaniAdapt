@@ -33,7 +33,7 @@
 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
 <span style="display: flex; align-items: center; justify-content: space-between; width: 100%">
   <span>Bukti Ilmiah (16 Field)</span>
-  <span style="font-size: 10px; background: var(--accent); color: var(--ink); padding: 1px 6px; border-radius: 4px; font-weight: 700">PRO</span>
+  <span style="font-size: 10px; background: var(--accent); color: var(--ink); padding: 1px 6px; border-radius: 4px; font-weight: 700">DETAIL</span>
 </span>
 </button>
 </div>
@@ -65,9 +65,9 @@
 <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px">
 <!-- DUAL MODE SWITCHER -->
 <div role="group" aria-label="Mode Tampilan" style="display: flex; align-items: center; gap: 4px; background: #FFFFFF; border: 1px solid var(--line); padding: 3px 5px; border-radius: 999px; box-shadow: 0 1px 3px rgba(0,0,0,0.04)">
-  <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); padding-left: 6px">Mode:</span>
-  <button type="button" id="mode-default-btn" data-ui-mode="default" style="min-height: 30px; padding: 0 12px; border-radius: 999px; border: none; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; background: var(--green); color: #FFFFFF">👨‍🌾 Petani</button>
-  <button type="button" id="mode-pro-btn" data-ui-mode="pro" style="min-height: 30px; padding: 0 12px; border-radius: 999px; border: none; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; background: transparent; color: var(--ink)">🏢 Farm &amp; Riset</button>
+  <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); padding-left: 6px">Tampilan:</span>
+  <button type="button" id="mode-default-btn" data-ui-mode="default" style="min-height: 30px; padding: 0 12px; border-radius: 999px; border: none; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; background: var(--green); color: #FFFFFF">👨‍🌾 Mode Ringkas (Petani)</button>
+  <button type="button" id="mode-pro-btn" data-ui-mode="pro" style="min-height: 30px; padding: 0 12px; border-radius: 999px; border: none; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; background: transparent; color: var(--ink)">🔬 Mode Lanjutan (Detail &amp; Riset)</button>
 </div>
 
 <!-- STRESS TEST TOGGLE -->
@@ -233,7 +233,7 @@ Sumber: Engine <span data-bind="cropLabel"></span> + Repository Literatur Terver
 </button>
 </section>
 
-<!-- PANEL BIOFISIK FAO-56 & RISET (KHUSUS MODE PRO) -->
+<!-- PANEL BIOFISIK FAO-56 & RISET (MODE LANJUTAN / DETAIL) -->
 <section id="fao56-pro-container" aria-label="Panel Biofisik FAO-56" style="display: none; background: #FFFFFF; border: 1.5px solid var(--green); border-radius: 18px; padding: 24px; flex-direction: column; gap: 16px; box-shadow: 0 4px 12px rgba(30,77,53,0.06)">
 </section>
 </div>

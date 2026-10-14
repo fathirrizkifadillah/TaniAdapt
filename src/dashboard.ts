@@ -1105,7 +1105,7 @@ function renderFao56ProPanel() {
           <span style="font-size: 18px">🔬</span>
           <h2 style="margin: 0; font-size: 17px; font-weight: 800; color: var(--ink)">Panel Biofisik Mekanistik FAO-56 &amp; Riset Komputasional</h2>
         </div>
-        <div style="font-size: 12px; color: var(--muted); margin-top: 2px">Khusus Mode Pro / Peneliti / Pengelola Farm / Akademisi Kampus</div>
+        <div style="font-size: 12px; color: var(--muted); margin-top: 2px">Mode Lanjutan: Transparansi data biofisik dan kalkulasi agrometeorologi untuk pengelola kebun, kampus, dan peneliti</div>
       </div>
       <div style="display: flex; gap: 6px; flex-wrap: wrap">
         <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; background: var(--sage); color: var(--green); padding: 3px 8px; border-radius: 6px">
@@ -1225,7 +1225,7 @@ function renderAuth() {
         <div style="display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2">
           <span style="font-size: 13px; font-weight: 700; color: var(--ink)">${esc(state.authUser.full_name)}</span>
           <span style="font-size: 10px; font-family: 'IBM Plex Mono', monospace; background: var(--sage); color: var(--green); padding: 1px 6px; border-radius: 4px; font-weight: 700">
-            ${isPro ? '🏢 FARM / PRO' : '👨‍🌾 PETANI'}
+            ${isPro ? '🏢 PENGELOLA / AKADEMISI' : '👨‍🌾 PETANI'}
           </span>
         </div>
         <button type="button" id="btn-logout" style="min-height: 32px; padding: 0 12px; border-radius: 999px; background: transparent; border: 1px solid var(--line); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--muted)">Keluar</button>
