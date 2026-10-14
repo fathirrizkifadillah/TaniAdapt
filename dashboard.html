@@ -87,6 +87,9 @@
 </div>
 </div>
 
+<!-- MODE EXPLANATION BANNER -->
+<div id="mode-banner" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; border-radius: 14px; font-size: 13px; font-weight: 500; margin-bottom: 4px"></div>
+
 <!-- ============ VIEW 1: RINGKASAN RISIKO ============ -->
 <div data-view="ringkasan">
 <div style="display: flex; flex-direction: column; gap: 24px">
@@ -213,7 +216,7 @@ Memuat analisis risiko tanaman...
 </section>
 
 <!-- INFLUENTIAL FACTORS (EVIDENCE WEIGHTS) -->
-<section aria-label="Faktor paling berpengaruh" style="flex: 1 1 300px; min-width: 0; background: #FFFFFF; border: 1px solid var(--line); border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 14px">
+<section id="factors-section" aria-label="Faktor paling berpengaruh" style="flex: 1 1 300px; min-width: 0; background: #FFFFFF; border: 1px solid var(--line); border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 14px">
 <h2 style="margin: 0; font-size: 17px; font-weight: 700">Evidence: Faktor Berpengaruh</h2>
 <div id="factors-container" style="display: flex; flex-direction: column; gap: 10px">
 </div>
@@ -282,7 +285,7 @@ Sumber: Engine <span data-bind="cropLabel"></span> + Repository Literatur Terver
 </div>
 
 <!-- 14-DAY HISTORY + 7-DAY FORECAST BAR CHART -->
-<section aria-label="Riwayat cuaca" style="background: #FFFFFF; border: 1px solid var(--line); border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 18px">
+<section id="chart-section" aria-label="Riwayat cuaca" style="background: #FFFFFF; border: 1px solid var(--line); border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 18px">
 <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: center">
 <div>
 <h2 style="margin: 0; font-size: 17px; font-weight: 700">Riwayat 14 Hari + Prakiraan 7 Hari</h2>

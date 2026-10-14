@@ -160,100 +160,18 @@ const ICON_CHECK = '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden=
 
 // ---------- INITIALIZE DEFAULT PLOTS ----------
 function initDefaultPlots(): PlotItem[] {
-  const saved = localStorage.getItem('taniadapt_plots_v4');
+  const saved = localStorage.getItem('taniadapt_user_plots_v1');
   if (saved) {
     try {
-      return JSON.parse(saved);
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) return parsed;
     } catch {
       // ignore parsing error
     }
   }
 
-  const defaults: PlotItem[] = [
-    {
-      id: 'plot-1',
-      name: 'Lahan Sentra Pasirhuni',
-      locationId: 'lembang',
-      placeName: 'Lembang, Kab. Bandung Barat (1.312 mdpl)',
-      cropId: 'cabai',
-      plantDate: '2026-08-19',
-      hst: 55,
-      stageName: 'Mulai Keluar Bunga Banyak (46–65 HST)',
-      risk: 'TINGGI',
-      trail: [
-        { dayLabel: 'HST 49', weather: 'Cerah Berawan', status: 'Sehat', note: 'Aplikasi KNO3 merah susulan' },
-        { dayLabel: 'HST 50', weather: 'Berawan', status: 'Sehat', note: 'Tajuk tanaman tegap' },
-        { dayLabel: 'HST 51', weather: 'Hujan Ringan', status: 'Sehat', note: 'Kuncup bunga serempak' },
-        { dayLabel: 'HST 52', weather: 'Hujan Sedang', status: 'Waspada', note: 'Kelembapan tinggi & daun basah lama' },
-        { dayLabel: 'HST 53', weather: 'Hujan Deras', status: 'Waspada', note: 'Parit bedengan mulai tergenang air' },
-        { dayLabel: 'HST 54', weather: 'Hujan Deras', status: 'Risiko tinggi', note: 'Pengurasan parit & sanitasi gulma' },
-        { dayLabel: 'HST 55 (Hari Ini)', weather: 'Hujan Ringan', status: 'Risiko tinggi', note: 'Waspada spora antraknosa bunga cabai' }
-      ]
-    },
-    {
-      id: 'plot-2',
-      name: 'Kebun Sentra Bayongbong',
-      locationId: 'garut',
-      placeName: 'Bayongbong, Kab. Garut (1.252 mdpl)',
-      cropId: 'cabai_rawit',
-      plantDate: '2026-07-20',
-      hst: 85,
-      stageName: 'Pembesaran Buah Rawit & Matang (76–105 HST)',
-      risk: 'SEDANG',
-      trail: [
-        { dayLabel: 'HST 79', weather: 'Cerah Pagi', status: 'Sehat', note: 'Buah cengek padat terisi' },
-        { dayLabel: 'HST 80', weather: 'Berawan', status: 'Sehat', note: 'Penyiraman pagi terjaga' },
-        { dayLabel: 'HST 81', weather: 'Hujan Sore', status: 'Waspada', note: 'Genangan parit segera tuntas' },
-        { dayLabel: 'HST 82', weather: 'Hujan Sedang', status: 'Waspada', note: 'Daun basah sampai malam' },
-        { dayLabel: 'HST 83', weather: 'Cerah Berawan', status: 'Sehat', note: 'Petikan rawit matang pertama' },
-        { dayLabel: 'HST 84', weather: 'Berawan', status: 'Sehat', note: 'Kondisi tajuk bersih' },
-        { dayLabel: 'HST 85 (Hari Ini)', weather: 'Cerah', status: 'Waspada', note: 'Waspada patek ujung buah' }
-      ]
-    },
-    {
-      id: 'plot-3',
-      name: 'Petak Sawah Sukamandi',
-      locationId: 'subang_pantura',
-      placeName: 'Sukamandi, Kab. Subang (49 mdpl)',
-      cropId: 'jagung',
-      plantDate: '2026-08-20',
-      hst: 55,
-      stageName: 'Keluar Bunga Jantan & Tongkol (46–60 HST)',
-      risk: 'SEDANG',
-      trail: [
-        { dayLabel: 'HST 49', weather: 'Cerah', status: 'Sehat', note: 'Tongkol mulai keluar rambut (silking)' },
-        { dayLabel: 'HST 50', weather: 'Cerah', status: 'Sehat', note: 'Kebutuhan air fase kritis terpenuhi' },
-        { dayLabel: 'HST 51', weather: 'Berawan', status: 'Sehat', note: 'Penyerbukan berjalan lancar' },
-        { dayLabel: 'HST 52', weather: 'Hujan Ringan', status: 'Sehat', note: 'Lembap tanah optimal' },
-        { dayLabel: 'HST 53', weather: 'Hujan Sedang', status: 'Waspada', note: 'Drainase sela barisan dibuka' },
-        { dayLabel: 'HST 54', weather: 'Hujan Ringan', status: 'Waspada', note: 'Angin kencang pantura' },
-        { dayLabel: 'HST 55 (Hari Ini)', weather: 'Berawan', status: 'Waspada', note: 'Pantau kelembapan tongkol' }
-      ]
-    },
-    {
-      id: 'plot-4',
-      name: 'Sentra Pangan Lakbok',
-      locationId: 'ciamis',
-      placeName: 'Lakbok, Kab. Ciamis (167 mdpl)',
-      cropId: 'kedelai',
-      plantDate: '2026-08-15',
-      hst: 60,
-      stageName: 'Pengisian Biji Polong (51–70 HST)',
-      risk: 'RENDAH',
-      trail: [
-        { dayLabel: 'HST 54', weather: 'Cerah', status: 'Sehat', note: 'Polong padat terisi' },
-        { dayLabel: 'HST 55', weather: 'Cerah', status: 'Sehat', note: 'Pengairan sela barisan' },
-        { dayLabel: 'HST 56', weather: 'Cerah', status: 'Sehat', note: 'Bebas ulat polong' },
-        { dayLabel: 'HST 57', weather: 'Berawan', status: 'Sehat', note: 'Daun hijau segar' },
-        { dayLabel: 'HST 58', weather: 'Hujan Ringan', status: 'Sehat', note: 'Air tanah cukup' },
-        { dayLabel: 'HST 59', weather: 'Cerah', status: 'Sehat', note: 'Lengas tanah terjaga' },
-        { dayLabel: 'HST 60 (Hari Ini)', weather: 'Cerah', status: 'Sehat', note: 'Kondisi prima menuju panen' }
-      ]
-    }
-  ];
-
-  localStorage.setItem('taniadapt_plots_v4', JSON.stringify(defaults));
-  return defaults;
+  // Lahan kosong secara default; pengguna mendaftarkan lahan riil mereka sendiri
+  return [];
 }
 
 // ---------- WEATHER DATA & DECISION CALCULATION ----------
@@ -324,7 +242,7 @@ async function recomputeEngine() {
     state.plots[state.fieldIndex].risk = result.overallRisk;
     state.plots[state.fieldIndex].hst = state.currentHST;
     state.plots[state.fieldIndex].stageName = result.stageName;
-    localStorage.setItem('taniadapt_plots_v3', JSON.stringify(state.plots));
+    localStorage.setItem('taniadapt_user_plots_v1', JSON.stringify(state.plots));
   }
 
   render();
@@ -838,6 +756,32 @@ function renderFields() {
   const fieldsCont = $('#fields');
   if (!fieldsCont) return;
 
+  const trailSection = document.querySelector('[aria-label="Jejak kondisi tanaman"]') as HTMLElement;
+
+  if (state.plots.length === 0) {
+    fieldsCont.innerHTML = `
+      <div style="flex: 1 1 100%; background: #FFFFFF; border: 2px dashed var(--line); border-radius: 18px; padding: 48px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.03)">
+        <div style="font-size: 48px">🌱</div>
+        <h3 style="margin: 0; font-size: 20px; font-weight: 800; color: var(--ink)">Belum Ada Petak Lahan Terdaftar</h3>
+        <p style="margin: 0; font-size: 14px; color: var(--muted); max-width: 500px; line-height: 1.6">
+          Daftarkan petak lahan pertanian Anda sejak hari tanam agar Decision Engine dapat memantau akumulasi kebasahan daun, neraca air FAO-56, dan peringatan OPT secara akurat.
+        </p>
+        <button type="button" data-action="toggle-form" style="margin-top: 6px; min-height: 44px; padding: 0 24px; border-radius: 999px; background: var(--green); color: #FFF; border: none; font-weight: 700; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(30,77,53,0.2)">
+          <span>+ Daftarkan Lahan Baru</span>
+        </button>
+      </div>
+    `;
+
+    if (trailSection) trailSection.style.display = 'none';
+
+    const addForm = $('#add-form');
+    if (addForm) addForm.hidden = !state.showForm;
+    bindText('formButton', state.showForm ? 'Batal Tambah' : 'Tambah Lahan Baru');
+    return;
+  }
+
+  if (trailSection) trailSection.style.display = 'flex';
+
   fieldsCont.innerHTML = state.plots.map((f, i) => {
     const on = state.fieldIndex === i;
     const card = 'flex: 1 1 290px; min-width: 0; background: #FFFFFF; border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 4px 12px rgba(19,39,29,0.06); ' +
@@ -1029,13 +973,58 @@ function renderUIMode() {
   // Toggle "Bukti Ilmiah (16 Field)" visibility based on Mode
   const evBox = $('#evidence-sidebar-container');
   if (evBox) {
-    evBox.style.display = state.uiMode === 'pro' ? 'block' : 'none';
+    evBox.style.display = !isDefault ? 'block' : 'none';
   }
 
   // Toggle Stress Scenario Switcher based on Mode
   const stressToggle = document.querySelector('[aria-label="Uji stres skenario cuaca"]') as HTMLElement;
   if (stressToggle) {
-    stressToggle.style.display = state.uiMode === 'pro' ? 'flex' : 'none';
+    stressToggle.style.display = !isDefault ? 'flex' : 'none';
+  }
+
+  // Sembunyikan bagian analitik statistik rumit di Mode Ringkas (Petani)
+  const factorsSection = $('#factors-section');
+  if (factorsSection) {
+    factorsSection.style.display = !isDefault ? 'flex' : 'none';
+  }
+
+  const chartSection = $('#chart-section');
+  if (chartSection) {
+    chartSection.style.display = !isDefault ? 'flex' : 'none';
+  }
+
+  // Banner Penjelas Perbedaan Mode
+  const banner = $('#mode-banner');
+  if (banner) {
+    if (isDefault) {
+      banner.style.display = 'flex';
+      banner.style.background = '#F0FDF4';
+      banner.style.border = '1.5px solid #BBF7D0';
+      banner.style.color = '#166534';
+      banner.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px">
+          <span style="font-size: 20px">👨‍🌾</span>
+          <span><strong>Mode Ringkas (Petani):</strong> Menampilkan ringkasan aksi praktis harian di lahan (Siram, Semprot, Pupuk). Rumus biofisik, grafik penguapan, dan bobot statistik disembunyikan agar ramah dan tidak membingungkan petani.</span>
+        </div>
+        <button type="button" data-ui-mode="pro" style="background: none; border: none; font: inherit; font-size: 12.5px; font-weight: 700; color: #166534; text-decoration: underline; cursor: pointer; white-space: nowrap">
+          Buka Data Lanjutan &rarr;
+        </button>
+      `;
+    } else {
+      banner.style.display = 'flex';
+      banner.style.background = '#F0F9FF';
+      banner.style.border = '1.5px solid #BAE6FD';
+      banner.style.color = '#0369A1';
+      banner.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px">
+          <span style="font-size: 20px">🔬</span>
+          <span><strong>Mode Lanjutan (Detail &amp; Riset):</strong> Seluruh metrik biofisik mekanistik FAO-56, grafik penguapan VPD, matriks lag temporal, dan simulasi 7 hari aktif ditampilkan untuk pengelola kebun, agribisnis, dan akademisi.</span>
+        </div>
+        <button type="button" data-ui-mode="default" style="background: none; border: none; font: inherit; font-size: 12.5px; font-weight: 700; color: #0369A1; text-decoration: underline; cursor: pointer; white-space: nowrap">
+          Tampilan Ringkas &rarr;
+        </button>
+      `;
+    }
   }
 
   renderFao56ProPanel();
@@ -1476,15 +1465,26 @@ function setupEventListeners() {
     // Field Open in Ringkasan
     const fieldOpen = target.closest('[data-field-open]') as HTMLElement;
     if (fieldOpen && fieldOpen.dataset.fieldOpen !== undefined) {
-      state.fieldIndex = Number(fieldOpen.dataset.fieldOpen);
-      const plot = state.plots[state.fieldIndex];
+      const idx = Number(fieldOpen.dataset.fieldOpen);
+      state.fieldIndex = idx;
+      const plot = state.plots[idx];
       if (plot) {
         state.cropId = plot.cropId;
-        state.currentHST = plot.hst;
+        if (plot.plantDate) {
+          const plantTime = new Date(plot.plantDate).getTime();
+          const nowTime = new Date().getTime();
+          const diffDays = Math.max(1, Math.floor((nowTime - plantTime) / 86400000));
+          state.currentHST = diffDays;
+          plot.hst = diffDays;
+        } else {
+          state.currentHST = plot.hst;
+        }
         const loc = INDONESIAN_LOCATIONS.find(l => l.id === plot.locationId);
         if (loc) state.location = loc;
       }
       state.view = 'ringkasan';
+      render(); // Instantly switch view to Ringkasan and update nav highlight!
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       recomputeEngine();
       return;
     }
@@ -1509,27 +1509,35 @@ function setupEventListeners() {
         return;
       }
 
+      const plantDateVal = dateInput.value || new Date().toISOString().split('T')[0];
+      const plantTime = new Date(plantDateVal).getTime();
+      const nowTime = new Date().getTime();
+      const computedHst = Math.max(1, Math.floor((nowTime - plantTime) / 86400000));
+
+      const locObj = INDONESIAN_LOCATIONS.find(l => l.id === locSelect.value);
+      const placeName = locObj ? `${locObj.name} (${locObj.elevationMeters} mdpl)` : 'Jawa Barat';
+
       const newPlot: PlotItem = {
         id: `plot-${Date.now()}`,
         name: nameInput.value.trim(),
         locationId: locSelect.value,
-        placeName: INDONESIAN_LOCATIONS.find(l => l.id === locSelect.value)?.name || 'Indonesia',
+        placeName,
         cropId: cropSelect.value as CropId,
-        plantDate: dateInput.value || new Date().toISOString().split('T')[0],
-        hst: 14,
+        plantDate: plantDateVal,
+        hst: computedHst,
         stageName: 'Vegetatif Awal',
         risk: 'RENDAH',
         trail: [
-          { dayLabel: 'HST 1', weather: 'Cerah', status: 'Sehat', note: 'Hari tanam bibit' },
-          { dayLabel: 'HST 7', weather: 'Cerah Berawan', status: 'Sehat', note: 'Penyulaman bibit mati' },
-          { dayLabel: 'HST 14 (Hari Ini)', weather: 'Berawan', status: 'Sehat', note: 'Aplikasi pupuk dasar' }
+          { dayLabel: `HST 1`, weather: 'Cerah', status: 'Sehat', note: 'Hari tanam bibit' },
+          { dayLabel: `HST ${computedHst} (Hari Ini)`, weather: 'Berawan', status: 'Sehat', note: 'Lahan terdaftar di TaniAdapt' }
         ]
       };
 
       state.plots.push(newPlot);
       state.fieldIndex = state.plots.length - 1;
       state.showForm = false;
-      localStorage.setItem('taniadapt_plots_v3', JSON.stringify(state.plots));
+      localStorage.setItem('taniadapt_user_plots_v1', JSON.stringify(state.plots));
+      nameInput.value = '';
       renderFields();
       return;
     }
@@ -1542,7 +1550,7 @@ function setupEventListeners() {
       const curPlot = state.plots[state.fieldIndex];
       if (curPlot && curPlot.trail.length > 0) {
         curPlot.trail[curPlot.trail.length - 1].note = noteInput.value.trim();
-        localStorage.setItem('taniadapt_plots_v3', JSON.stringify(state.plots));
+        localStorage.setItem('taniadapt_user_plots_v1', JSON.stringify(state.plots));
         noteInput.value = '';
         renderFields();
       }
