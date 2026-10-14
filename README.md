@@ -134,34 +134,23 @@ TaniAdapt dibangun dengan filosofi **Anti-AI-Slop** dan **Human-First**:
 ```text
 taniadapt/
 ├── index.html                   # Landing page dan panduan metodologi ilmiah
-├── dashboard.html               # Antarmuka dashboard standalone (vanilla TS driver)
-├── app.html                     # Antarmuka workstation reaktif (React 19 SPA)
+├── dashboard.html               # Antarmuka dashboard sistem pendukung keputusan
 ├── package.json                 # Konfigurasi dependensi dan skrip proyek
 ├── tsconfig.json                # Root TypeScript Project References
 ├── tsconfig.app.json            # Konfigurasi TypeScript untuk aplikasi web (Vite)
 ├── tsconfig.node.json           # Konfigurasi TypeScript untuk Vite config
-├── vite.config.ts               # Konfigurasi bundler Vite (@vitejs/plugin-react & multi-input)
-├── tailwind.config.js           # Konfigurasi Tailwind CSS (Palette Anti-Slop Agritech)
-├── postcss.config.js            # Konfigurasi PostCSS & Autoprefixer
+├── vite.config.ts               # Konfigurasi bundler Vite (multi-input SPA/MPA)
 ├── .editorconfig                # Standarisasi format editor (LF, UTF-8, 2 spaces)
 ├── .env.example                 # Template konfigurasi variabel lingkungan
 ├── .gitignore                   # Aturan pengabaian file repository yang komprehensif
+├── css/
+│   └── style.css                # Sistem token desain agritech organik TaniAdapt
 ├── public/                      # Aset statis & logo vektor SVG resmi TaniAdapt
 ├── scripts/                     # Skrip otomasi & audit kualitas (anti-slop-audit.mjs)
 ├── skills/                      # Dokumentasi aturan agronomis (agro-decision-engine)
 └── src/
-    ├── main.tsx                 # Entry point React application
-    ├── App.tsx                  # Root component React Workstation
-    ├── dashboard.ts             # Logika interaktif antarmuka dashboard standalone
-    ├── index.css                # Styling global Tailwind, high-contrast, & print mode
-    ├── components/              # Komponen modular UI (React):
-    │   ├── advisory/            # Rekomendasi tindakan, kalkulator hasil, laporan cetak
-    │   ├── ai/                  # Dialog explainability & penalaran agronomis
-    │   ├── audit/               # Modal audit kepatuhan anti-slop
-    │   ├── common/              # Header, kartu metrik, badge risiko
-    │   ├── crop/                # Selektor komoditas, fenologi, matriks risiko penyakit
-    │   ├── simulation/          # Sandbox simulasi & pengujian stres cuaca ekstrem
-    │   └── weather/             # Tinjauan mikroklimat, grafik lag temporal, analisis VPD
+    ├── dashboard.ts             # Logika interaktif antarmuka dashboard (TypeScript murni)
+    ├── vite-env.d.ts            # Pengetikan env client Vite
     ├── engine/                  # Core agrometeorological decision engine:
     │   ├── featureEngineering.ts# Algoritma rolling window, curah hujan kumulatif, VPD Tetens
     │   ├── cropEngines.ts       # Model fenologi, koefisien Kc FAO-56, ambang patogen
@@ -202,8 +191,7 @@ npm run dev
 ```
 Aplikasi akan aktif di:
 - **Landing Page:** [http://localhost:5173/](http://localhost:5173/)
-- **Dashboard Standalone:** [http://localhost:5173/dashboard.html](http://localhost:5173/dashboard.html)
-- **Workstation Reaktif (React):** [http://localhost:5173/app.html](http://localhost:5173/app.html)
+- **Dashboard Rekomendasi:** [http://localhost:5173/dashboard.html](http://localhost:5173/dashboard.html)
 
 ### 3. Membangun Paket Produksi (Build)
 ```bash
