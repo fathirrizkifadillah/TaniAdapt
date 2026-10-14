@@ -199,6 +199,26 @@ npm run build
 ```
 Hasil kompilasi yang dioptimasi dan ter-minifikasi akan tersimpan di direktori `dist/`.
 
+### 4. Deployment ke Vercel
+
+Proyek ini telah dikonfigurasi dengan `vercel.json` siap pakai untuk Vite Multi-Page Application (MPA).
+
+**Cara Deploy via Vercel Dashboard (Rekomendasi):**
+1. Hubungkan repositori GitHub `fathirrizkifadillah/TaniAdapt` ke akun [Vercel](https://vercel.com).
+2. Vercel akan otomatis mendeteksi Framework Preset: **Vite**.
+3. Pastikan konfigurasi default berikut:
+   - **Build Command:** `npm run build`
+   - **Output Directory:** `dist`
+   - **Install Command:** `npm install`
+4. Klik **Deploy**.
+
+**Cara Deploy via Vercel CLI:**
+```bash
+npx vercel
+# Untuk rilis produksi:
+npx vercel --prod
+```
+
 ---
 
 ## Pengujian Otomatis (Unit Tests)
