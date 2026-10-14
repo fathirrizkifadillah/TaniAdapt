@@ -489,5 +489,202 @@ export const CROP_MODELS: Record<CropId, CropDefinition> = {
         literatureCitationId: 'ipb_irigasi_vpd_2021'
       }
     ]
+  },
+  cabai_rawit: {
+    id: 'cabai_rawit',
+    name: 'Cabai Rawit',
+    scientificName: 'Capsicum frutescens L.',
+    category: 'Hortikultura',
+    description: 'Cabai rawit lokal (cengek) dengan siklus panen panjang hingga 150 hari, sensitif terhadap kelembapan tinggi pemicu patek buah dan antraknosa.',
+    totalDurationDays: 150,
+    optimalTempRange: [22, 29],
+    optimalRHRange: [60, 80],
+    growthStages: [
+      {
+        id: 'cr_seedling',
+        name: 'Bibit Baru Pindah Tanam (0–20 HST)',
+        minHST: 0,
+        maxHST: 20,
+        description: 'Fase adaptasi akar muda pada bedengan tanah.',
+        waterSensitivity: 'SEDANG',
+        diseaseVulnerability: 'TINGGI',
+        keyNutrientNeed: 'Fosfat untuk pacu perakaran',
+        agronomicFocus: 'Jaga kelembapan tidak berlebih, hindari rebah kecambah'
+      },
+      {
+        id: 'cr_vegetative',
+        name: 'Tumbuh Cabang & Ranting Rimbun (21–50 HST)',
+        minHST: 21,
+        maxHST: 50,
+        description: 'Pembentukan percabangan sekunder dan daun rimbun.',
+        waterSensitivity: 'SEDANG',
+        diseaseVulnerability: 'SEDANG',
+        keyNutrientNeed: 'Nitrogen dan Kalium seimbang',
+        agronomicFocus: 'Wiwil tunas air bawah dan sanitasi gulma bedengan'
+      },
+      {
+        id: 'cr_flowering',
+        name: 'Mulai Keluar Bunga Lebat (51–75 HST)',
+        minHST: 51,
+        maxHST: 75,
+        description: 'Bunga putih bermekaran serempak di ketiak cabang.',
+        waterSensitivity: 'KRITIS',
+        diseaseVulnerability: 'TINGGI',
+        keyNutrientNeed: 'Kalium, Kalsium, dan Boron anti rontok bunga',
+        agronomicFocus: 'Jaga ketersediaan air stabil, jangan biarkan tanah retak'
+      },
+      {
+        id: 'cr_fruiting',
+        name: 'Buah Membesar & Matang Hijau/Merah (76–105 HST)',
+        minHST: 76,
+        maxHST: 105,
+        description: 'Buah rawit padat terisi dan mulai menguning hingga merah.',
+        waterSensitivity: 'TINGGI',
+        diseaseVulnerability: 'KRITIS',
+        keyNutrientNeed: 'Kalsium dan Kalium tinggi',
+        agronomicFocus: 'Waspadai patek buah (antraknosa) saat cuaca basah'
+      },
+      {
+        id: 'cr_harvesting',
+        name: 'Masa Panen Petikan Berkala (106–150 HST)',
+        minHST: 106,
+        maxHST: 150,
+        description: 'Pemetikan buah rawit bertahap tiap 5-7 hari sekali.',
+        waterSensitivity: 'SEDANG',
+        diseaseVulnerability: 'TINGGI',
+        keyNutrientNeed: 'Pupuk susulan penopang pembungaan lanjutan',
+        agronomicFocus: 'Petik saat embun kering untuk menjaga kesegaran buah'
+      }
+    ],
+    diseases: [
+      {
+        id: 'antraknosa_rawit',
+        name: 'Antraknosa / Patek Buah Rawit',
+        pathogen: 'Colletotrichum acutatum',
+        indonesianName: 'Patek Cabai Rawit',
+        description: 'Bercak melingkar cekung dengan bintik hitam pada buah rawit masak.',
+        triggers: {
+          minConsecutiveRainDays: 3,
+          minRH: 82,
+          tempRange: [24, 28],
+          minRolling3dRain: 25
+        },
+        preventiveAction: 'Semprot fungisida protektif kontak sebelum hujan lebat; petik dan musnahkan buah yang busuk.',
+        curativeAction: 'Rotasi fungisida sistemik sesuai rekomendasi PPL.',
+        literatureCitationId: 'balitsa_antraknosa_2020'
+      },
+      {
+        id: 'layu_bakteri_rawit',
+        name: 'Layu Bakteri Lahan Basah',
+        pathogen: 'Ralstonia solanacearum',
+        indonesianName: 'Layu Bakteri Cabai Rawit',
+        description: 'Tanaman mendadak layu hijau segar saat siang hari akibat genangan parit.',
+        triggers: {
+          minRolling3dRain: 35,
+          minRH: 88
+        },
+        preventiveAction: 'Perdalam parit bedengan minimal 30 cm agar air cepat tuntas terbuang.',
+        curativeAction: 'Cabut dan buang tanaman layu agar tidak menular ke barisan lain.',
+        literatureCitationId: 'balitsa_tomat_blight_2018'
+      }
+    ]
+  },
+  kedelai: {
+    id: 'kedelai',
+    name: 'Kedelai',
+    scientificName: 'Glycine max (L.) Merr.',
+    category: 'Pangan',
+    description: 'Komoditas pangan legum semusim unggulan 17 sentra Jawa Barat, sensitif terhadap kekeringan fase pengisian polong (FAO-56 Zr=0.8m, p=0.50).',
+    totalDurationDays: 85,
+    optimalTempRange: [23, 30],
+    optimalRHRange: [65, 85],
+    growthStages: [
+      {
+        id: 'k_seedling',
+        name: 'Kecambah & Daun Awal (0–15 HST)',
+        minHST: 0,
+        maxHST: 15,
+        description: 'Munculnya daun trifoliate pertama pasca sebar benih.',
+        waterSensitivity: 'SEDANG',
+        diseaseVulnerability: 'SEDANG',
+        keyNutrientNeed: 'Inokulan Rhizobium bintil akar',
+        agronomicFocus: 'Cegah genangan air berlebih yang membusukkan benih'
+      },
+      {
+        id: 'k_vegetative',
+        name: 'Tumbuh Percabangan Rimbun (16–30 HST)',
+        minHST: 16,
+        maxHST: 30,
+        description: 'Pembentukan cabang vegetatif dan nodul bintil akar aktif.',
+        waterSensitivity: 'SEDANG',
+        diseaseVulnerability: 'SEDANG',
+        keyNutrientNeed: 'Fosfat dan Kalium',
+        agronomicFocus: 'Penyiangan gulma dan pembumbunan tanah barisan'
+      },
+      {
+        id: 'k_flowering',
+        name: 'Berbunga & Pembentukan Polong (31–50 HST)',
+        minHST: 31,
+        maxHST: 50,
+        description: 'Kuntum bunga ungu/putih mekar dan mulai membentuk bakal polong.',
+        waterSensitivity: 'TINGGI',
+        diseaseVulnerability: 'TINGGI',
+        keyNutrientNeed: 'Kalium dan Kalsium penguat bunga',
+        agronomicFocus: 'Jaga lengas tanah, kekurangan air menyebabkan bunga gugur'
+      },
+      {
+        id: 'k_pod_fill',
+        name: 'Pengisian Biji Polong (51–70 HST)',
+        minHST: 51,
+        maxHST: 70,
+        description: 'Biji di dalam polong membesar dan padat terisi.',
+        waterSensitivity: 'KRITIS',
+        diseaseVulnerability: 'SEDANG',
+        keyNutrientNeed: 'Kalium tinggi untuk bobot biji optimal',
+        agronomicFocus: 'Fase paling haus air, jangan biarkan deplesi melewati batas RAW'
+      },
+      {
+        id: 'k_maturation',
+        name: 'Polong Menguning & Siap Panen (71–85 HST)',
+        minHST: 71,
+        maxHST: 85,
+        description: 'Daun mulai rontok alami dan polong berubah cokelat kering.',
+        waterSensitivity: 'RENDAH',
+        diseaseVulnerability: 'TINGGI',
+        keyNutrientNeed: 'Nihil pupuk kimia',
+        agronomicFocus: 'Panen saat cuaca terik dan RH <= 75% untuk biji kering simpan'
+      }
+    ],
+    diseases: [
+      {
+        id: 'karat_daun_kedelai',
+        name: 'Karat Daun Kedelai',
+        pathogen: 'Phakopsora pachyrhizi',
+        indonesianName: 'Karat Daun Kedelai',
+        description: 'Pustul cokelat kemerahan di bawah permukaan daun yang membuat daun menguning rontok prematur.',
+        triggers: {
+          minConsecutiveRainDays: 2,
+          minRH: 85,
+          tempRange: [20, 28]
+        },
+        preventiveAction: 'Tanam varietas tahan karat dan atur drainase lahan agar tidak lembap jenuh.',
+        curativeAction: 'Semprot fungisida anjuran penyuluh lapangan jika gejala karat meluas.',
+        literatureCitationId: 'balitkabi_kedelai_2021'
+      },
+      {
+        id: 'ulat_polong_kedelai',
+        name: 'Ulat Penggerek Polong',
+        pathogen: 'Etiella zinckenella',
+        indonesianName: 'Penggerek Polong Kedelai',
+        description: 'Larva melubangi kulit polong dan memakan biji muda di dalamnya.',
+        triggers: {
+          minConsecutiveRainDays: 0,
+          tempRange: [25, 32]
+        },
+        preventiveAction: 'Pasang perangkap feromon dan lakukan pengamatan rutin fase pembentukan polong.',
+        curativeAction: 'Kendalikan dengan arahan Petugas Penyuluh Lapangan.',
+        literatureCitationId: 'balitkabi_kedelai_2021'
+      }
+    ]
   }
 };

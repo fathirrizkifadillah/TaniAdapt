@@ -6,6 +6,8 @@ import { extractTemporalFeatures } from './featureEngineering';
 import {
   evaluateBawangMerahEngine,
   evaluateCabaiEngine,
+  evaluateCabaiRawitEngine,
+  evaluateKedelaiEngine,
   evaluateJagungEngine,
   evaluatePadiEngine,
   evaluateTomatEngine
@@ -59,6 +61,12 @@ export function runAgroDecisionEngine(
   switch (cropId) {
     case 'cabai':
       evalOutput = evaluateCabaiEngine(stage, currentHST, features, current, forecast);
+      break;
+    case 'cabai_rawit':
+      evalOutput = evaluateCabaiRawitEngine(stage, currentHST, features, current, forecast);
+      break;
+    case 'kedelai':
+      evalOutput = evaluateKedelaiEngine(stage, currentHST, features, current, forecast);
       break;
     case 'padi':
       evalOutput = evaluatePadiEngine(stage, currentHST, features, current, forecast);

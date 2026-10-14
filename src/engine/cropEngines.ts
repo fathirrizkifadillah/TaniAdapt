@@ -663,3 +663,206 @@ export function evaluateTomatEngine(
     temporalSummary
   };
 }
+
+// ----------------------------------------------------
+// 6. ENGINE CABAI RAWIT (Capsicum frutescens L.)
+// ----------------------------------------------------
+export function evaluateCabaiRawitEngine(
+  stage: GrowthStage,
+  hst: number,
+  tf: TemporalFeatures,
+  current: CurrentWeather,
+  _forecast: DailyForecast[]
+): CropEvaluationOutput {
+  const recommendations: ActionableRecommendation[] = [];
+  const diseaseRisks: DiseaseRiskAssessment[] = [];
+
+  let antraknosaScore = 15;
+  const antraknosaFactors: string[] = [];
+
+  if (tf.consecutiveRainyDays >= 3) {
+    antraknosaScore += 45;
+    antraknosaFactors.push(`Hujan ${tf.consecutiveRainyDays} hari berurutan memicu spora patek rawit`);
+  } else if (tf.rolling3dRain >= 25) {
+    antraknosaScore += 30;
+    antraknosaFactors.push(`Hujan 3 hari = ${tf.rolling3dRain} mm`);
+  }
+
+  if (tf.rolling7dRH >= 82) {
+    antraknosaScore += 25;
+    antraknosaFactors.push(`Kelembapan tajuk tinggi (${tf.rolling7dRH}% RH)`);
+  }
+
+  if (stage.id === 'cr_fruiting' || stage.id === 'cr_harvesting') {
+    antraknosaScore = Math.min(100, Math.round(antraknosaScore * 1.25));
+    antraknosaFactors.push('Buah rawit padat sangat rentan busuk ujung patek');
+  }
+
+  const antraknosaLevel: RiskLevel = antraknosaScore >= 70 ? 'TINGGI' : antraknosaScore >= 40 ? 'SEDANG' : 'RENDAH';
+  diseaseRisks.push({
+    diseaseId: 'antraknosa_rawit',
+    diseaseName: 'Antraknosa / Patek Buah Rawit',
+    pathogen: 'Colletotrichum acutatum',
+    level: antraknosaLevel,
+    score: antraknosaScore,
+    reason: antraknosaLevel === 'TINGGI'
+      ? 'Mikroklimat jenuh lembap mempercepat lesi melingkar hitam pada buah cengek.'
+      : 'Kondisi mikroklimat terkontrol, waspadai hujan malam.',
+    triggerFactors: antraknosaFactors,
+    preventiveAdvice: 'Aplikasi fungisida kontak saat jeda hujan; petik bersih buah rawit yang busuk.',
+    literatureCitationId: 'balitsa_antraknosa_2020',
+  });
+
+  if (antraknosaLevel === 'TINGGI') {
+    recommendations.push({
+      id: 'rec_rawit_antraknosa',
+      category: 'PROTEKSI_PENYAKIT',
+      title: 'Proteksi Mendesak Patek Cabai Rawit',
+      urgency: 'HARI_INI',
+      riskLevel: 'TINGGI',
+      action: 'Lakukan penyemprotan fungisida kontak protektan sebelum awan hujan sore terbentuk; petik dan musnahkan buah sakit.',
+      rationale: `Akumulasi basah daun ${tf.rolling7dRH}% RH memicu infeksi spora (Balitsa, 2020).`,
+      growthStageContext: `Fase ${stage.name} (HST ${hst})`,
+      evidenceCitationId: 'balitsa_antraknosa_2020',
+      literatureSource: 'Balai Penelitian Tanaman Sayuran (Balitsa)',
+    });
+  }
+
+  // Model Layu Bakteri Parit Tergenang
+  let layuScore = 10;
+  if (tf.rolling3dRain >= 35) {
+    layuScore += 50;
+  }
+  if (current.relativeHumidity >= 88) {
+    layuScore += 30;
+  }
+  const layuLevel: RiskLevel = layuScore >= 65 ? 'TINGGI' : 'RENDAH';
+  diseaseRisks.push({
+    diseaseId: 'layu_bakteri_rawit',
+    diseaseName: 'Layu Bakteri Lahan Basah',
+    pathogen: 'Ralstonia solanacearum',
+    level: layuLevel,
+    score: layuScore,
+    reason: layuLevel === 'TINGGI' ? 'Drainase parit tergenang mempermudah invasi bakteri perakaran.' : 'Aerasi perakaran baik.',
+    triggerFactors: tf.rolling3dRain >= 35 ? ['Akumulasi hujan tinggi memicu genangan parit'] : [],
+    preventiveAdvice: 'Perdalam parit bedengan agar tidak ada air menggenang lebih dari 6 jam.',
+    literatureCitationId: 'balitsa_tomat_blight_2018',
+  });
+
+  const overallRisk: RiskLevel = antraknosaLevel === 'TINGGI' || layuLevel === 'TINGGI' ? 'TINGGI' : antraknosaLevel === 'SEDANG' ? 'SEDANG' : 'RENDAH';
+  const temporalSummary = `Hujan 3 Hari: ${tf.rolling3dRain} mm | Kelembapan 7 Hari: ${tf.rolling7dRH}% | Suhu: ${current.temperature}°C | VPD: ${tf.currentVPD} kPa`;
+
+  return {
+    overallRisk,
+    diseaseRisks,
+    irrigation: {
+      status: tf.rolling3dRain > 35 ? 'DRAINASE_MENDESAK' : tf.consecutiveDryDays >= 3 ? 'BUTUH_PENGAIRAN' : 'CUKUP',
+      soilMoistureIndexPercent: Math.min(100, Math.round(55 + tf.rolling3dRain * 1.2)),
+      recommendation: tf.rolling3dRain > 35 ? 'Kuras parit bedengan cabai rawit.' : 'Siram secukupnya pagi hari.',
+      rationale: 'Akar cabai rawit rentan busuk jika tergenang air.',
+    },
+    fertilization: {
+      safeToApply: tf.forecastRain24h < 25,
+      status: tf.forecastRain24h < 25 ? 'AMAN' : 'TUNDA_KARENA_HUJAN',
+      reason: tf.forecastRain24h < 25 ? 'Aman untuk pupuk susulan KNO3.' : 'Prakiraan hujan lebat berisiko mencuci pupuk.',
+      recommendedNutrient: stage.keyNutrientNeed,
+    },
+    recommendations,
+    temporalSummary,
+  };
+}
+
+// ----------------------------------------------------
+// 7. ENGINE KEDELAI (Glycine max L.)
+// ----------------------------------------------------
+export function evaluateKedelaiEngine(
+  stage: GrowthStage,
+  hst: number,
+  tf: TemporalFeatures,
+  current: CurrentWeather,
+  _forecast: DailyForecast[]
+): CropEvaluationOutput {
+  const recommendations: ActionableRecommendation[] = [];
+  const diseaseRisks: DiseaseRiskAssessment[] = [];
+
+  let karatScore = 15;
+  const karatFactors: string[] = [];
+  if (tf.consecutiveRainyDays >= 2) {
+    karatScore += 40;
+    karatFactors.push(`Hujan ${tf.consecutiveRainyDays} hari berurutan mendukung spora karat`);
+  }
+  if (tf.rolling7dRH >= 85) {
+    karatScore += 30;
+    karatFactors.push(`Kelembapan relatif tinggi (${tf.rolling7dRH}%)`);
+  }
+  if (current.temperature >= 20 && current.temperature <= 28) {
+    karatScore += 15;
+    karatFactors.push(`Suhu optimum infeksi (${current.temperature}°C)`);
+  }
+
+  const karatLevel: RiskLevel = karatScore >= 65 ? 'TINGGI' : karatScore >= 35 ? 'SEDANG' : 'RENDAH';
+  diseaseRisks.push({
+    diseaseId: 'karat_daun_kedelai',
+    diseaseName: 'Karat Daun Kedelai',
+    pathogen: 'Phakopsora pachyrhizi',
+    level: karatLevel,
+    score: karatScore,
+    reason: karatLevel === 'TINGGI' ? 'Pustul karat daun rentan meluas pada kelembapan tinggi.' : 'Tekanan karat daun moderat.',
+    triggerFactors: karatFactors,
+    preventiveAdvice: 'Aplikasi fungisida protektif kontak bila gejala bercak cokelat bawah daun mulai muncul.',
+    literatureCitationId: 'balitkabi_kedelai_2021',
+  });
+
+  if (karatLevel === 'TINGGI') {
+    recommendations.push({
+      id: 'rec_kedelai_karat',
+      category: 'PROTEKSI_PENYAKIT',
+      title: 'Kewaspadaan Karat Daun Kedelai',
+      urgency: 'HARI_INI',
+      riskLevel: 'TINGGI',
+      action: 'Lakukan pengamatan di kanopi bawah daun; semprot fungisida anjuran penyuluh lapangan bila ditemukan bintik karat aktif.',
+      rationale: `Kondisi lembap ${tf.rolling7dRH}% RH mendukung perkecambahan urediniospora (Balitkabi, 2021).`,
+      growthStageContext: `Fase ${stage.name} (HST ${hst})`,
+      evidenceCitationId: 'balitkabi_kedelai_2021',
+      literatureSource: 'Balai Penelitian Tanaman Aneka Kacang dan Umbi (Balitkabi)',
+    });
+  }
+
+  // Cekaman Kekeringan Fase Pengisian Polong (R3-R5 / HST 51-70)
+  if (stage.id === 'k_pod_fill' && tf.consecutiveDryDays >= 4) {
+    recommendations.push({
+      id: 'rec_kedelai_irigasi_polong',
+      category: 'PENGATURAN_IRIGASI',
+      title: 'Irigasi Kritis Pengisian Biji Kedelai',
+      urgency: 'HARI_INI',
+      riskLevel: 'TINGGI',
+      action: 'Berikan air irigasi secukupnya ke sela barisan kedelai; jangan biarkan deplesi perakaran melampaui batas RAW (FAO-56 p=0.50).',
+      rationale: 'Kekurangan air pada fase pengisian biji menyebabkan polong hampa dan biji mengkerut hingga susut hasil 40%.',
+      growthStageContext: `Fase ${stage.name} (HST ${hst})`,
+      evidenceCitationId: 'fao56_allen_1998',
+      literatureSource: 'FAO-56 Penman-Monteith (Bab 8)',
+    });
+  }
+
+  const overallRisk: RiskLevel = karatLevel === 'TINGGI' ? 'TINGGI' : karatLevel === 'SEDANG' ? 'SEDANG' : 'RENDAH';
+  const temporalSummary = `Hujan 3 Hari: ${tf.rolling3dRain} mm | Hari Kering: ${tf.consecutiveDryDays} hari | Suhu: ${current.temperature}°C | VPD: ${tf.currentVPD} kPa`;
+
+  return {
+    overallRisk,
+    diseaseRisks,
+    irrigation: {
+      status: tf.consecutiveDryDays >= 4 ? 'BUTUH_PENGAIRAN' : tf.rolling3dRain > 35 ? 'WASPADA_GENANGAN' : 'CUKUP',
+      soilMoistureIndexPercent: Math.min(100, Math.round(50 - tf.consecutiveDryDays * 8 + tf.rolling3dRain * 1.5)),
+      recommendation: tf.consecutiveDryDays >= 4 ? 'Segera lakukan pengairan sela barisan.' : 'Lengas tanah terjaga.',
+      rationale: 'Kedelai membutuhkan ketersediaan air stabil selama pengisian polong.',
+    },
+    fertilization: {
+      safeToApply: tf.forecastRain24h < 20,
+      status: tf.forecastRain24h < 20 ? 'AMAN' : 'TUNDA_KARENA_HUJAN',
+      reason: tf.forecastRain24h < 20 ? 'Kondisi tanah aman untuk pupuk Kalium.' : 'Prakiraan hujan lebat berisiko pencucian hara.',
+      recommendedNutrient: stage.keyNutrientNeed,
+    },
+    recommendations,
+    temporalSummary,
+  };
+}

@@ -16,6 +16,9 @@ import {
   registerUser,
   clearAuthSession,
   generateAndDownloadWordReport,
+  searchLocationsByApi,
+  getCurrentGpsPosition,
+  GeocodingResult,
   AuthUser,
   UserProfileData,
 } from './services';
@@ -85,11 +88,13 @@ const state = {
 
 // ---------- CONSTANTS & HELPER UI ----------
 const CROPS_LIST: { id: CropId; label: string; scientific: string }[] = [
-  { id: 'cabai', label: 'Cabai / Cabe Merah', scientific: 'Capsicum annuum L.' },
+  { id: 'cabai', label: 'Cabai Merah (Besar/Keriting)', scientific: 'Capsicum annuum L.' },
+  { id: 'cabai_rawit', label: 'Cabai Rawit (Cengek)', scientific: 'Capsicum frutescens L.' },
   { id: 'padi', label: 'Padi Sawah', scientific: 'Oryza sativa L.' },
-  { id: 'bawang_merah', label: 'Bawang Merah', scientific: 'Allium ascalonicum' },
-  { id: 'jagung', label: 'Jagung Hibrida', scientific: 'Zea mays L.' },
-  { id: 'tomat', label: 'Tomat Sayur', scientific: 'Solanum lycopersicum' }
+  { id: 'jagung', label: 'Jagung Pipil / Hibrida', scientific: 'Zea mays L.' },
+  { id: 'kedelai', label: 'Kedelai 17 Sentra Jabar', scientific: 'Glycine max (L.) Merr.' },
+  { id: 'tomat', label: 'Tomat Sayur / Buah', scientific: 'Solanum lycopersicum' },
+  { id: 'bawang_merah', label: 'Bawang Merah', scientific: 'Allium ascalonicum' }
 ];
 
 const VIEWS = [
@@ -155,7 +160,7 @@ const ICON_CHECK = '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden=
 
 // ---------- INITIALIZE DEFAULT PLOTS ----------
 function initDefaultPlots(): PlotItem[] {
-  const saved = localStorage.getItem('taniadapt_plots_v3');
+  const saved = localStorage.getItem('taniadapt_plots_v4');
   if (saved) {
     try {
       return JSON.parse(saved);
@@ -167,13 +172,13 @@ function initDefaultPlots(): PlotItem[] {
   const defaults: PlotItem[] = [
     {
       id: 'plot-1',
-      name: 'Lahan Pasirhuni',
+      name: 'Lahan Sentra Pasirhuni',
       locationId: 'lembang',
-      placeName: 'Lembang, Kab. Bandung Barat',
+      placeName: 'Lembang, Kab. Bandung Barat (1.312 mdpl)',
       cropId: 'cabai',
       plantDate: '2026-08-19',
       hst: 55,
-      stageName: 'Pembungaan & Pembesaran Buah',
+      stageName: 'Mulai Keluar Bunga Banyak (46–65 HST)',
       risk: 'TINGGI',
       trail: [
         { dayLabel: 'HST 49', weather: 'Cerah Berawan', status: 'Sehat', note: 'Aplikasi KNO3 merah susulan' },
@@ -181,53 +186,73 @@ function initDefaultPlots(): PlotItem[] {
         { dayLabel: 'HST 51', weather: 'Hujan Ringan', status: 'Sehat', note: 'Kuncup bunga serempak' },
         { dayLabel: 'HST 52', weather: 'Hujan Sedang', status: 'Waspada', note: 'Kelembapan tinggi & daun basah lama' },
         { dayLabel: 'HST 53', weather: 'Hujan Deras', status: 'Waspada', note: 'Parit bedengan mulai tergenang air' },
-        { dayLabel: 'HST 54', weather: 'Hujan Deras', status: 'Risiko tinggi', note: 'Pengurasan parit & penyiangan' },
-        { dayLabel: 'HST 55 (Hari Ini)', weather: 'Hujan Ringan', status: 'Risiko tinggi', note: 'Waspada spora antraknosa bunga' }
+        { dayLabel: 'HST 54', weather: 'Hujan Deras', status: 'Risiko tinggi', note: 'Pengurasan parit & sanitasi gulma' },
+        { dayLabel: 'HST 55 (Hari Ini)', weather: 'Hujan Ringan', status: 'Risiko tinggi', note: 'Waspada spora antraknosa bunga cabai' }
       ]
     },
     {
       id: 'plot-2',
-      name: 'Petak Sekunder 4',
-      locationId: 'sukamandi',
-      placeName: 'Sukamandi, Kab. Subang',
-      cropId: 'padi',
-      plantDate: '2026-09-01',
-      hst: 42,
-      stageName: 'Anakan Aktif & Maksimum',
+      name: 'Kebun Sentra Bayongbong',
+      locationId: 'garut',
+      placeName: 'Bayongbong, Kab. Garut (1.252 mdpl)',
+      cropId: 'cabai_rawit',
+      plantDate: '2026-07-20',
+      hst: 85,
+      stageName: 'Pembesaran Buah Rawit & Matang (76–105 HST)',
       risk: 'SEDANG',
       trail: [
-        { dayLabel: 'HST 36', weather: 'Cerah', status: 'Sehat', note: 'Pengairan macak-macak' },
-        { dayLabel: 'HST 37', weather: 'Cerah', status: 'Sehat', note: 'Anakan 18 batang per rumpun' },
-        { dayLabel: 'HST 38', weather: 'Berawan', status: 'Sehat', note: 'Pertumbuhan normal' },
-        { dayLabel: 'HST 39', weather: 'Hujan Ringan', status: 'Sehat', note: 'Genangan 3 cm optimal' },
-        { dayLabel: 'HST 40', weather: 'Hujan Sedang', status: 'Waspada', note: 'Angin kencang dari timur' },
-        { dayLabel: 'HST 41', weather: 'Hujan Ringan', status: 'Waspada', note: 'Potensi luka stomata akibat angin' },
-        { dayLabel: 'HST 42 (Hari Ini)', weather: 'Berawan', status: 'Waspada', note: 'Pantau gejala hawar daun bakteri' }
+        { dayLabel: 'HST 79', weather: 'Cerah Pagi', status: 'Sehat', note: 'Buah cengek padat terisi' },
+        { dayLabel: 'HST 80', weather: 'Berawan', status: 'Sehat', note: 'Penyiraman pagi terjaga' },
+        { dayLabel: 'HST 81', weather: 'Hujan Sore', status: 'Waspada', note: 'Genangan parit segera tuntas' },
+        { dayLabel: 'HST 82', weather: 'Hujan Sedang', status: 'Waspada', note: 'Daun basah sampai malam' },
+        { dayLabel: 'HST 83', weather: 'Cerah Berawan', status: 'Sehat', note: 'Petikan rawit matang pertama' },
+        { dayLabel: 'HST 84', weather: 'Berawan', status: 'Sehat', note: 'Kondisi tajuk bersih' },
+        { dayLabel: 'HST 85 (Hari Ini)', weather: 'Cerah', status: 'Waspada', note: 'Waspada patek ujung buah' }
       ]
     },
     {
       id: 'plot-3',
-      name: 'Tegalan Wanasari',
-      locationId: 'brebes',
-      placeName: 'Brebes, Jawa Tengah',
-      cropId: 'bawang_merah',
-      plantDate: '2026-09-15',
-      hst: 28,
-      stageName: 'Vegetatif Lanjut / Pembentukan Umbi',
+      name: 'Petak Sawah Sukamandi',
+      locationId: 'subang_pantura',
+      placeName: 'Sukamandi, Kab. Subang (49 mdpl)',
+      cropId: 'jagung',
+      plantDate: '2026-08-20',
+      hst: 55,
+      stageName: 'Keluar Bunga Jantan & Tongkol (46–60 HST)',
+      risk: 'SEDANG',
+      trail: [
+        { dayLabel: 'HST 49', weather: 'Cerah', status: 'Sehat', note: 'Tongkol mulai keluar rambut (silking)' },
+        { dayLabel: 'HST 50', weather: 'Cerah', status: 'Sehat', note: 'Kebutuhan air fase kritis terpenuhi' },
+        { dayLabel: 'HST 51', weather: 'Berawan', status: 'Sehat', note: 'Penyerbukan berjalan lancar' },
+        { dayLabel: 'HST 52', weather: 'Hujan Ringan', status: 'Sehat', note: 'Lembap tanah optimal' },
+        { dayLabel: 'HST 53', weather: 'Hujan Sedang', status: 'Waspada', note: 'Drainase sela barisan dibuka' },
+        { dayLabel: 'HST 54', weather: 'Hujan Ringan', status: 'Waspada', note: 'Angin kencang pantura' },
+        { dayLabel: 'HST 55 (Hari Ini)', weather: 'Berawan', status: 'Waspada', note: 'Pantau kelembapan tongkol' }
+      ]
+    },
+    {
+      id: 'plot-4',
+      name: 'Sentra Pangan Lakbok',
+      locationId: 'ciamis',
+      placeName: 'Lakbok, Kab. Ciamis (167 mdpl)',
+      cropId: 'kedelai',
+      plantDate: '2026-08-15',
+      hst: 60,
+      stageName: 'Pengisian Biji Polong (51–70 HST)',
       risk: 'RENDAH',
       trail: [
-        { dayLabel: 'HST 22', weather: 'Cerah Panas', status: 'Sehat', note: 'Penyiraman pagi hari rutin' },
-        { dayLabel: 'HST 23', weather: 'Cerah', status: 'Sehat', note: 'Kondisi kering optimal' },
-        { dayLabel: 'HST 24', weather: 'Cerah', status: 'Sehat', note: 'Pertumbuhan anakan daun baik' },
-        { dayLabel: 'HST 25', weather: 'Berawan', status: 'Sehat', note: 'Suhu siang 32°C' },
-        { dayLabel: 'HST 26', weather: 'Cerah', status: 'Sehat', note: 'Drainase bedengan lancar' },
-        { dayLabel: 'HST 27', weather: 'Cerah', status: 'Sehat', note: 'Tajuk bersih dari embun tepung' },
-        { dayLabel: 'HST 28 (Hari Ini)', weather: 'Cerah Berawan', status: 'Sehat', note: 'Optimal pembentukan umbi' }
+        { dayLabel: 'HST 54', weather: 'Cerah', status: 'Sehat', note: 'Polong padat terisi' },
+        { dayLabel: 'HST 55', weather: 'Cerah', status: 'Sehat', note: 'Pengairan sela barisan' },
+        { dayLabel: 'HST 56', weather: 'Cerah', status: 'Sehat', note: 'Bebas ulat polong' },
+        { dayLabel: 'HST 57', weather: 'Berawan', status: 'Sehat', note: 'Daun hijau segar' },
+        { dayLabel: 'HST 58', weather: 'Hujan Ringan', status: 'Sehat', note: 'Air tanah cukup' },
+        { dayLabel: 'HST 59', weather: 'Cerah', status: 'Sehat', note: 'Lengas tanah terjaga' },
+        { dayLabel: 'HST 60 (Hari Ini)', weather: 'Cerah', status: 'Sehat', note: 'Kondisi prima menuju panen' }
       ]
     }
   ];
 
-  localStorage.setItem('taniadapt_plots_v3', JSON.stringify(defaults));
+  localStorage.setItem('taniadapt_plots_v4', JSON.stringify(defaults));
   return defaults;
 }
 
@@ -321,19 +346,39 @@ function renderNav() {
   }).join('');
 }
 
+function updateCoordinateDisplay() {
+  const coordEl = $('#coord-display');
+  const elevEl = $('#elev-display');
+  if (coordEl) {
+    coordEl.textContent = `${state.location.latitude.toFixed(4)}, ${state.location.longitude.toFixed(4)}`;
+  }
+  if (elevEl) {
+    elevEl.textContent = `Elevasi: ${state.location.elevationMeters} mdpl`;
+  }
+}
+
 function renderLocationDropdown() {
   const select = $('#lokasi-select') as HTMLSelectElement;
   if (!select) return;
 
-  select.innerHTML = INDONESIAN_LOCATIONS.map((loc) => {
+  const isPredefined = INDONESIAN_LOCATIONS.some(l => l.id === state.location.id);
+  let optionsHtml = INDONESIAN_LOCATIONS.map((loc) => {
     const sel = loc.id === state.location.id ? 'selected' : '';
-    return `<option value="${loc.id}" ${sel}>${loc.name} (${loc.province}) — ${loc.elevationMeters}m dpl</option>`;
+    return `<option value="${loc.id}" ${sel}>${loc.name} — ${loc.elevationMeters}m dpl</option>`;
   }).join('');
+
+  if (!isPredefined) {
+    optionsHtml = `<option value="${state.location.id}" selected>📍 ${state.location.name} (${state.location.latitude.toFixed(4)}, ${state.location.longitude.toFixed(4)})</option>` + optionsHtml;
+  }
+
+  select.innerHTML = optionsHtml;
 
   const modalSelect = $('#ll') as HTMLSelectElement;
   if (modalSelect) {
     modalSelect.innerHTML = select.innerHTML;
   }
+
+  updateCoordinateDisplay();
 }
 
 function renderCrops() {
@@ -502,7 +547,10 @@ function renderRecommendations() {
             <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; ${isUrgent ? 'color: var(--risk-strong)' : 'color: var(--green)'}">[${r.urgency}]</span>
           </div>
           <span style="font-size: 13px; color: var(--text-2); line-height: 1.4">${r.action}</span>
-          <span style="font-size: 11px; color: var(--muted); margin-top: 4px; font-family: 'IBM Plex Mono', monospace">Kategori: ${r.category} &bull; Rationale: ${r.rationale}</span>
+          ${state.uiMode === 'pro'
+            ? `<span style="font-size: 11px; color: var(--muted); margin-top: 4px; font-family: 'IBM Plex Mono', monospace">Kategori: ${r.category} &bull; Rationale: ${r.rationale} &bull; Sumber: ${r.literatureSource || 'FAO-56'}</span>`
+            : `<span style="font-size: 12px; color: var(--green); margin-top: 4px; font-weight: 600">Catatan Petani: ${r.rationale}</span>`
+          }
         </div>
       </li>`;
     }).join('');
@@ -516,13 +564,21 @@ function renderInfluentialFactors() {
   const container = $('#factors-container');
   if (!container) return;
 
+  const isPro = state.uiMode === 'pro';
+
   // Define weights based on weather & crop sensitivity
-  const factors = [
+  const factors = isPro ? [
     { name: 'Hari Hujan Berturut-turut', value: `${f.consecutiveRainyDays} hari`, weight: Math.min(100, f.consecutiveRainyDays * 20), level: f.consecutiveRainyDays >= 3 ? 'Kuat' : 'Sedang' },
     { name: 'Kelembapan Relatif Rolling (7d)', value: `${Math.round(f.rolling7dRH)}%`, weight: Math.min(100, Math.round(f.rolling7dRH)), level: f.rolling7dRH >= 85 ? 'Kuat' : 'Sedang' },
-    { name: 'Defisit Tekanan Uap (VPD)', value: `${f.currentVPD.toFixed(2)} kPa`, weight: Math.min(100, Math.round((1 - Math.min(1, f.currentVPD / 1.5)) * 100)), level: f.currentVPD < 0.4 ? 'Kuat (Lembap)' : 'Normal' },
+    { name: 'Defisit Tekanan Uap (VPD Tetens)', value: `${f.currentVPD.toFixed(2)} kPa`, weight: Math.min(100, Math.round((1 - Math.min(1, f.currentVPD / 1.5)) * 100)), level: f.currentVPD < 0.4 ? 'Kuat (Lembap)' : 'Normal' },
     { name: 'Kerentanan Fase Fenologi', value: state.engineResult?.stageName || 'Vegetatif', weight: state.engineResult?.stageVulnerability === 'KRITIS' ? 95 : state.engineResult?.stageVulnerability === 'TINGGI' ? 80 : 50, level: 'Tinggi' },
-    { name: 'Akumulasi Hujan 7 Hari', value: `${Math.round(f.rolling7dRain)} mm`, weight: Math.min(100, Math.round(f.rolling7dRain * 1.2)), level: f.rolling7dRain > 60 ? 'Kuat' : 'Sedang' }
+    { name: 'Akumulasi Presipitasi 7 Hari', value: `${Math.round(f.rolling7dRain)} mm`, weight: Math.min(100, Math.round(f.rolling7dRain * 1.2)), level: f.rolling7dRain > 60 ? 'Kuat' : 'Sedang' }
+  ] : [
+    { name: 'Hari Hujan Berturut-turut', value: `${f.consecutiveRainyDays} hari`, weight: Math.min(100, f.consecutiveRainyDays * 20), level: f.consecutiveRainyDays >= 3 ? 'Waspada' : 'Aman' },
+    { name: 'Rata-rata Kelembapan Kebun (7 Hari)', value: `${Math.round(f.rolling7dRH)}%`, weight: Math.min(100, Math.round(f.rolling7dRH)), level: f.rolling7dRH >= 85 ? 'Sangat Lembap' : 'Cukup' },
+    { name: 'Laju Penguapan Udara (VPD)', value: f.currentVPD < 0.4 ? 'Lembap Basah' : f.currentVPD > 1.2 ? 'Kering Terik' : 'Nyaman Optimal', weight: Math.min(100, Math.round((1 - Math.min(1, f.currentVPD / 1.5)) * 100)), level: 'Normal' },
+    { name: 'Kebutuhan Air Tahap Ini', value: state.engineResult?.stageName || 'Pertumbuhan', weight: state.engineResult?.stageVulnerability === 'KRITIS' ? 95 : 65, level: 'Penting' },
+    { name: 'Total Curah Hujan Seminggu', value: `${Math.round(f.rolling7dRain)} mm`, weight: Math.min(100, Math.round(f.rolling7dRain * 1.2)), level: f.rolling7dRain > 60 ? 'Basah' : 'Normal' }
   ];
 
   container.innerHTML = factors.map((item) => {
@@ -975,6 +1031,12 @@ function renderUIMode() {
   if (evBox) {
     evBox.style.display = state.uiMode === 'pro' ? 'block' : 'none';
   }
+
+  // Toggle Stress Scenario Switcher based on Mode
+  const stressToggle = document.querySelector('[aria-label="Uji stres skenario cuaca"]') as HTMLElement;
+  if (stressToggle) {
+    stressToggle.style.display = state.uiMode === 'pro' ? 'flex' : 'none';
+  }
 }
 
 function renderAuth() {
@@ -1418,6 +1480,13 @@ function setupEventListeners() {
       renderAuthModal();
       return;
     }
+    const skipDemo = target.closest('#skip-demo-btn-login') || target.closest('#skip-demo-btn-reg');
+    if (skipDemo) {
+      localStorage.setItem('taniadapt_demo_guest', 'true');
+      state.isAuthModalOpen = false;
+      renderAuthModal();
+      return;
+    }
     const btnLogout = target.closest('#btn-logout');
     if (btnLogout) {
       clearAuthSession();
@@ -1425,6 +1494,111 @@ function setupEventListeners() {
       state.authProfile = null;
       render();
       return;
+    }
+  });
+
+  // GPS Location Detect
+  const btnGps = $('#btn-gps-locate');
+  if (btnGps) {
+    btnGps.addEventListener('click', async () => {
+      btnGps.textContent = '⏳ Mendeteksi GPS...';
+      try {
+        const pos = await getCurrentGpsPosition();
+        state.location = {
+          id: 'gps_custom',
+          name: `Titik GPS Lahan (${pos.latitude.toFixed(4)}, ${pos.longitude.toFixed(4)})`,
+          regency: 'Jawa Barat',
+          province: 'Jawa Barat',
+          latitude: pos.latitude,
+          longitude: pos.longitude,
+          elevationMeters: 750,
+          agroclimateZone: 'Presisi GPS Hyperlocal',
+          primaryCrops: [state.cropId],
+          soilTexture: 'Lempung Berdebu Subur (Loam)',
+        };
+        renderLocationDropdown();
+        await recomputeEngine();
+        btnGps.innerHTML = '<span>✅ GPS Terdeteksi</span>';
+        setTimeout(() => {
+          btnGps.innerHTML = '<span>📍 Deteksi GPS Lahan</span>';
+        }, 3000);
+      } catch (err: any) {
+        alert(err.message || 'Gagal mendeteksi koordinat GPS.');
+        btnGps.innerHTML = '<span>📍 Deteksi GPS Lahan</span>';
+      }
+    });
+  }
+
+  // Geocoding API Search
+  const searchInput = $('#location-search-input') as HTMLInputElement;
+  const searchBtn = $('#btn-search-geocoding');
+  const resultsDropdown = $('#geocoding-results');
+
+  async function performLocationSearch() {
+    const query = searchInput?.value.trim();
+    if (!query || query.length < 2) return;
+    if (searchBtn) searchBtn.textContent = 'Mencari...';
+
+    const results = await searchLocationsByApi(query);
+    if (searchBtn) searchBtn.textContent = 'Cari';
+
+    if (resultsDropdown) {
+      if (results.length === 0) {
+        resultsDropdown.innerHTML = '<div style="padding: 12px; font-size: 13px; color: var(--muted)">Tidak ada lokasi ditemukan. Coba nama kecamatan/desa lain.</div>';
+        resultsDropdown.style.display = 'block';
+        return;
+      }
+
+      resultsDropdown.innerHTML = results.map(r => `
+        <div class="geocoding-item" data-geo-id="${r.id}" style="padding: 10px 14px; border-bottom: 1px solid var(--line); cursor: pointer; font-size: 13px; display: flex; justify-content: space-between; align-items: center">
+          <div>
+            <div style="font-weight: 700; color: var(--ink)">${r.displayName}</div>
+            <div style="font-size: 11px; color: var(--muted); font-family: monospace">Lat: ${r.latitude}° | Lon: ${r.longitude}° ${r.elevation ? `| Elev: ${r.elevation}m` : ''}</div>
+          </div>
+          <span style="font-size: 11px; color: var(--green); font-weight: 700">Pilih &rarr;</span>
+        </div>
+      `).join('');
+      resultsDropdown.style.display = 'block';
+
+      // Click on item
+      resultsDropdown.querySelectorAll('.geocoding-item').forEach((itemEl, idx) => {
+        itemEl.addEventListener('click', () => {
+          const selected = results[idx];
+          state.location = {
+            id: `geo_${selected.id}`,
+            name: selected.displayName,
+            regency: selected.admin2 || selected.name,
+            province: selected.admin1 || 'Jawa Barat',
+            latitude: selected.latitude,
+            longitude: selected.longitude,
+            elevationMeters: selected.elevation || 650,
+            agroclimateZone: 'Presisi Geocoding API',
+            primaryCrops: [state.cropId],
+            soilTexture: 'Lempung Berdebu (Loam)',
+          };
+          renderLocationDropdown();
+          resultsDropdown.style.display = 'none';
+          if (searchInput) searchInput.value = selected.displayName;
+          recomputeEngine();
+        });
+      });
+    }
+  }
+
+  if (searchBtn) searchBtn.addEventListener('click', performLocationSearch);
+  if (searchInput) {
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        performLocationSearch();
+      }
+    });
+  }
+
+  // Close geocoding dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!resultsDropdown?.contains(e.target as Node) && e.target !== searchInput && e.target !== searchBtn) {
+      if (resultsDropdown) resultsDropdown.style.display = 'none';
     }
   });
 
@@ -1571,6 +1745,53 @@ function setupEventListeners() {
   }
 }
 
+function initWebSocketClient() {
+  try {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws/telemetry`;
+    const ws = new WebSocket(wsUrl);
+
+    const pulseDot = $('#ws-pulse-dot');
+    const statusText = $('#ws-status-text');
+
+    ws.onopen = () => {
+      if (statusText) statusText.textContent = 'Telemetri Live Aktif (WebSocket)';
+      if (pulseDot) {
+        pulseDot.style.background = '#10B981';
+        pulseDot.style.boxShadow = '0 0 8px rgba(16,185,129,0.8)';
+      }
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'TELEMETRY_PULSE') {
+          if (pulseDot) {
+            pulseDot.style.transform = 'scale(1.5)';
+            setTimeout(() => {
+              pulseDot.style.transform = 'scale(1)';
+            }, 300);
+          }
+        }
+      } catch {}
+    };
+
+    ws.onclose = () => {
+      if (statusText) statusText.textContent = 'Telemetri Tersambung (Polling Aktif)';
+      if (pulseDot) {
+        pulseDot.style.background = '#10B981';
+        pulseDot.style.boxShadow = 'none';
+      }
+    };
+
+    ws.onerror = () => {
+      if (statusText) statusText.textContent = 'Telemetri Tersambung (Polling Aktif)';
+    };
+  } catch (err) {
+    console.warn('WebSocket telemetry initialization skipped:', err);
+  }
+}
+
 // ---------- INIT ENTRY POINT ----------
 async function init() {
   state.authUser = getStoredUser();
@@ -1593,6 +1814,14 @@ async function init() {
     }
   }
 
+  // Check login gate: if user is not logged in and hasn't skipped demo, show onboarding/login modal!
+  const skippedDemo = localStorage.getItem('taniadapt_demo_guest');
+  if (!state.authUser && skippedDemo !== 'true') {
+    state.isAuthModalOpen = true;
+    renderAuthModal();
+  }
+
+  initWebSocketClient();
   handleUrlParams();
   setupEventListeners();
   await recomputeEngine();

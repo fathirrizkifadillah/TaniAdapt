@@ -2,6 +2,7 @@ import { defineConfig } from 'vitest/config';
 import { resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { authMiddleware } from './src/server/authApi.ts';
+import { setupTelemetryWebSocketServer } from './src/server/wsServer.ts';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
@@ -11,9 +12,15 @@ export default defineConfig({
       name: 'taniadapt-auth-api',
       configureServer(server) {
         server.middlewares.use(authMiddleware);
+        if (server.httpServer) {
+          setupTelemetryWebSocketServer(server.httpServer);
+        }
       },
       configurePreviewServer(server) {
         server.middlewares.use(authMiddleware);
+        if (server.httpServer) {
+          setupTelemetryWebSocketServer(server.httpServer);
+        }
       },
     },
   ],

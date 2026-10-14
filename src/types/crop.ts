@@ -1,4 +1,4 @@
-export type CropId = 'cabai' | 'padi' | 'bawang_merah' | 'jagung' | 'tomat';
+export type CropId = 'cabai' | 'cabai_rawit' | 'padi' | 'kedelai' | 'bawang_merah' | 'jagung' | 'tomat';
 
 export interface GrowthStage {
   id: string;
