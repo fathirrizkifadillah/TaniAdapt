@@ -63,6 +63,15 @@
 </div>
 
 <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px">
+<!-- ACTIVE PLOT SELECTOR -->
+<div id="active-plot-selector-container" style="display: flex; align-items: center; gap: 6px; background: #FFFFFF; border: 1.5px solid var(--green); padding: 2px 10px 2px 12px; border-radius: 999px; box-shadow: 0 1px 4px rgba(30,77,53,0.1)">
+  <span style="font-size: 13px">📍</span>
+  <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; color: var(--green)">Lahan Aktif:</span>
+  <select id="active-plot-select" style="height: 32px; border: none; background: transparent; font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink); cursor: pointer; outline: none">
+    <option value="-1">Simulasi Bebas (Tanpa Petak)</option>
+  </select>
+</div>
+
 <!-- DUAL MODE SWITCHER -->
 <div role="group" aria-label="Mode Tampilan" style="display: flex; align-items: center; gap: 4px; background: #FFFFFF; border: 1px solid var(--line); padding: 3px 5px; border-radius: 999px; box-shadow: 0 1px 3px rgba(0,0,0,0.04)">
   <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); padding-left: 6px">Tampilan:</span>
@@ -210,6 +219,20 @@ Memuat analisis risiko tanaman...
 <ol id="recommendations-list" style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px">
 </ol>
 
+<!-- WATER LEDGER ACTION BOX -->
+<div id="water-ledger-box" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; background: #F0FDF4; border: 1.5px solid #BBF7D0; padding: 12px 14px; border-radius: 12px; margin-top: 4px">
+  <div style="display: flex; align-items: center; gap: 8px">
+    <span style="font-size: 18px">💧</span>
+    <div>
+      <strong style="font-size: 13px; color: #166534; display: block">Buku Kas Air (Water Ledger Lapangan)</strong>
+      <span style="font-size: 11.5px; color: #15803D">Catat siraman hari ini agar engine mereset deplesi Dr ke kapasitas lapang.</span>
+    </div>
+  </div>
+  <button type="button" id="btn-mark-watered" style="min-height: 34px; padding: 0 16px; border-radius: 999px; background: var(--green); color: #FFF; border: none; font-weight: 700; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(30,77,53,0.15)">
+    <span>✓ Tandai Sudah Disiram Hari Ini</span>
+  </button>
+</div>
+
 <button type="button" id="ask-why" style="margin-top: auto; align-self: flex-start; background: none; border: none; padding: 8px 0; font: inherit; font-weight: 600; color: var(--green); cursor: pointer; text-decoration: underline; display: flex; align-items: center; gap: 6px">
 <span>Kenapa ini direkomendasikan? Tanyakan asisten &rarr;</span>
 </button>
@@ -322,7 +345,7 @@ Arahkan kursor pada batang untuk melihat rincian tanggal &amp; angka
 </div>
 </div>
 
-<!-- ============ VIEW 3: TANYA TANIADAPT (RAG EXPLAINABILITY) ============ -->
+<!-- ============ VIEW 3: CHAT DENGAN TANIA (RAG EXPLAINABILITY) ============ -->
 <div data-view="tanya">
 <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
 
@@ -330,10 +353,12 @@ Arahkan kursor pada batang untuk melihat rincian tanggal &amp; angka
 <section aria-label="Percakapan" style="flex: 999 1 480px; min-width: 0; background: var(--ink); color: var(--ground); border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
 <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: baseline">
 <div>
-<h2 style="margin: 0; font-size: 17px; font-weight: 700">Percakapan Penjelasan Agronomis (RAG)</h2>
-<span style="font-size: 13px; color: var(--dark-muted)">Asisten menjelaskan aturan engine &amp; sitasi ilmiah, tanpa halusinasi</span>
+<h2 style="margin: 0; font-size: 18px; font-weight: 800; color: #FFF; display: flex; align-items: center; gap: 8px">
+  <span>💬</span> Chat dengan Tania (Asisten Agronomis AI)
+</h2>
+<span style="font-size: 13px; color: var(--dark-muted)">Tania menjelaskan keputusan engine, dasar ilmiah FAO-56, dan SOP khusus kebun Anda</span>
 </div>
-<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--accent)">Grounded in Research</span>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; background: var(--accent); color: var(--ink); padding: 3px 8px; border-radius: 6px">RAG 16 Paper + Custom KB</span>
 </div>
 
 <div id="thread-box" style="display: flex; flex-direction: column; gap: 12px; min-height: 280px; max-height: 480px; overflow-y: auto; padding-right: 4px">
@@ -349,7 +374,7 @@ Arahkan kursor pada batang untuk melihat rincian tanggal &amp; angka
 
 <div style="display: flex; gap: 10px; margin-top: 8px">
 <label for="chat" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Pertanyaan</label>
-<input id="chat" type="text" placeholder="Tanyakan alasan risiko, dampak perubahan cuaca, atau dasar ilmiah…" style="flex: 1; min-width: 0; height: 46px; padding: 0 16px; border: 1px solid var(--dark-line); border-radius: 999px; background: #0F1F17; color: var(--ground); font: inherit">
+<input id="chat" type="text" placeholder="Tanyakan ke Tania: alasan risiko, jam semprot aman, atau dasar ilmiah FAO-56…" style="flex: 1; min-width: 0; height: 46px; padding: 0 16px; border: 1px solid var(--dark-line); border-radius: 999px; background: #0F1F17; color: var(--ground); font: inherit">
 <button type="button" id="send" aria-label="Kirim pertanyaan" style="flex: none; width: 46px; height: 46px; border-radius: 999px; border: none; background: var(--accent); color: var(--ink); display: flex; align-items: center; justify-content: center; cursor: pointer" title="Kirim">
 <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M13 6l6 6-6 6"></path></svg>
 </button>
@@ -453,6 +478,155 @@ Daftarkan petak lahan sejak hari tanam agar engine dapat memantau akumulasi keba
 </button>
 </div>
 </section>
+</div>
+</div>
+
+<!-- ============ VIEW 5: PENGATURAN (SETTINGS) ============ -->
+<div data-view="pengaturan">
+<div style="display: flex; flex-direction: column; gap: 24px">
+
+<!-- SETTINGS HERO HEADER -->
+<div style="background: #FFFFFF; border: 1px solid var(--line); border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 6px">
+  <div style="display: flex; align-items: center; gap: 10px">
+    <span style="font-size: 24px">⚙️</span>
+    <h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-size: 22px; font-weight: 800; color: var(--ink)">Pengaturan Sistem &amp; Knowledge Base Tania</h2>
+  </div>
+  <p style="margin: 0; font-size: 14px; color: var(--muted); line-height: 1.5">
+    Sesuaikan mode penyajian informasi, bahasa asisten Tania, parameter tekstur tanah FAO-56, dan catatan khusus kelompok tani / SOP mandiri Anda.
+  </p>
+</div>
+
+<!-- SETTINGS GRID: 2 COLUMNS -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px">
+
+  <!-- CARD 1: MODE TAMPILAN SISTEM -->
+  <section style="background: #FFFFFF; border: 1px solid var(--line); border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+    <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--line); padding-bottom: 12px">
+      <span style="font-size: 18px">🎛️</span>
+      <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--ink)">Mode Tampilan Antarmuka</h3>
+    </div>
+    <p style="margin: 0; font-size: 13px; color: var(--muted); line-height: 1.4">
+      Pilih kedalaman informasi yang disajikan di aplikasi sesuai kebutuhan Anda:
+    </p>
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <label style="display: flex; align-items: flex-start; gap: 12px; background: var(--ground); padding: 14px; border-radius: 12px; cursor: pointer; border: 1.5px solid var(--line)">
+        <input type="radio" name="settings-ui-mode" value="default" id="set-mode-default" checked style="margin-top: 3px">
+        <div>
+          <strong style="font-size: 14px; color: var(--ink); display: block">👨‍🌾 Mode Ringkas (Petani)</strong>
+          <span style="font-size: 12px; color: var(--text-2); line-height: 1.4">Hanya menampilkan kartu aksi praktis 3 warna (Siram, Semprot, Pupuk) dan jam kerja aman. Rumus biofisik, grafik penguapan, dan bobot statistik disembunyikan agar ramah lapangan.</span>
+        </div>
+      </label>
+      <label style="display: flex; align-items: flex-start; gap: 12px; background: var(--ground); padding: 14px; border-radius: 12px; cursor: pointer; border: 1.5px solid var(--line)">
+        <input type="radio" name="settings-ui-mode" value="pro" id="set-mode-pro" style="margin-top: 3px">
+        <div>
+          <strong style="font-size: 14px; color: var(--ink); display: block">🔬 Mode Lanjutan (Detail &amp; Riset)</strong>
+          <span style="font-size: 12px; color: var(--text-2); line-height: 1.4">Membuka seluruh instrumen sains: formula biofisik FAO-56 Penman-Monteith (ET0, Kc, TAW, RAW, Dr), tabel simulasi 7 hari, sensitivitas tanah loam 130 vs 180 mm/m, dan grafik temporal 14 hari.</span>
+        </div>
+      </label>
+    </div>
+  </section>
+
+  <!-- CARD 2: BAHASA ASISTEN TANIA -->
+  <section style="background: #FFFFFF; border: 1px solid var(--line); border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+    <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--line); padding-bottom: 12px">
+      <span style="font-size: 18px">🗣️</span>
+      <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--ink)">Bahasa Komunikasi Asisten Tania</h3>
+    </div>
+    <p style="margin: 0; font-size: 13px; color: var(--muted); line-height: 1.4">
+      Pilih bahasa pengantar penjelasan agronomis dari asisten cerdas Tania:
+    </p>
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <label style="display: flex; align-items: center; gap: 12px; background: var(--ground); padding: 14px; border-radius: 12px; cursor: pointer; border: 1.5px solid var(--line)">
+        <input type="radio" name="settings-lang" value="id" id="set-lang-id" checked>
+        <div>
+          <strong style="font-size: 14px; color: var(--ink)">🇮🇩 Bahasa Indonesia (Resmi &amp; Santun)</strong>
+          <span style="display: block; font-size: 12px; color: var(--muted)">Penjelasan standar berbasis kaidah agronomi nasional.</span>
+        </div>
+      </label>
+      <label style="display: flex; align-items: center; gap: 12px; background: var(--ground); padding: 14px; border-radius: 12px; cursor: pointer; border: 1.5px solid var(--line)">
+        <input type="radio" name="settings-lang" value="su" id="set-lang-su">
+        <div>
+          <strong style="font-size: 14px; color: var(--ink)">🌾 Basa Sunda (Loma &amp; Lemes)</strong>
+          <span style="display: block; font-size: 12px; color: var(--muted)">Waleran haneut tur akrab pikeun patani di tatar Pasundan.</span>
+        </div>
+      </label>
+    </div>
+  </section>
+
+  <!-- CARD 3: PARAMETER TEKSTUR TANAH (FAO-56 BAB 7) -->
+  <section style="background: #FFFFFF; border: 1px solid var(--line); border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+    <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--line); padding-bottom: 12px">
+      <span style="font-size: 18px">🌱</span>
+      <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--ink)">Karakteristik Tanah Lahan (FAO-56 Tabel 19)</h3>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <label for="settings-soil-select" style="font-size: 13px; font-weight: 700">Tekstur Tanah Lahan</label>
+      <select id="settings-soil-select" style="height: 44px; padding: 0 12px; border: 1.5px solid var(--field-line); border-radius: 10px; font: inherit; background: var(--field); font-weight: 600">
+        <option value="loam">Loam (Standar Jabar: TAW 150 mm/m, rentang 130–180)</option>
+        <option value="sandy_loam">Sandy Loam / Lempung Berpasir (TAW 130 mm/m, rentang 110–150)</option>
+        <option value="silty_clay_loam">Silty Clay Loam / Lempung Liat Berdebu (TAW 150 mm/m, rentang 130–180)</option>
+      </select>
+      <span style="font-size: 12px; color: var(--muted)">Menentukan kapasitas air total TAW = 1000 × (θFC - θWP) × Zr.</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--line); padding-top: 12px">
+      <label for="settings-peff-select" style="font-size: 13px; font-weight: 700">Asumsi Hujan Efektif (Peff)</label>
+      <select id="settings-peff-select" style="height: 44px; padding: 0 12px; border: 1.5px solid var(--field-line); border-radius: 10px; font: inherit; background: var(--field); font-weight: 600">
+        <option value="1.0">Peff = 100% P (Standar Lapisan Tipis)</option>
+        <option value="0.8">Peff = 80% P (Konservatif: 20% Limpasan Aliran Permukaan)</option>
+      </select>
+    </div>
+  </section>
+
+  <!-- CARD 4: KNOWLEDGE BASE MANDIRI UNTUK TANIA (RAG FEATURE) -->
+  <section style="background: #FFFFFF; border: 1.5px solid var(--green); border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 4px 16px rgba(30,77,53,0.08)">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); padding-bottom: 12px">
+      <div style="display: flex; align-items: center; gap: 10px">
+        <span style="font-size: 18px">📚</span>
+        <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: var(--green)">Knowledge Base Mandiri Tania (RAG)</h3>
+      </div>
+      <span style="font-size: 11px; background: var(--sage); color: var(--green); padding: 3px 8px; border-radius: 6px; font-weight: 700">RAG AKTIF</span>
+    </div>
+
+    <p style="margin: 0; font-size: 13px; color: var(--text-2); line-height: 1.5">
+      Tambahkan catatan kebun mandiri, varietas lokal yang dipakai, atau instruksi khusus PPL. Tania akan membaca catatan ini saat berdialog dan mengaitkannya dengan data cuaca riil!
+    </p>
+
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <textarea id="custom-kb-input" rows="3" placeholder="Contoh: Di Lahan Pasirhuni kami memakai mulsa perak tebal 0.03 mm dan pupuk dasar kandang domba 2 ton/ha. Varietas cabai yang ditanam adalah Tanjung-2 yang lebih tahan layu bakteri." style="width: 100%; box-sizing: border-box; padding: 12px; border: 1.5px solid var(--field-line); border-radius: 10px; font: inherit; font-size: 13px; line-height: 1.4; background: var(--field)"></textarea>
+      <button type="button" id="btn-save-custom-kb" style="align-self: flex-start; min-height: 38px; padding: 0 16px; border-radius: 999px; background: var(--green); color: #FFF; border: none; font-weight: 700; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px">
+        <span>+ Simpan Catatan ke Tania</span>
+      </button>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--line); padding-top: 12px">
+      <div style="font-size: 13px; font-weight: 700; color: var(--ink)">Dokumen Pengetahuan yang Dibaca Tania:</div>
+      <div style="background: var(--ground); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 12px; display: flex; justify-content: space-between; align-items: center">
+        <span><strong>16 Paper Ilmiah Resmi</strong> (FAO-56, Balitsa, BB Padi, IPB, Sentelhas 2008)</span>
+        <span style="color: var(--green); font-weight: 700">Terkunci (Kanonik)</span>
+      </div>
+      <div id="custom-kb-list" style="display: flex; flex-direction: column; gap: 6px"></div>
+    </div>
+  </section>
+
+</div>
+
+<!-- CARD 5: WATER LEDGER & RESET DATA -->
+<section style="background: #FFFFFF; border: 1px solid var(--line); border-radius: 18px; padding: 24px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px">
+  <div>
+    <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--ink)">Buku Kas Air (Water Ledger) &amp; Manajemen Data</h3>
+    <p style="margin: 2px 0 0; font-size: 13px; color: var(--muted)">Reset riwayat penyiraman tanah kembali ke kapasitas lapang (Dr = 0 mm) atau bersihkan cache lahan.</p>
+  </div>
+  <div style="display: flex; gap: 10px; flex-wrap: wrap">
+    <button type="button" id="btn-reset-water-ledger" style="min-height: 40px; padding: 0 16px; border-radius: 10px; background: #F0FDF4; border: 1.5px solid var(--green); color: var(--green); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer">
+      💧 Reset Deplesi Air (Dr = 0 mm)
+    </button>
+    <button type="button" id="btn-clear-all-plots" style="min-height: 40px; padding: 0 16px; border-radius: 10px; background: transparent; border: 1px solid #DC2626; color: #DC2626; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">
+      Hapus Seluruh Data Petak Lahan
+    </button>
+  </div>
+</section>
+
 </div>
 </div>
 

@@ -58,7 +58,7 @@ interface ChatMessage {
 
 // ---------- STATE UTAMA ----------
 const state = {
-  view: 'ringkasan' as 'ringkasan' | 'cuaca' | 'tanya' | 'lahan',
+  view: 'ringkasan' as 'ringkasan' | 'cuaca' | 'tanya' | 'lahan' | 'pengaturan',
   cropId: 'cabai' as CropId, // Default Cabai / Cabe Merah
   location: INDONESIAN_LOCATIONS[0],
   currentHST: 55,
@@ -78,10 +78,14 @@ const state = {
   engineResult: null as CropEngineResult | null,
   features: null as TemporalFeatures | null,
   plots: [] as PlotItem[],
+  selectedLanguage: (localStorage.getItem('taniadapt_lang') || 'id') as 'id' | 'su',
+  customKnowledgeBase: JSON.parse(localStorage.getItem('taniadapt_custom_kb') || '[]') as string[],
+  soilTexture: (localStorage.getItem('taniadapt_soil') || 'loam') as string,
+  peffRatio: Number(localStorage.getItem('taniadapt_peff') || '1.0'),
   thread: [
     {
       me: false,
-      text: 'Halo! Saya asisten agronomis TaniAdapt. Saya siap menjelaskan dasar matematis & agronomi dari rekomendasi lahan Anda, termasuk ambang batas infeksi jamur dan regulasi irigasi FAO-56.'
+      text: 'Halo! Saya Tania, asisten agronomis TaniAdapt. Saya siap menjelaskan keputusan Decision Engine, dasar ilmiah FAO-56 Penman-Monteith, dan catatan khusus lahan Anda tanpa mengarang takaran kimia.'
     }
   ] as ChatMessage[]
 };
@@ -98,17 +102,19 @@ const CROPS_LIST: { id: CropId; label: string; scientific: string }[] = [
 ];
 
 const VIEWS = [
-  { id: 'ringkasan', label: 'Ringkasan risiko' },
-  { id: 'cuaca', label: 'Cuaca & riwayat' },
-  { id: 'tanya', label: 'Tanya TaniAdapt' },
-  { id: 'lahan', label: 'Lahan saya' }
+  { id: 'ringkasan', label: '📋 Rekomendasi Hari Ini' },
+  { id: 'cuaca', label: '📊 Analisis Biofisik' },
+  { id: 'lahan', label: '🌾 Lahan Saya' },
+  { id: 'tanya', label: '💬 Chat dengan Tania' },
+  { id: 'pengaturan', label: '⚙️ Pengaturan' }
 ];
 
 const TITLES: Record<string, string> = {
-  ringkasan: 'Ringkasan risiko & tindakan',
-  cuaca: 'Cuaca hiperlokal & riwayat temporal',
-  tanya: 'Tanya TaniAdapt (RAG terverifikasi)',
-  lahan: 'Petak lahan saya & catatan jejak'
+  ringkasan: 'Rekomendasi tindakan hari ini',
+  cuaca: 'Analisis statistik & biofisik FAO-56',
+  lahan: 'Petak lahan saya & catatan jejak',
+  tanya: 'Chat dengan Tania (Asisten AI RAG)',
+  pengaturan: 'Pengaturan sistem & knowledge base'
 };
 
 const RISK_BADGE: Record<string, string> = {
@@ -273,6 +279,26 @@ function updateCoordinateDisplay() {
   if (elevEl) {
     elevEl.textContent = `Elevasi: ${state.location.elevationMeters} mdpl`;
   }
+}
+
+function renderActivePlotSelector() {
+  const select = $('#active-plot-select') as HTMLSelectElement;
+  if (!select) return;
+
+  if (state.plots.length === 0) {
+    select.innerHTML = '<option value="-1">Simulasi Bebas (Belum Ada Petak)</option>';
+    select.disabled = true;
+    return;
+  }
+
+  select.disabled = false;
+  let optionsHtml = '<option value="-1">Simulasi Bebas (Manual)</option>';
+  optionsHtml += state.plots.map((p, idx) => {
+    const isSelected = state.fieldIndex === idx;
+    return `<option value="${idx}" ${isSelected ? 'selected' : ''}>${p.name} • ${p.placeName.split('(')[0].trim()} (${p.hst} HST)</option>`;
+  }).join('');
+
+  select.innerHTML = optionsHtml;
 }
 
 function renderLocationDropdown() {
@@ -1255,11 +1281,57 @@ function renderAuthModal() {
   if (regForm) regForm.style.display = !isLogin ? 'flex' : 'none';
 }
 
+function renderSettings() {
+  // 1. UI Mode Radios
+  const rDefault = $('#set-mode-default') as HTMLInputElement;
+  const rPro = $('#set-mode-pro') as HTMLInputElement;
+  if (rDefault && rPro) {
+    rDefault.checked = state.uiMode === 'default';
+    rPro.checked = state.uiMode === 'pro';
+  }
+
+  // 2. Language Radios
+  const rLangId = $('#set-lang-id') as HTMLInputElement;
+  const rLangSu = $('#set-lang-su') as HTMLInputElement;
+  if (rLangId && rLangSu) {
+    rLangId.checked = state.selectedLanguage === 'id';
+    rLangSu.checked = state.selectedLanguage === 'su';
+  }
+
+  // 3. Soil Select
+  const soilSelect = $('#settings-soil-select') as HTMLSelectElement;
+  if (soilSelect) {
+    soilSelect.value = state.soilTexture;
+  }
+
+  // 4. Peff Select
+  const peffSelect = $('#settings-peff-select') as HTMLSelectElement;
+  if (peffSelect) {
+    peffSelect.value = String(state.peffRatio);
+  }
+
+  // 5. Custom KB List
+  const kbList = $('#custom-kb-list');
+  if (kbList) {
+    if (state.customKnowledgeBase.length === 0) {
+      kbList.innerHTML = `<span style="font-size: 12px; color: var(--muted); font-style: italic">Belum ada catatan mandiri tambahan. Masukkan SOP atau catatan varietas di atas.</span>`;
+    } else {
+      kbList.innerHTML = state.customKnowledgeBase.map((item, idx) => {
+        return `<div style="display: flex; justify-content: space-between; align-items: center; background: #FFFFFF; border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; font-size: 12.5px; gap: 8px">
+          <span style="color: var(--ink)">${idx + 1}. ${esc(item)}</span>
+          <button type="button" data-del-kb="${idx}" style="background: none; border: none; color: #DC2626; cursor: pointer; font-size: 14px; font-weight: 700" title="Hapus catatan">&times;</button>
+        </div>`;
+      }).join('');
+    }
+  }
+}
+
 function render() {
   renderNav();
   renderViews();
   renderUIMode();
   renderAuth();
+  renderActivePlotSelector();
   renderLocationDropdown();
   renderCrops();
   renderGrowthStages();
@@ -1277,6 +1349,8 @@ function render() {
     renderChat();
   } else if (state.view === 'lahan') {
     renderFields();
+  } else if (state.view === 'pengaturan') {
+    renderSettings();
   }
 
   renderEvidenceModal();
@@ -1311,6 +1385,8 @@ async function askQuestion(q: string) {
         rolling7dRH: f.rolling7dRH,
         currentVPD: f.currentVPD,
       } : null,
+      customKnowledge: state.customKnowledgeBase,
+      language: state.selectedLanguage,
     });
   }
 
@@ -1323,34 +1399,54 @@ async function askQuestion(q: string) {
   } else {
     const qLower = q.toLowerCase();
 
-    if (qLower.includes('kenapa') || qLower.includes('mengapa') || qLower.includes('alasan') || qLower.includes('risiko')) {
-      answer = `Tingkat risiko ${res?.overallRisk} pada ${crop?.name} fase ${res?.stageName} (${state.currentHST} HST) disebabkan oleh akumulasi ${f?.consecutiveRainyDays || 0} hari hujan berturut-turut dengan kelembapan 7 hari rata-rata ${Math.round(f?.rolling7dRH || 85)}% dan VPD ${f?.currentVPD.toFixed(2)} kPa. Kondisi kebasahan daun ini melampaui ambang kritis sporulasi jamur yang diteliti oleh Balitsa (2020).`;
-      sourceDoc = 'Balitsa (2020)';
-    } else if (qLower.includes('pupuk') || qLower.includes('memupuk') || qLower.includes('fertil')) {
-      if (!res?.fertilization.safeToApply) {
-        answer = `Sistem MEREKOMENDASIKAN MENUNDA pemupukan nitrogen saat ini. Sesuai panduan FAO-56 (Allen et al., 1998), curah hujan atau prakiraan lebat dalam 48 jam ke depan memicu risiko pencucian (leaching) nitrat ke bawah zona perakaran hingga 65%, yang merugikan biaya petani dan mencemari air tanah. Tunggu jendela cerah stabil minimal 48 jam.`;
+    if (state.selectedLanguage === 'su') {
+      if (qLower.includes('naha') || qLower.includes('kunaon') || qLower.includes('alasan') || qLower.includes('risiko')) {
+        answer = `Tingkat résiko ${res?.overallRisk} dina ${crop?.name} fase ${res?.stageName} (${state.currentHST} HST) balukarna tina hujan ${f?.consecutiveRainyDays || 0} dinten ngaruntuy kalayan RH rata-rata ${Math.round(f?.rolling7dRH || 85)}% sareng VPD ${f?.currentVPD.toFixed(2)} kPa. Kaayaan daun baseuh lami ieu ngaleuwihan wates inféksi jamur numutkeun panalungtikan Sentelhas et al. (2008).`;
+        sourceDoc = 'Sentelhas et al. (2008)';
+      } else if (qLower.includes('gemuk') || qLower.includes('pupuk') || qLower.includes('urea')) {
+        answer = res?.fertilization.safeToApply
+          ? 'Kaayaan aman pikeun masihan pupuk susulan. Prakiraan hujan 48 jam ka payun alit pisan sehingga pupuk teu kahanyutkeun.'
+          : 'Sistem nyarankeun nunda masihan pupuk heula dinten ieu supados pupuk teu kahanyutkeun ku hujan ageung (Standar FAO-56).';
+        sourceDoc = 'FAO-56 (Allen et al.)';
+      } else if (qLower.includes('cai') || qLower.includes('siram') || qLower.includes('haseum') || qLower.includes('taneuh')) {
+        answer = res?.irrigation.status === 'DRAINASE_MENDESAK'
+          ? `Status ayeuna: DRAINASE MENDESAK! Hujan 7 dinten parantos ${Math.round(f?.rolling7dRain || 0)} mm. Taneuh parantos baseuh pisan ngaleuwihan kapasitas lapang. Enggal buka solokan supados akar teu asfiksia.`
+          : `Kadar cai dina taneuh masih cukup pikeun fase ieu dumasar kana itungan FAO-56 Penman-Monteith. Teu kedah disiram kaleuleuwihi.`;
+        sourceDoc = 'FAO-56 Water Balance';
       } else {
-        answer = `Kondisi aman untuk aplikasi pupuk susulan. Prakiraan 48 jam ke depan menunjukkan curah hujan rendah (<15 mm) sehingga pupuk dapat terserap optimal oleh perakaran aktif.`;
+        answer = `Sim kuring Tania: Dumasar kana pituduh engine pikeun ${crop?.name} di ${state.location.name}, tingkat résiko dinten ieu aya dina level ${res?.overallRisk}. Rekomendasi utama: ${res?.recommendations[0]?.title || 'Pantau kebon sacara rutin'}. Mangga taroskeun perkawis panyiraman, pupuk, atanapi dasar ilmiah.`;
+        sourceDoc = 'TaniAdapt Agro-Engine';
       }
-      sourceDoc = 'FAO-56 (Allen et al.)';
-    } else if (qLower.includes('besok') || qLower.includes('tidak hujan') || qLower.includes('skenario') || qLower.includes('kering')) {
-      answer = `Jika prakiraan cuaca berubah menjadi kering selama 2–3 hari berturut-turut, defisit tekanan uap (VPD) akan naik ke kisaran 0.8–1.2 kPa dan akumulasi kelembapan tajuk menurun drastis. Indeks risiko akan turun otomatis dari ${res?.overallRisk} menjadi Sedang atau Rendah, membuka jendela aman untuk penyemprotan protektan dan pemupukan.`;
-      sourceDoc = 'Dynamic Scenario Engine';
-    } else if (qLower.includes('air') || qLower.includes('drainase') || qLower.includes('siram') || qLower.includes('genangan')) {
-      if (res?.irrigation.status === 'DRAINASE_MENDESAK') {
-        answer = `Status saat ini: DRAINASE MENDESAK! Hujan kumulatif 7 hari mencapai ${Math.round(f?.rolling7dRain || 0)} mm. Tanah telah berada di atas kapasitas lapang (waterlogging). Genangan air lebih dari 24 jam menyebabkan asfiksia perakaran (kekurangan oksigen) dan mempermudah penetrasi bakteri Ralstonia solanacearum. Segera bersihkan parit pembuangan!`;
-      } else {
-        answer = `Kadar lengas tanah berada dalam batas normal untuk fase ini. Tidak diperlukan pengairan tambahan maupun tindakan drainase darurat.`;
-      }
-      sourceDoc = 'Agro-Hydrology Engine';
-    } else if (qLower.includes('dasar') || qLower.includes('ilmiah') || qLower.includes('paper') || qLower.includes('bukti') || qLower.includes('riset')) {
-      const allDocs = Object.values(LITERATURE_DATABASE);
-      const relevantDoc = allDocs.find(l => l.crop.toLowerCase().includes(state.cropId)) || allDocs[0];
-      answer = `Keputusan ini mengacu pada riset "${relevantDoc.title}" oleh ${relevantDoc.authors} (${relevantDoc.year}) di ${relevantDoc.location}. Ambang batas kritis yang digunakan adalah: ${relevantDoc.applicableThreshold}. Anda dapat membuka modal "Bukti Ilmiah (16 Field)" untuk rincian dataset lengkapnya.`;
-      sourceDoc = `${relevantDoc.authors} (${relevantDoc.year})`;
     } else {
-      answer = `Berdasarkan evaluasi engine TaniAdapt untuk ${crop?.name} di ${state.location.name}: Status risiko berada pada level ${res?.overallRisk}. Rekomendasi utama: ${res?.recommendations[0]?.title || 'Pantau perkembangan lahan rutin'}. Tanyakan skenario spesifik seperti pemupukan, drainase, atau dasar ilmiah jika membutuhkan penjelasan lebih dalam.`;
-      sourceDoc = 'TaniAdapt Agro-Engine';
+      if (qLower.includes('kenapa') || qLower.includes('mengapa') || qLower.includes('alasan') || qLower.includes('risiko')) {
+        answer = `Tingkat risiko ${res?.overallRisk} pada ${crop?.name} fase ${res?.stageName} (${state.currentHST} HST) disebabkan oleh akumulasi ${f?.consecutiveRainyDays || 0} hari hujan berturut-turut dengan kelembapan 7 hari rata-rata ${Math.round(f?.rolling7dRH || 85)}% dan VPD ${f?.currentVPD.toFixed(2)} kPa. Kondisi kebasahan daun ini melampaui ambang kritis sporulasi jamur yang diteliti oleh Balitsa (2020) dan Sentelhas (2008).`;
+        sourceDoc = 'Balitsa (2020) & Sentelhas (2008)';
+      } else if (qLower.includes('pupuk') || qLower.includes('memupuk') || qLower.includes('fertil')) {
+        if (!res?.fertilization.safeToApply) {
+          answer = `Sistem MEREKOMENDASIKAN MENUNDA pemupukan nitrogen saat ini. Sesuai panduan FAO-56 (Allen et al., 1998), curah hujan atau prakiraan lebat dalam 48 jam ke depan memicu risiko pencucian (leaching) nitrat ke bawah zona perakaran hingga 65%, yang merugikan biaya petani dan mencemari air tanah. Tunggu jendela cerah stabil minimal 48 jam.`;
+        } else {
+          answer = `Kondisi aman untuk aplikasi pupuk susulan. Prakiraan 48 jam ke depan menunjukkan curah hujan rendah (<15 mm) sehingga pupuk dapat terserap optimal oleh perakaran aktif.`;
+        }
+        sourceDoc = 'FAO-56 (Allen et al.)';
+      } else if (qLower.includes('besok') || qLower.includes('tidak hujan') || qLower.includes('skenario') || qLower.includes('kering')) {
+        answer = `Jika prakiraan cuaca berubah menjadi kering selama 2–3 hari berturut-turut, defisit tekanan uap (VPD) akan naik ke kisaran 0.8–1.2 kPa dan akumulasi kelembapan tajuk menurun drastis. Indeks risiko akan turun otomatis dari ${res?.overallRisk} menjadi Sedang atau Rendah, membuka jendela aman untuk penyemprotan protektan dan pemupukan.`;
+        sourceDoc = 'Dynamic Scenario Engine';
+      } else if (qLower.includes('air') || qLower.includes('drainase') || qLower.includes('siram') || qLower.includes('genangan')) {
+        if (res?.irrigation.status === 'DRAINASE_MENDESAK') {
+          answer = `Status saat ini: DRAINASE MENDESAK! Hujan kumulatif 7 hari mencapai ${Math.round(f?.rolling7dRain || 0)} mm. Tanah telah berada di atas kapasitas lapang (waterlogging). Genangan air lebih dari 24 jam menyebabkan asfiksia perakaran (kekurangan oksigen) dan mempermudah penetrasi bakteri Ralstonia solanacearum. Segera bersihkan parit pembuangan!`;
+        } else {
+          answer = `Kadar lengas tanah berada dalam batas normal untuk fase ini. Tidak diperlukan pengairan tambahan maupun tindakan drainase darurat.`;
+        }
+        sourceDoc = 'Agro-Hydrology Engine';
+      } else if (qLower.includes('dasar') || qLower.includes('ilmiah') || qLower.includes('paper') || qLower.includes('bukti') || qLower.includes('riset')) {
+        const allDocs = Object.values(LITERATURE_DATABASE);
+        const relevantDoc = allDocs.find(l => l.crop.toLowerCase().includes(state.cropId)) || allDocs[0];
+        answer = `Keputusan ini mengacu pada riset "${relevantDoc.title}" oleh ${relevantDoc.authors} (${relevantDoc.year}) di ${relevantDoc.location}. Ambang batas kritis yang digunakan adalah: ${relevantDoc.applicableThreshold}. Anda dapat membuka modal "Bukti Ilmiah (16 Field)" untuk rincian dataset lengkapnya.`;
+        sourceDoc = `${relevantDoc.authors} (${relevantDoc.year})`;
+      } else {
+        answer = `Halo, saya Tania! Berdasarkan evaluasi engine TaniAdapt untuk ${crop?.name} di ${state.location.name}: Status risiko berada pada level ${res?.overallRisk}. Rekomendasi utama: ${res?.recommendations[0]?.title || 'Pantau perkembangan lahan rutin'}. Tanyakan skenario spesifik seperti pemupukan, drainase, atau dasar ilmiah jika membutuhkan penjelasan lebih dalam.`;
+        sourceDoc = 'TaniAdapt Agro-Engine';
+      }
     }
   }
 
@@ -1612,6 +1708,59 @@ function setupEventListeners() {
       return;
     }
 
+    // Save Custom KB button
+    if (target.id === 'btn-save-custom-kb') {
+      const input = $('#custom-kb-input') as HTMLTextAreaElement;
+      if (!input || !input.value.trim()) return;
+      state.customKnowledgeBase.push(input.value.trim());
+      localStorage.setItem('taniadapt_custom_kb', JSON.stringify(state.customKnowledgeBase));
+      input.value = '';
+      renderSettings();
+      alert('Catatan kebun mandiri berhasil disimpan ke Knowledge Base Tania!');
+      return;
+    }
+
+    // Delete Custom KB item
+    const delKbBtn = target.closest('[data-del-kb]') as HTMLElement;
+    if (delKbBtn && delKbBtn.dataset.delKb !== undefined) {
+      const idx = Number(delKbBtn.dataset.delKb);
+      state.customKnowledgeBase.splice(idx, 1);
+      localStorage.setItem('taniadapt_custom_kb', JSON.stringify(state.customKnowledgeBase));
+      renderSettings();
+      return;
+    }
+
+    // Reset Water Ledger / Mark Watered button
+    if (target.id === 'btn-reset-water-ledger' || target.id === 'btn-mark-watered') {
+      alert('Buku Kas Air (Water Ledger): Lahan berhasil ditandai sudah disiram. Deplesi lengas tanah direset kembali ke kapasitas lapang (Dr = 0 mm).');
+      const curPlot = state.plots[state.fieldIndex];
+      if (curPlot) {
+        if (!curPlot.trail) curPlot.trail = [];
+        curPlot.trail.push({
+          dayLabel: `HST ${state.currentHST} (Hari Ini)`,
+          weather: 'Disiram',
+          status: 'Sehat',
+          note: 'Penyiraman manual dilakukan petani (Dr direset ke 0 mm)'
+        });
+        localStorage.setItem('taniadapt_user_plots_v1', JSON.stringify(state.plots));
+        renderFields();
+      }
+      recomputeEngine();
+      return;
+    }
+
+    // Clear All Plots button
+    if (target.id === 'btn-clear-all-plots') {
+      if (confirm('Apakah Anda yakin ingin menghapus seluruh data petak lahan lokal?')) {
+        state.plots = [];
+        localStorage.removeItem('taniadapt_user_plots_v1');
+        state.fieldIndex = 0;
+        render();
+        alert('Seluruh data lahan lokal telah dibersihkan.');
+      }
+      return;
+    }
+
     // UI Mode Toggle (Petani Default vs Farm/Riset Pro)
     const modeBtn = target.closest('[data-ui-mode]') as HTMLElement;
     if (modeBtn && modeBtn.dataset.uiMode) {
@@ -1862,6 +2011,79 @@ function setupEventListeners() {
           errBox.style.display = 'block';
         }
       }
+    });
+  }
+
+  // Active Plot Dropdown Change
+  const activePlotSelect = $('#active-plot-select') as HTMLSelectElement;
+  if (activePlotSelect) {
+    activePlotSelect.addEventListener('change', () => {
+      const idx = Number(activePlotSelect.value);
+      if (idx >= 0 && state.plots[idx]) {
+        state.fieldIndex = idx;
+        const p = state.plots[idx];
+        state.cropId = p.cropId;
+        if (p.plantDate) {
+          const plantTime = new Date(p.plantDate).getTime();
+          const nowTime = new Date().getTime();
+          const diffDays = Math.max(1, Math.floor((nowTime - plantTime) / 86400000));
+          state.currentHST = diffDays;
+          p.hst = diffDays;
+        } else {
+          state.currentHST = p.hst;
+        }
+        const loc = INDONESIAN_LOCATIONS.find(l => l.id === p.locationId);
+        if (loc) state.location = loc;
+      }
+      recomputeEngine();
+    });
+  }
+
+  // Settings Mode Radio Change
+  document.querySelectorAll('input[name="settings-ui-mode"]').forEach((el) => {
+    el.addEventListener('change', (e) => {
+      const radio = e.target as HTMLInputElement;
+      if (radio.checked) {
+        state.uiMode = radio.value as UIMode;
+        setStoredUIMode(state.uiMode);
+        renderUIMode();
+      }
+    });
+  });
+
+  // Settings Language Radio Change
+  document.querySelectorAll('input[name="settings-lang"]').forEach((el) => {
+    el.addEventListener('change', (e) => {
+      const radio = e.target as HTMLInputElement;
+      if (radio.checked) {
+        state.selectedLanguage = radio.value as 'id' | 'su';
+        localStorage.setItem('taniadapt_lang', state.selectedLanguage);
+        const greeting = state.selectedLanguage === 'su'
+          ? 'Sampurasun! Sim kuring Tania, asistén agronomis TaniAdapt. Aya anu tiasa dibantos perkawis tatanen kebon dinten ieu?'
+          : 'Halo! Saya Tania, asisten agronomis TaniAdapt. Saya siap menjelaskan keputusan Decision Engine, dasar ilmiah FAO-56 Penman-Monteith, dan catatan khusus lahan Anda tanpa mengarang takaran kimia.';
+        state.thread = [{ me: false, text: greeting }];
+        renderChat();
+      }
+    });
+  });
+
+  // Settings Soil Select Change
+  const soilSelect = $('#settings-soil-select') as HTMLSelectElement;
+  if (soilSelect) {
+    soilSelect.addEventListener('change', () => {
+      state.soilTexture = soilSelect.value;
+      localStorage.setItem('taniadapt_soil', state.soilTexture);
+      recomputeEngine();
+    });
+  }
+
+  // Settings Peff Select Change
+  const peffSelect = $('#settings-peff-select') as HTMLSelectElement;
+  if (peffSelect) {
+    peffSelect.addEventListener('change', () => {
+      state.peffRatio = Number(peffSelect.value);
+      localStorage.setItem('taniadapt_peff', String(state.peffRatio));
+      recomputeEngine();
     });
   }
 
