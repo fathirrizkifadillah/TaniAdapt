@@ -183,14 +183,52 @@ function initDefaultPlots(): PlotItem[] {
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed)) return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
     } catch {
       // ignore parsing error
     }
   }
 
-  // Lahan kosong secara default; pengguna mendaftarkan lahan riil mereka sendiri
-  return [];
+  const now = new Date();
+  const d55 = new Date(now.getTime() - 55 * 86400000).toISOString().split('T')[0];
+  const d20 = new Date(now.getTime() - 20 * 86400000).toISOString().split('T')[0];
+
+  const defaults: PlotItem[] = [
+    {
+      id: 'plot-1',
+      name: 'Lahan Sentra Pasirhuni',
+      locationId: 'lembang',
+      placeName: 'Lembang, Kab. Bandung Barat (1.312 mdpl)',
+      cropId: 'cabai',
+      plantDate: d55,
+      hst: 55,
+      stageName: 'Mulai Keluar Bunga Banyak (46–65 HST)',
+      risk: 'TINGGI',
+      trail: [
+        { dayLabel: 'HST 1', weather: 'Cerah', status: 'Sehat', note: 'Penanaman bibit cabai merah' },
+        { dayLabel: 'HST 49', weather: 'Cerah Berawan', status: 'Sehat', note: 'Aplikasi pupuk susulan' },
+        { dayLabel: 'HST 55 (Hari Ini)', weather: 'Hujan Ringan', status: 'Waspada', note: 'Monitoring kebasahan daun' }
+      ]
+    },
+    {
+      id: 'plot-2',
+      name: 'Kebun Sentra Bayongbong',
+      locationId: 'garut',
+      placeName: 'Bayongbong, Garut (720 mdpl)',
+      cropId: 'tomat',
+      plantDate: d20,
+      hst: 20,
+      stageName: 'Vegetatif Lanjut (16–30 HST)',
+      risk: 'SEDANG',
+      trail: [
+        { dayLabel: 'HST 1', weather: 'Cerah', status: 'Sehat', note: 'Pindah tanam bibit tomat' },
+        { dayLabel: 'HST 20 (Hari Ini)', weather: 'Berawan', status: 'Sehat', note: 'Pemasangan ajir bambu' }
+      ]
+    }
+  ];
+
+  localStorage.setItem('taniadapt_user_plots_v1', JSON.stringify(defaults));
+  return defaults;
 }
 
 // ---------- WEATHER DATA & DECISION CALCULATION ----------
@@ -475,7 +513,7 @@ function renderLocationDropdown() {
   }).join('');
 
   if (!isPredefined) {
-    optionsHtml = `<option value="${state.location.id}" selected>📍 ${state.location.name} (${state.location.latitude.toFixed(4)}, ${state.location.longitude.toFixed(4)})</option>` + optionsHtml;
+    optionsHtml = `<option value="${state.location.id}" selected>[GPS] ${state.location.name} (${state.location.latitude.toFixed(4)}, ${state.location.longitude.toFixed(4)})</option>` + optionsHtml;
   }
 
   select.innerHTML = optionsHtml;
@@ -950,7 +988,7 @@ function renderFields() {
   if (state.plots.length === 0) {
     fieldsCont.innerHTML = `
       <div style="flex: 1 1 100%; background: #FFFFFF; border: 2px dashed var(--line); border-radius: 18px; padding: 48px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.03)">
-        <div style="font-size: 48px">🌱</div>
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
         <h3 style="margin: 0; font-size: 20px; font-weight: 800; color: var(--ink)">Belum Ada Petak Lahan Terdaftar</h3>
         <p style="margin: 0; font-size: 14px; color: var(--muted); max-width: 500px; line-height: 1.6">
           Daftarkan petak lahan pertanian Anda sejak hari tanam agar Decision Engine dapat memantau akumulasi kebasahan daun, neraca air FAO-56, dan peringatan OPT secara akurat.
@@ -1192,7 +1230,7 @@ function renderUIMode() {
       banner.style.color = '#166534';
       banner.innerHTML = `
         <div style="display: flex; align-items: center; gap: 10px">
-          <span style="font-size: 20px">👨‍🌾</span>
+          <span style="font-weight: 800; font-size: 13px; background: #DCFCE7; color: #166534; padding: 2px 8px; border-radius: 6px">PETANI</span>
           <span><strong>Mode Ringkas (Petani):</strong> Menampilkan ringkasan aksi praktis harian di lahan (Siram, Semprot, Pupuk). Rumus biofisik, grafik penguapan, dan bobot statistik disembunyikan agar ramah dan tidak membingungkan petani.</span>
         </div>
         <button type="button" data-ui-mode="pro" style="background: none; border: none; font: inherit; font-size: 12.5px; font-weight: 700; color: #166534; text-decoration: underline; cursor: pointer; white-space: nowrap">
@@ -1206,7 +1244,7 @@ function renderUIMode() {
       banner.style.color = '#0369A1';
       banner.innerHTML = `
         <div style="display: flex; align-items: center; gap: 10px">
-          <span style="font-size: 20px">🔬</span>
+          <span style="font-weight: 800; font-size: 13px; background: #E0F2FE; color: #0369A1; padding: 2px 8px; border-radius: 6px">RISET</span>
           <span><strong>Mode Lanjutan (Detail &amp; Riset):</strong> Seluruh metrik biofisik mekanistik FAO-56, grafik penguapan VPD, matriks lag temporal, dan simulasi 7 hari aktif ditampilkan untuk pengelola kebun, agribisnis, dan akademisi.</span>
         </div>
         <button type="button" data-ui-mode="default" style="background: none; border: none; font: inherit; font-size: 12.5px; font-weight: 700; color: #0369A1; text-decoration: underline; cursor: pointer; white-space: nowrap">
@@ -1239,17 +1277,17 @@ function renderFao56ProPanel() {
   let regimeNotice = '';
   if (isBawang) {
     regimeNotice = `<div style="background: #FEE2E2; border-left: 4px solid #DC2626; padding: 10px 14px; border-radius: 8px; font-size: 13px; color: #991B1B">
-      <strong>⚠️ Status Registri Ilmiah (Phase 5): DIBLOKIR / PENDING NEW DATA</strong><br>
+      <strong>[DIBLOKIR] Status Registri Ilmiah (Phase 5): PENDING NEW DATA</strong><br>
       Ketiadaan data sentra valid di Jawa Barat. Seluruh output disajikan terbatas untuk kajian komparasi drainase.
     </div>`;
   } else if (isPadi) {
     regimeNotice = `<div style="background: #FEF3C7; border-left: 4px solid #D97706; padding: 10px 14px; border-radius: 8px; font-size: 13px; color: #92400E">
-      <strong>ℹ️ Status Modul Deplesi Air (Phase 4 & 5): EVIDENCE_INSUFFICIENT (Rezim Sawah Tergenang)</strong><br>
+      <strong>[STATUS] Modul Deplesi Air (Phase 4 & 5): EVIDENCE_INSUFFICIENT (Rezim Sawah Tergenang)</strong><br>
       Padi sawah di Jawa Barat dibudidayakan dalam kondisi tergenang (ponded wetland). Rumus deplesi lengas tanah tak jenuh (RAW = p * TAW) tidak berlaku secara biologis tanpa model perkolasi genangan lokal.
     </div>`;
   } else if (isCabai) {
     regimeNotice = `<div style="background: #FEF3C7; border-left: 4px solid #D97706; padding: 10px 14px; border-radius: 8px; font-size: 13px; color: #92400E">
-      <strong>ℹ️ Status Modul Deplesi Air Cabai: UNVERIFIED (FAO-56 Hanya Memuat Paprika Subtropis)</strong><br>
+      <strong>[STATUS] Modul Deplesi Air Cabai: UNVERIFIED (FAO-56 Hanya Memuat Paprika Subtropis)</strong><br>
       Cabai tropis Jawa Barat dibudidayakan di bedengan bermulsa plastik MPHP (evaporasi ditekan hingga 70%). Sistem menolak ekstrapolasi liar dari sweet pepper. Modul proteksi jamur fajar LWD (Sentelhas 2008), jendela semprot angin, dan panen tetap aktif 100%.
     </div>`;
   }
@@ -1280,7 +1318,7 @@ function renderFao56ProPanel() {
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid var(--line); padding-bottom: 12px">
       <div>
         <div style="display: flex; align-items: center; gap: 8px">
-          <span style="font-size: 18px">🔬</span>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20M12 2v20M4.93 4.93l14.14 14.14M4.93 19.07L19.07 4.93"/></svg>
           <h2 style="margin: 0; font-size: 17px; font-weight: 800; color: var(--ink)">Panel Biofisik Mekanistik FAO-56 &amp; Riset Komputasional</h2>
         </div>
         <div style="font-size: 12px; color: var(--muted); margin-top: 2px">Mode Lanjutan: Transparansi data biofisik dan kalkulasi agrometeorologi untuk pengelola kebun, kampus, dan peneliti</div>
@@ -1341,21 +1379,21 @@ function renderFao56ProPanel() {
       <div style="flex: 1 1 240px; background: #F8FAFC; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px">
         <strong style="color: var(--ink)">Uji Sensitivitas Tanah Loam (FAO-56 Tabel 19):</strong>
         <div style="margin-top: 3px; color: ${f.sensitif_terhadap_asumsi_tanah ? '#B45309' : 'var(--green)'}; font-weight: 600">
-          ${f.sensitif_terhadap_asumsi_tanah ? '⚠️ Sensitif terhadap batas rentang TAW 130–180 mm/m' : '✓ Stabil terhadap variasi rentang tekstur tanah loam'}
+          ${f.sensitif_terhadap_asumsi_tanah ? '[Sensitif] Terhadap batas rentang TAW 130–180 mm/m' : '[Stabil] Terhadap variasi rentang tekstur tanah loam'}
         </div>
       </div>
 
       <div style="flex: 1 1 240px; background: #F8FAFC; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px">
         <strong style="color: var(--ink)">Uji Sensitivitas Presipitasi Efektif (Peff):</strong>
         <div style="margin-top: 3px; color: ${f.sensitif_terhadap_asumsi_hujan_efektif ? '#B45309' : 'var(--green)'}; font-weight: 600">
-          ${f.sensitif_terhadap_asumsi_hujan_efektif ? '⚠️ Keputusan sensitif terhadap reduksi Peff = 0.8 * P' : '✓ Keputusan stabil terhadap reduksi Peff = 0.8 * P'}
+          ${f.sensitif_terhadap_asumsi_hujan_efektif ? '[Sensitif] Keputusan sensitif terhadap reduksi Peff = 0.8 * P' : '[Stabil] Keputusan stabil terhadap reduksi Peff = 0.8 * P'}
         </div>
       </div>
 
       <div style="flex: 1 1 240px; background: #F8FAFC; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px">
         <strong style="color: var(--ink)">Status Ledger Cold-Start (M3):</strong>
         <div style="margin-top: 3px; color: var(--green); font-weight: 600">
-          ${f.dr_awal_status === 'pasti' ? '✓ Pasti (Konvergen ke kapasitas lapang)' : 'Interval [Rendah, Tinggi]'}
+          ${f.dr_awal_status === 'pasti' ? '[Pasti] Konvergen ke kapasitas lapang' : 'Interval [Rendah, Tinggi]'}
         </div>
       </div>
     </div>
@@ -1403,7 +1441,7 @@ function renderAuth() {
         <div style="display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2">
           <span style="font-size: 13px; font-weight: 700; color: var(--ink)">${esc(state.authUser.full_name)}</span>
           <span style="font-size: 10px; font-family: 'IBM Plex Mono', monospace; background: var(--sage); color: var(--green); padding: 1px 6px; border-radius: 4px; font-weight: 700">
-            ${isPro ? '🏢 PENGELOLA / AKADEMISI' : '👨‍🌾 PETANI'}
+            ${isPro ? 'PENGELOLA / AKADEMISI' : 'PETANI'}
           </span>
         </div>
         <button type="button" id="btn-logout" style="min-height: 32px; padding: 0 12px; border-radius: 999px; background: transparent; border: 1px solid var(--line); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--muted)">Keluar</button>
@@ -1412,7 +1450,7 @@ function renderAuth() {
   } else {
     container.innerHTML = `
       <button type="button" id="open-auth-btn" style="min-height: 36px; padding: 0 14px; border-radius: 999px; background: var(--green); color: #FFFFFF; border: none; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(30,77,53,0.15)">
-        <span>👤 Masuk / Profil</span>
+        <span>Masuk / Profil</span>
       </button>
     `;
   }
@@ -1502,14 +1540,14 @@ function render() {
 
   if (state.view === 'ringkasan') {
     renderPlotFeed();
+  } else if (state.view === 'cuaca') {
+    renderBiofisikPlotBanner();
+    renderWeatherView();
     renderRiskCard();
     renderRecommendations();
     renderInfluentialFactors();
     renderWeatherSnapshot();
     renderFao56ProPanel();
-  } else if (state.view === 'cuaca') {
-    renderBiofisikPlotBanner();
-    renderWeatherView();
   } else if (state.view === 'tanya') {
     renderChat();
   } else if (state.view === 'lahan') {
@@ -2075,13 +2113,13 @@ function setupEventListeners() {
         };
         renderLocationDropdown();
         await recomputeEngine();
-        btnGps.innerHTML = '<span>✅ GPS Terdeteksi</span>';
+        btnGps.innerHTML = '<span>GPS Terdeteksi</span>';
         setTimeout(() => {
-          btnGps.innerHTML = '<span>📍 Deteksi GPS Lahan</span>';
+          btnGps.innerHTML = '<span>Deteksi GPS Lahan</span>';
         }, 3000);
       } catch (err: any) {
         alert(err.message || 'Gagal mendeteksi koordinat GPS.');
-        btnGps.innerHTML = '<span>📍 Deteksi GPS Lahan</span>';
+        btnGps.innerHTML = '<span>Deteksi GPS Lahan</span>';
       }
     });
   }
@@ -2454,8 +2492,14 @@ async function init() {
   initWebSocketClient();
   handleUrlParams();
   setupEventListeners();
-  await recomputeEngine();
-  await recomputeAllPlots();
+  render(); // Initial immediate render so UI never stays blank
+
+  try {
+    await recomputeEngine();
+    await recomputeAllPlots();
+  } catch (err) {
+    console.error('Computation failed:', err);
+  }
   render();
 }
 
