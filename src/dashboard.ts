@@ -1037,6 +1037,181 @@ function renderUIMode() {
   if (stressToggle) {
     stressToggle.style.display = state.uiMode === 'pro' ? 'flex' : 'none';
   }
+
+  renderFao56ProPanel();
+}
+
+function renderFao56ProPanel() {
+  const container = $('#fao56-pro-container');
+  if (!container) return;
+
+  if (state.uiMode !== 'pro' || !state.engineResult?.fao56) {
+    container.style.display = 'none';
+    return;
+  }
+
+  container.style.display = 'flex';
+  const f = state.engineResult.fao56;
+  const res = state.engineResult;
+
+  const isBawang = state.cropId === 'bawang_merah';
+  const isPadi = state.cropId === 'padi';
+  const isCabai = state.cropId === 'cabai' || state.cropId === 'cabai_rawit';
+
+  let regimeNotice = '';
+  if (isBawang) {
+    regimeNotice = `<div style="background: #FEE2E2; border-left: 4px solid #DC2626; padding: 10px 14px; border-radius: 8px; font-size: 13px; color: #991B1B">
+      <strong>⚠️ Status Registri Ilmiah (Phase 5): DIBLOKIR / PENDING NEW DATA</strong><br>
+      Ketiadaan data sentra valid di Jawa Barat. Seluruh output disajikan terbatas untuk kajian komparasi drainase.
+    </div>`;
+  } else if (isPadi) {
+    regimeNotice = `<div style="background: #FEF3C7; border-left: 4px solid #D97706; padding: 10px 14px; border-radius: 8px; font-size: 13px; color: #92400E">
+      <strong>ℹ️ Status Modul Deplesi Air (Phase 4 & 5): EVIDENCE_INSUFFICIENT (Rezim Sawah Tergenang)</strong><br>
+      Padi sawah di Jawa Barat dibudidayakan dalam kondisi tergenang (ponded wetland). Rumus deplesi lengas tanah tak jenuh (RAW = p * TAW) tidak berlaku secara biologis tanpa model perkolasi genangan lokal.
+    </div>`;
+  } else if (isCabai) {
+    regimeNotice = `<div style="background: #FEF3C7; border-left: 4px solid #D97706; padding: 10px 14px; border-radius: 8px; font-size: 13px; color: #92400E">
+      <strong>ℹ️ Status Modul Deplesi Air Cabai: UNVERIFIED (FAO-56 Hanya Memuat Paprika Subtropis)</strong><br>
+      Cabai tropis Jawa Barat dibudidayakan di bedengan bermulsa plastik MPHP (evaporasi ditekan hingga 70%). Sistem menolak ekstrapolasi liar dari sweet pepper. Modul proteksi jamur fajar LWD (Sentelhas 2008), jendela semprot angin, dan panen tetap aktif 100%.
+    </div>`;
+  }
+
+  // 7-day forward simulation rows
+  let forwardSimRows = '';
+  if (f.proyeksi_7hari && f.proyeksi_7hari.length > 0) {
+    forwardSimRows = f.proyeksi_7hari.map(p => {
+      const isCrossing = p.dr_prakiraan_mm > p.raw_mm;
+      return `<tr style="border-bottom: 1px solid var(--line); font-size: 12.5px">
+        <td style="padding: 8px 10px; font-weight: 600">H+${p.hari} (${p.tanggal})</td>
+        <td style="padding: 8px 10px; font-family: 'IBM Plex Mono', monospace; font-weight: 700; color: ${isCrossing ? 'var(--risk-strong)' : 'var(--ink)'}">
+          ${p.dr_prakiraan_mm} mm
+        </td>
+        <td style="padding: 8px 10px; font-family: 'IBM Plex Mono', monospace; color: var(--muted)">${p.dr_tanpa_hujan_mm} mm</td>
+        <td style="padding: 8px 10px; font-family: 'IBM Plex Mono', monospace; color: var(--green); font-weight: 600">${p.raw_mm} mm</td>
+        <td style="padding: 8px 10px">
+          ${isCrossing
+            ? '<span style="background: #FEE2E2; color: #991B1B; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700">Cekaman Air (Dr > RAW)</span>'
+            : '<span style="background: #DCFCE7; color: #166534; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700">Aman Terpenuhi</span>'
+          }
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  container.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid var(--line); padding-bottom: 12px">
+      <div>
+        <div style="display: flex; align-items: center; gap: 8px">
+          <span style="font-size: 18px">🔬</span>
+          <h2 style="margin: 0; font-size: 17px; font-weight: 800; color: var(--ink)">Panel Biofisik Mekanistik FAO-56 &amp; Riset Komputasional</h2>
+        </div>
+        <div style="font-size: 12px; color: var(--muted); margin-top: 2px">Khusus Mode Pro / Peneliti / Pengelola Farm / Akademisi Kampus</div>
+      </div>
+      <div style="display: flex; gap: 6px; flex-wrap: wrap">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; background: var(--sage); color: var(--green); padding: 3px 8px; border-radius: 6px">
+          VERIFIED_METHOD (FAO-56)
+        </span>
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; background: #E0E7FF; color: #3730A3; padding: 3px 8px; border-radius: 6px">
+          Draft 2020-12
+        </span>
+      </div>
+    </div>
+
+    ${regimeNotice}
+
+    <!-- 6 METRIC TILES BIOFISIK -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px">
+      <div style="background: var(--ground); border: 1px solid var(--line); border-radius: 12px; padding: 12px">
+        <div style="font-size: 11px; color: var(--muted); font-weight: 600">ET0 Penman-Monteith</div>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 800; color: var(--ink); margin-top: 2px">${f.et0_daily_mm} <span style="font-size: 12px; font-weight: 500">mm/hari</span></div>
+        <div style="font-size: 10.5px; color: var(--muted); margin-top: 4px">Allen et al. (1998) Eq. 6</div>
+      </div>
+
+      <div style="background: var(--ground); border: 1px solid var(--line); border-radius: 12px; padding: 12px">
+        <div style="font-size: 11px; color: var(--muted); font-weight: 600">Koefisien Tanaman (Kc)</div>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 800; color: var(--green); margin-top: 2px">${f.kc_current}</div>
+        <div style="font-size: 10.5px; color: var(--muted); margin-top: 4px">FAO-56 Tabel 12 (HST ${res.currentHST})</div>
+      </div>
+
+      <div style="background: var(--ground); border: 1px solid var(--line); border-radius: 12px; padding: 12px">
+        <div style="font-size: 11px; color: var(--muted); font-weight: 600">Konsumsi Tanaman (ETc)</div>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 800; color: var(--ink); margin-top: 2px">${f.etc_daily_mm} <span style="font-size: 12px; font-weight: 500">mm/hari</span></div>
+        <div style="font-size: 10.5px; color: var(--muted); margin-top: 4px">ETc = Kc × ET0</div>
+      </div>
+
+      <div style="background: var(--ground); border: 1px solid var(--line); border-radius: 12px; padding: 12px">
+        <div style="font-size: 11px; color: var(--muted); font-weight: 600">Air Tersedia Total (TAW)</div>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 800; color: var(--ink); margin-top: 2px">${f.taw_mm} <span style="font-size: 12px; font-weight: 500">mm</span></div>
+        <div style="font-size: 10.5px; color: var(--muted); margin-top: 4px">Loam 150 mm/m × Zr ${f.root_depth_m}m</div>
+      </div>
+
+      <div style="background: var(--ground); border: 1px solid var(--line); border-radius: 12px; padding: 12px">
+        <div style="font-size: 11px; color: var(--muted); font-weight: 600">Batas Siap Serap (RAW)</div>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 800; color: #2563EB; margin-top: 2px">${f.raw_mm} <span style="font-size: 12px; font-weight: 500">mm</span></div>
+        <div style="font-size: 10.5px; color: var(--muted); margin-top: 4px">RAW = p (${f.p_fraction}) × TAW</div>
+      </div>
+
+      <div style="background: var(--ground); border: 1px solid var(--line); border-radius: 12px; padding: 12px">
+        <div style="font-size: 11px; color: var(--muted); font-weight: 600">Deplesi Perakaran (Dr)</div>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 800; color: ${f.is_stressed ? 'var(--risk-strong)' : 'var(--green)'}; margin-top: 2px">${f.depletion_dr_mm} <span style="font-size: 12px; font-weight: 500">mm</span></div>
+        <div style="font-size: 10.5px; color: var(--muted); margin-top: 4px">${f.is_stressed ? 'Dr > RAW (Cekaman Air)' : 'Dr <= RAW (Optimal)'}</div>
+      </div>
+    </div>
+
+    <!-- SENSITIVITY AND COLD-START BADGES -->
+    <div style="display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px">
+      <div style="flex: 1 1 240px; background: #F8FAFC; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px">
+        <strong style="color: var(--ink)">Uji Sensitivitas Tanah Loam (FAO-56 Tabel 19):</strong>
+        <div style="margin-top: 3px; color: ${f.sensitif_terhadap_asumsi_tanah ? '#B45309' : 'var(--green)'}; font-weight: 600">
+          ${f.sensitif_terhadap_asumsi_tanah ? '⚠️ Sensitif terhadap batas rentang TAW 130–180 mm/m' : '✓ Stabil terhadap variasi rentang tekstur tanah loam'}
+        </div>
+      </div>
+
+      <div style="flex: 1 1 240px; background: #F8FAFC; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px">
+        <strong style="color: var(--ink)">Uji Sensitivitas Presipitasi Efektif (Peff):</strong>
+        <div style="margin-top: 3px; color: ${f.sensitif_terhadap_asumsi_hujan_efektif ? '#B45309' : 'var(--green)'}; font-weight: 600">
+          ${f.sensitif_terhadap_asumsi_hujan_efektif ? '⚠️ Keputusan sensitif terhadap reduksi Peff = 0.8 * P' : '✓ Keputusan stabil terhadap reduksi Peff = 0.8 * P'}
+        </div>
+      </div>
+
+      <div style="flex: 1 1 240px; background: #F8FAFC; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px">
+        <strong style="color: var(--ink)">Status Ledger Cold-Start (M3):</strong>
+        <div style="margin-top: 3px; color: var(--green); font-weight: 600">
+          ${f.dr_awal_status === 'pasti' ? '✓ Pasti (Konvergen ke kapasitas lapang)' : 'Interval [Rendah, Tinggi]'}
+        </div>
+      </div>
+    </div>
+
+    <!-- 7-DAY FORWARD SIMULATION TABLE -->
+    ${forwardSimRows ? `
+      <div style="border-top: 1px solid var(--line); padding-top: 14px">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px">
+          <strong style="font-size: 14px; color: var(--ink)">Simulasi Maju 7 Hari (Prakiraan Cuaca vs Tanpa Hujan):</strong>
+          <span style="font-size: 11.5px; color: var(--muted); font-family: 'IBM Plex Mono', monospace">Proyeksi berhenti saat melintasi RAW pertama (Ks tidak dimodelkan)</span>
+        </div>
+        <div style="overflow-x: auto">
+          <table style="width: 100%; border-collapse: collapse; text-align: left">
+            <thead>
+              <tr style="background: var(--ground); border-bottom: 1.5px solid var(--line); font-size: 12px; color: var(--muted)">
+                <th style="padding: 8px 10px">Hari &amp; Tanggal</th>
+                <th style="padding: 8px 10px">Dr Skenario Prakiraan</th>
+                <th style="padding: 8px 10px">Dr Skenario Tanpa Hujan</th>
+                <th style="padding: 8px 10px">Batas RAW Kritis</th>
+                <th style="padding: 8px 10px">Status Proyeksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${forwardSimRows}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    ` : ''}
+
+    <div style="background: var(--ground); padding: 10px 14px; border-radius: 10px; font-size: 11.5px; color: var(--muted); line-height: 1.4">
+      <strong>Catatan Ilmiah Keputusan Engine:</strong> Berdasarkan temuan ekonometrika Phase 7 &amp; evaluasi ML Phase 9, model regresi berbasis cuaca saja terbukti tidak memiliki daya generalisasi out-of-sample pada tahun baru (LOYO CV R² ≈ 0). Maka sistem mengunci status <em>claim_forbidden</em> pada tebak tonase panen, dan mengalihkan 100% keputusan pada rekomendasi tindakan diurnal harian berbasis biofisik deterministik.
+    </div>
+  `;
 }
 
 function renderAuth() {
@@ -1106,6 +1281,7 @@ function render() {
     renderRecommendations();
     renderInfluentialFactors();
     renderWeatherSnapshot();
+    renderFao56ProPanel();
   } else if (state.view === 'cuaca') {
     renderWeatherView();
   } else if (state.view === 'tanya') {

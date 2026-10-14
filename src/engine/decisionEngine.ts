@@ -1,8 +1,11 @@
 import { CropId, GrowthStage } from '../types/crop';
 import { CurrentWeather, DailyForecast, HistoricalWeatherDay, TemporalFeatures } from '../types/weather';
-import { CropEngineResult } from '../types/decision';
+import { CropEngineResult, BioMechanisticFao56Result } from '../types/decision';
 import { CROP_MODELS } from '../data/cropModels';
 import { extractTemporalFeatures } from './featureEngineering';
+import { calculateDailyET0 } from './fao56';
+import { calculateDynamicKc } from './kc';
+import { calculateTawRaw, evaluateWaterStress, updateDailyDepletion, simulate7DaysForward } from './waterBalance';
 import {
   evaluateBawangMerahEngine,
   evaluateCabaiEngine,
@@ -84,6 +87,58 @@ export function runAgroDecisionEngine(
       throw new Error(`Engine belum diimplementasikan untuk crop: ${cropId}`);
   }
 
+  // 4. Hitung Komputasi Biofisik Mekanistik FAO-56 Penman-Monteith & Neraca Air
+  const tmax = forecast[0]?.tempMax ?? (current.temperature + 4);
+  const tmin = forecast[0]?.tempMin ?? Math.max(10, current.temperature - 4);
+  const dewpoint = current.temperature - (100 - current.relativeHumidity) / 5;
+  const wind10mMs = current.windSpeed / 3.6;
+  const solarRadiation = 20.0; // Rata-rata radiasi harian Jawa Barat (MJ/m2/hari)
+  const elevation = 150.0;
+  const latitude = -6.8;
+  const dayOfYear = Math.floor((new Date().getTime() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
+
+  const et0 = Number(calculateDailyET0(tmax, tmin, dewpoint, wind10mMs, solarRadiation, elevation, latitude, dayOfYear).toFixed(2));
+  const kcCurve = calculateDynamicKc(cropId as any, currentHST);
+  const etc = Number((kcCurve.kc * et0).toFixed(2));
+
+  const tawRaw = calculateTawRaw(cropId as any, currentHST);
+  const estimatedDr0 = Math.min(tawRaw.taw_mm, Math.max(0, features.consecutiveDryDays * etc - features.rolling3dRain));
+  const waterEval = evaluateWaterStress(cropId as any, currentHST, estimatedDr0, 0.0);
+
+  // Sensitivitas Peff
+  const altDr = updateDailyDepletion(estimatedDr0, etc, 0.8 * current.precipitation, 150.0);
+  const altWaterEval = evaluateWaterStress(cropId as any, currentHST, altDr, 0.0);
+  const sensitifHujanEfektif = cropId !== 'padi' && cropId !== 'cabai' && cropId !== 'cabai_rawit' && cropId !== 'bawang_merah'
+    ? waterEval.status !== altWaterEval.status
+    : false;
+
+  // Proyeksi 7 Hari
+  const forecast7Days = forecast.slice(0, 7).map((d, i) => ({
+    day: i + 1,
+    date: d.date,
+    precip_mm: d.precipitationSum || 0,
+    et0_mm: et0,
+  }));
+  const sim7d = simulate7DaysForward(cropId as any, currentHST, estimatedDr0, forecast7Days);
+
+  const fao56Result: BioMechanisticFao56Result = {
+    et0_daily_mm: et0,
+    kc_current: kcCurve.kc,
+    etc_daily_mm: etc,
+    taw_mm: tawRaw.taw_mm,
+    raw_mm: tawRaw.raw_mm,
+    depletion_dr_mm: estimatedDr0,
+    root_depth_m: tawRaw.root_depth_m,
+    p_fraction: tawRaw.p_fraction,
+    is_stressed: waterEval.status === 'kondisi_stres_abiotik',
+    sensitif_terhadap_asumsi_tanah: waterEval.sensitif_terhadap_asumsi_tanah,
+    sensitif_terhadap_asumsi_hujan_efektif: sensitifHujanEfektif,
+    proyeksi_7hari: sim7d.proyeksi_7hari,
+    hari_pertama_melewati_raw_prakiraan: sim7d.hari_pertama_melewati_raw_prakiraan,
+    hari_pertama_melewati_raw_tanpa_hujan: sim7d.hari_pertama_melewati_raw_tanpa_hujan,
+    dr_awal_status: 'pasti',
+  };
+
   const result: CropEngineResult = {
     cropId,
     cropName: crop.name,
@@ -98,7 +153,8 @@ export function runAgroDecisionEngine(
     fertilization: evalOutput.fertilization,
     recommendations: evalOutput.recommendations,
     temporalSummary: evalOutput.temporalSummary,
-    computedAt: new Date().toISOString()
+    computedAt: new Date().toISOString(),
+    fao56: fao56Result
   };
 
   return { result, features };

@@ -47,6 +47,32 @@ export interface FertilizationAdvisory {
   recommendedNutrient: string;
 }
 
+export interface BioMechanisticFao56Result {
+  et0_daily_mm: number;
+  kc_current: number;
+  etc_daily_mm: number;
+  taw_mm: number;
+  raw_mm: number;
+  depletion_dr_mm: number;
+  root_depth_m: number;
+  p_fraction: number;
+  is_stressed: boolean;
+  sensitif_terhadap_asumsi_tanah: boolean;
+  sensitif_terhadap_asumsi_hujan_efektif: boolean;
+  proyeksi_7hari?: Array<{
+    hari: number;
+    tanggal: string;
+    dr_prakiraan_mm: number;
+    dr_tanpa_hujan_mm: number;
+    raw_mm: number;
+  }>;
+  hari_pertama_melewati_raw_prakiraan?: string | null;
+  hari_pertama_melewati_raw_tanpa_hujan?: string | null;
+  dr_awal_status?: 'pasti' | 'interval';
+  dr_interval_mm?: [number, number];
+  konvergen_pada?: string | null;
+}
+
 export interface CropEngineResult {
   cropId: CropId;
   cropName: string;
@@ -62,4 +88,5 @@ export interface CropEngineResult {
   recommendations: ActionableRecommendation[];
   temporalSummary: string;
   computedAt: string;
+  fao56?: BioMechanisticFao56Result;
 }

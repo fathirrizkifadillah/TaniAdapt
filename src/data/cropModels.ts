@@ -208,7 +208,7 @@ export const CROP_MODELS: Record<CropId, CropDefinition> = {
     name: 'Bawang Merah',
     scientificName: 'Allium cepa var. aggregatum',
     category: 'Rempah',
-    description: 'Sentra Brebes & Nganjuk. Komoditas hortikultura yang sangat rapuh terhadap kelebihan air dan infeksi layu tanah.',
+    description: 'Status Registri: DIBLOKIR / PENDING NEW DATA pada model Jawa Barat (Phase 5) karena ketiadaan data sentra terverifikasi; ditampilkan terbatas untuk studi komparasi drainase.',
     totalDurationDays: 65,
     optimalTempRange: [25, 32],
     optimalRHRange: [55, 75],

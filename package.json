@@ -19,6 +19,7 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@rolldown/binding-linux-x64-gnu": "^1.2.14",
     "@types/node": "^24.13.3",
     "oxlint": "^1.81.0",
     "typescript": "~6.0.2",

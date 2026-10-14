@@ -70,7 +70,7 @@ export function evaluateCabaiEngine(
       ? 'Mikroklimat jenuh lembap dengan riwayat hujan berulang memicu perkecambahan konidia secara massal.'
       : 'Kondisi mikroklimat cukup terkendali namun tetap waspadai kelembapan malam hari.',
     triggerFactors: antraknosaFactors,
-    preventiveAdvice: 'Aplikasi fungisida kontak berbahan Mancozeb atau Propineb saat jeda hujan.',
+    preventiveAdvice: 'Aplikasi fungisida protektif kontak saat jeda hujan sesuai anjuran PPL setempat.',
     literatureCitationId: 'balitsa_antraknosa_2020'
   });
 
@@ -81,7 +81,7 @@ export function evaluateCabaiEngine(
       title: 'Proteksi Mendesak Antraknosa (Patek)',
       urgency: 'HARI_INI',
       riskLevel: 'TINGGI',
-      action: 'Lakukan penyemprotan fungisida protektif Mancozeb/Propineb sebelum hujan sore; petik dan bakar buah yang menunjukkan lesi patek aktif.',
+      action: 'Lakukan penyemprotan fungisida protektif kontak sebelum hujan sore (konsultasikan bahan aktif dengan PPL); petik dan musnahkan buah yang menunjukkan lesi patek aktif.',
       rationale: `Riwayat hujan ${tf.consecutiveRainyDays} hari berturut-turut dan RH ${tf.rolling7dRH}% sangat kondusif untuk penyebaran spora (Balitsa, 2020).`,
       growthStageContext: `Fase ${stage.name} (HST ${hst})`,
       evidenceCitationId: 'balitsa_antraknosa_2020',
@@ -252,7 +252,7 @@ export function evaluatePadiEngine(
       ? 'Kombinasi cuaca basah dan fase bunting memicu perkecambahan spora blas leher yang dapat menyebabkan malai hampa.'
       : 'Tekanan penyakit blas dalam batas aman terkontrol.',
     triggerFactors: blasFactors,
-    preventiveAdvice: 'Aplikasi fungisida protektif Trisiklazol saat daun bendera mulai muncul.',
+    preventiveAdvice: 'Aplikasi fungisida protektif saat daun bendera mulai muncul sesuai anjuran PPL setempat.',
     literatureCitationId: 'bbpadi_blas_2019'
   });
 
@@ -263,7 +263,7 @@ export function evaluatePadiEngine(
       title: 'Aplikasi Preventif Fungisida Blas Daun/Leher',
       urgency: 'HARI_INI',
       riskLevel: 'TINGGI',
-      action: 'Semprotkan fungisida Trisiklazol atau Isoprotiolan saat embun pagi mengering; kurangi dosis pupuk Urea berlebih.',
+      action: 'Lakukan penyemprotan fungisida protektif anjuran PPL saat embun pagi mengering; kurangi takaran pupuk Urea berlebih.',
       rationale: `Akumulasi hujan 3 hari ${tf.rolling3dRain} mm dan RH ${tf.rolling7dRH}% memenuhi kriteria epidemi blas BB Padi Sukamandi (2019).`,
       growthStageContext: `Fase ${stage.name} (HST ${hst})`,
       evidenceCitationId: 'bbpadi_blas_2019',
