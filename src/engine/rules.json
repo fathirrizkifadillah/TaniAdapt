@@ -1,0 +1,530 @@
+{
+  "rules_version": "v2.4-verified-params",
+  "last_updated": "2026-10-13",
+  "description": "Basis data aturan operasional agrometeorologi kanonik TaniAdapt v2.4 dengan parameter terverifikasi FAO-56 dan klasifikasi bukti bertingkat.",
+  "status_hierarchy": {
+    "VERIFIED_METHOD": "Metode biofisik baku standar internasional dengan formula dan tabel tercetak (FAO-56). Satu-satunya status yang diizinkan memicu status level atas kondisi_stres_abiotik.",
+    "METHOD_UNCALIBRATED": "Metode tercantum dalam literatur ilmiah terbitan jurnal (Sentelhas et al. 2008), namun ambang empiris belum dikalibrasi dengan sensor mikro in-situ Jawa Barat. TIDAK diizinkan memicu status level atas.",
+    "CONVENTION_PENDING": "Aturan praktis operasional lapangan yang ditetapkan oleh tim tanpa kalibrasi sensor in-situ.",
+    "INSUFFICIENT": "Parameter agrometeorologi tanpa rujukan ilmiah terverifikasi; wajib mengembalikan evidence_insufficient.",
+    "DEPRECATED": "Aturan lama yang dinonaktifkan demi mencegah kontradiksi dengan metode biofisik mekanistik aktif."
+  },
+  "rules": [
+    {
+      "id": "RULE_WATER_FAO56_DEPLETION",
+      "action": "irrigation",
+      "condition": {
+        "metric": "soil_water_depletion_Dr",
+        "operator": ">",
+        "threshold_reference": "RAW_p_x_TAW"
+      },
+      "unit": "mm",
+      "evidence_id": "FAO56_RAW_DEPLETION",
+      "status": "VERIFIED_METHOD",
+      "status_label": "DANGER",
+      "crop_scope": ["jagung", "kedelai", "tomat"],
+      "source_data": "reanalysis_forecast",
+      "config": {
+        "soil": {
+          "texture_default": "loam",
+          "texture_note": "asumsi tanah loam, nilai dipilih dari rentang FAO-56 Bab 7, Tabel 19 (https://www.fao.org/4/x0490e)",
+          "theta_fc": 0.27,
+          "theta_fc_range": [0.20, 0.30],
+          "theta_wp": 0.12,
+          "theta_wp_range": [0.07, 0.17],
+          "taw_default_mm_m": 150.0,
+          "taw_range_mm_m": [130.0, 180.0],
+          "taw_source": "FAO-56 Bab 7, Tabel 19 (https://www.fao.org/4/x0490e)"
+        },
+        "soil_classes": {
+          "sandy_loam": {
+            "name": "Sandy Loam",
+            "theta_fc_range": [0.18, 0.28],
+            "theta_wp_range": [0.06, 0.16],
+            "diff_range": [0.11, 0.15],
+            "taw_range_mm_m": [110.0, 150.0],
+            "theta_fc_chosen": 0.23,
+            "theta_wp_chosen": 0.10,
+            "taw_chosen_mm_m": 130.0,
+            "status": "CONVENTION_PENDING",
+            "note": "pilihan tim di dalam rentang FAO-56 Bab 7, Tabel 19; teks petani = PENDING_HUMAN"
+          },
+          "loam": {
+            "name": "Loam",
+            "theta_fc_range": [0.20, 0.30],
+            "theta_wp_range": [0.07, 0.17],
+            "diff_range": [0.13, 0.18],
+            "taw_range_mm_m": [130.0, 180.0],
+            "theta_fc_chosen": 0.27,
+            "theta_wp_chosen": 0.12,
+            "taw_chosen_mm_m": 150.0,
+            "status": "CONVENTION_PENDING",
+            "note": "pilihan tim di dalam rentang FAO-56 Bab 7, Tabel 19; teks petani = PENDING_HUMAN"
+          },
+          "silty_clay_loam": {
+            "name": "Silty Clay Loam",
+            "theta_fc_range": [0.30, 0.37],
+            "theta_wp_range": [0.17, 0.24],
+            "diff_range": [0.13, 0.18],
+            "taw_range_mm_m": [130.0, 180.0],
+            "theta_fc_chosen": 0.33,
+            "theta_wp_chosen": 0.18,
+            "taw_chosen_mm_m": 150.0,
+            "status": "CONVENTION_PENDING",
+            "note": "pilihan tim di dalam rentang FAO-56 Bab 7, Tabel 19; teks petani = PENDING_HUMAN"
+          }
+        },
+        "crops": {
+          "jagung": {
+            "name": "Jagung Pipil / Grain Maize",
+            "zr_range_m": [1.0, 1.7],
+            "zr_chosen_m": 1.0,
+            "zr_note": "pilihan tim di dalam rentang FAO-56 Bab 8, Tabel 22 (https://www.fao.org/4/x0490e)",
+            "p_fraction": 0.55,
+            "p_source": "FAO-56 Bab 8, Tabel 22 (p untuk ETc ≈ 5 mm/hari; https://www.fao.org/4/x0490e)",
+            "kc_ini": 0.30,
+            "kc_mid": 1.20,
+            "kc_end_options": {
+              "panen_kering": 0.35,
+              "panen_basah": 0.60
+            },
+            "panen_kering_default": true,
+            "kc_source": "FAO-56 Bab 6, Tabel 12 (https://www.fao.org/4/x0490e)",
+            "stage_lengths_days": [20, 35, 40, 30],
+            "total_days": 125,
+            "stage_length_label": "analog humid (Nigeria), bukan Jawa Barat (FAO-56 Bab 6, Tabel 11; https://www.fao.org/4/x0490e)"
+          },
+          "kedelai": {
+            "name": "Kedelai / Soybean",
+            "zr_range_m": [0.6, 1.3],
+            "zr_chosen_m": 0.8,
+            "zr_note": "pilihan tim di dalam rentang FAO-56 Bab 8, Tabel 22 (https://www.fao.org/4/x0490e)",
+            "p_fraction": 0.50,
+            "p_source": "FAO-56 Bab 8, Tabel 22 (p untuk ETc ≈ 5 mm/hari; https://www.fao.org/4/x0490e)",
+            "kc_ini": 0.40,
+            "kc_mid": 1.15,
+            "kc_end": 0.50,
+            "kc_source": "FAO-56 Bab 6, Tabel 12 (https://www.fao.org/4/x0490e)",
+            "stage_lengths_days": [15, 15, 40, 15],
+            "total_days": 85,
+            "stage_length_label": "Tropics (FAO-56 Bab 6, Tabel 11; https://www.fao.org/4/x0490e)"
+          },
+          "tomat": {
+            "name": "Tomat / Tomato",
+            "zr_range_m": [0.7, 1.5],
+            "zr_chosen_m": 0.7,
+            "zr_note": "pilihan tim di dalam rentang FAO-56 Bab 8, Tabel 22 (https://www.fao.org/4/x0490e)",
+            "p_fraction": 0.40,
+            "p_source": "FAO-56 Bab 8, Tabel 22 (p untuk ETc ≈ 5 mm/hari; https://www.fao.org/4/x0490e)",
+            "kc_ini": 0.60,
+            "kc_mid": 1.15,
+            "kc_end_range": [0.70, 0.90],
+            "kc_end_chosen": 0.80,
+            "kc_end_note": "Tabel 12 FAO-56 tidak memiliki catatan kaki untuk Tomato; nilai 0.80 adalah pilihan tim (titik tengah rentang 0.70–0.90; https://www.fao.org/4/x0490e), status CONVENTION_PENDING",
+            "kc_source": "FAO-56 Bab 6, Tabel 12 (https://www.fao.org/4/x0490e)",
+            "stage_lengths_days": [30, 40, 45, 30],
+            "total_days": 145,
+            "stage_length_label": "tidak punya baris tropis di FAO-56 Bab 6, Tabel 11 -> panjang fase tomat CONVENTION_PENDING (https://www.fao.org/4/x0490e)"
+          },
+          "padi": {
+            "name": "Padi Sawah / Wetland Rice",
+            "p_fraction": 0.20,
+            "p_note": "p 0.20 dari saturasi; modul deplesi tanah TIDAK berlaku untuk sawah tergenang; modul air padi berstatus INSUFFICIENT",
+            "kc_ini": 1.05,
+            "kc_mid": 1.20,
+            "kc_end_range": [0.60, 0.90],
+            "kc_end_chosen": 0.60,
+            "kc_source": "FAO-56 Bab 6, Tabel 12 (https://www.fao.org/4/x0490e)"
+          }
+        },
+        "limitations": {
+          "p_adjustment": "Penyesuaian p terhadap ETc: p = p_Table22 + 0.04 * (5 - ETc); rumus belum diverifikasi manusia (nomor persamaan belum dikonfirmasi). Dari Example 36 terkonfirmasi: TAW = Eq. 82, RAW = Eq. 83 (https://www.fao.org/4/x0490e). Toleransi: p dapat turun 5-10% pada tanah halus dan naik 5-10% pada tanah kasar; dicatat sebagai batasan dan tidak dipakai sebagai koreksi otomatis.",
+          "kc_climate_adjustment": "Nilai Kc_mid dan Kc_end tabel FAO-56 Bab 6, Tabel 12 berlaku untuk RHmin ≈ 45% dan angin ≈ 2 m/s; koreksi iklim (FAO-56 Eq. 62/65) belum diterapkan.",
+          "dr0_assumption": "Kondisi awal deplesi Dr0 dijadikan input eksplisit (default Dr0 = 0, kapasitas lapang), ditandai sebagai asumsi.",
+          "soil_sensitivity": "Engine mengevaluasi sensitivitas TAW pada batas 130 mm/m dan 180 mm/m; jika keputusan berubah, flag sensitif_terhadap_asumsi_tanah diset true.",
+          "peff_assumption": "P_eff = P (limpasan permukaan diabaikan) adalah asumsi; status CONVENTION_PENDING.",
+          "ks_limitation": "Ks (koefisien stres air) tidak dimodelkan; proyeksi/simulasi dihentikan pada perlintasan RAW pertama (Dr > RAW)."
+        }
+      },
+      "description": "Deplesi lengas zona perakaran (Dr) melampaui air siap serap (RAW = p * TAW) sesuai FAO-56 Bab 8, Tabel 19 & Tabel 22 (Eq. 82 & Eq. 83; https://www.fao.org/4/x0490e).",
+      "notes": "Metode biofisik terverifikasi FAO-56; satu-satunya aturan evaluasi defisit lengas irigasi aktif di engine yang boleh memicu kondisi_stres_abiotik."
+    },
+    {
+      "id": "RULE_WATER_CWB_DROUGHT",
+      "action": "irrigation",
+      "condition": {
+        "metric": "cwb_14d",
+        "operator": "<",
+        "threshold": -50.0
+      },
+      "unit": "mm",
+      "evidence_id": null,
+      "status": "DEPRECATED",
+      "status_label": "DANGER",
+      "crop_scope": ["jagung", "kedelai", "tomat"],
+      "source_data": "reanalysis_forecast",
+      "description": "Ambang batas konvensi defisit CWB kumulatif 14 hari di bawah -50 mm.",
+      "notes": "Dinonaktifkan demi ketaatan arsitektur: digantikan sepenuhnya oleh RULE_WATER_FAO56_DEPLETION."
+    },
+    {
+      "id": "RULE_WATER_CWB_WARN",
+      "action": "irrigation",
+      "condition": {
+        "metric": "cwb_14d",
+        "operator": "between",
+        "min": -50.0,
+        "max": -25.0
+      },
+      "unit": "mm",
+      "evidence_id": null,
+      "status": "DEPRECATED",
+      "status_label": "WARN",
+      "crop_scope": ["jagung", "kedelai", "tomat"],
+      "source_data": "reanalysis_forecast",
+      "description": "Ambang konvensi waspada defisit air ringan pada jendela kumulatif 14 hari antara -50 mm dan -25 mm.",
+      "notes": "Dinonaktifkan demi ketaatan arsitektur: digantikan sepenuhnya oleh RULE_WATER_FAO56_DEPLETION."
+    },
+    {
+      "id": "RULE_WATER_CWB_NORMAL",
+      "action": "irrigation",
+      "condition": {
+        "metric": "cwb_14d",
+        "operator": ">=",
+        "threshold": -25.0
+      },
+      "unit": "mm",
+      "evidence_id": null,
+      "status": "DEPRECATED",
+      "status_label": "SAFE",
+      "crop_scope": ["jagung", "kedelai", "tomat"],
+      "source_data": "reanalysis_forecast",
+      "description": "Kondisi lengas tanah konvensi normal jika defisit 14 hari tidak melebihi -25 mm.",
+      "notes": "Dinonaktifkan demi ketaatan arsitektur: digantikan sepenuhnya oleh RULE_WATER_FAO56_DEPLETION."
+    },
+    {
+      "id": "RULE_WATER_PADI_INSUFFICIENT",
+      "action": "irrigation",
+      "condition": {
+        "metric": "ponded_water_depth",
+        "operator": "is_null"
+      },
+      "unit": "mm",
+      "evidence_id": null,
+      "status": "INSUFFICIENT",
+      "status_label": "WARN",
+      "crop_scope": ["padi"],
+      "source_data": "forecast",
+      "description": "Kc padi sawah FAO-56 Bab 6, Tabel 12 mengasumsikan sawah tergenang; modul deplesi tanah tidak berlaku tanpa model genangan/perkolasi lokal.",
+      "notes": "Wajib mengembalikan evidence_insufficient untuk modul penyiraman padi."
+    },
+    {
+      "id": "RULE_IRRIG_RAIN_ACTIVE",
+      "action": "irrigation",
+      "condition": {
+        "metric": "precip_current",
+        "operator": ">=",
+        "threshold": 3.0
+      },
+      "unit": "mm",
+      "evidence_id": null,
+      "status": "CONVENTION_PENDING",
+      "status_label": "DANGER",
+      "crop_scope": ["all"],
+      "source_data": "forecast",
+      "description": "Hujan aktif >= 3.0 mm melarang penyiraman tambahan karena air hujan sudah membasahi kanopi dan permukaan tanah.",
+      "notes": "aturan praktis ditetapkan tim, tanpa sumber ilmiah"
+    },
+    {
+      "id": "RULE_IRRIG_VPD_HIGH",
+      "action": "irrigation",
+      "condition": {
+        "metric": "vpd",
+        "operator": ">",
+        "threshold": 15.0
+      },
+      "unit": "hPa",
+      "evidence_id": null,
+      "status": "CONVENTION_PENDING",
+      "status_label": "WARN",
+      "crop_scope": ["all"],
+      "source_data": "forecast",
+      "description": "Defisit tekanan uap (VPD) > 15.0 hPa saat terik siang menyebabkan air siraman menguap sangat cepat sebelum meresap ke perakaran.",
+      "notes": "aturan praktis ditetapkan tim, tanpa sumber ilmiah"
+    },
+    {
+      "id": "RULE_IRRIG_SRAD_HIGH",
+      "action": "irrigation",
+      "condition": {
+        "metric": "solar_radiation",
+        "operator": ">",
+        "threshold": 500.0
+      },
+      "unit": "W/m²",
+      "evidence_id": null,
+      "status": "CONVENTION_PENDING",
+      "status_label": "WARN",
+      "crop_scope": ["all"],
+      "source_data": "forecast",
+      "description": "Radiasi surya > 500 W/m² saat siang terik mempercepat evaporasi langsung dari permukaan tanah.",
+      "notes": "aturan praktis ditetapkan tim, tanpa sumber ilmiah"
+    },
+    {
+      "id": "RULE_IRRIG_SOIL_SATURATED",
+      "action": "irrigation",
+      "condition": {
+        "metric": "soil_moisture_relative_to_fc",
+        "operator": ">=",
+        "threshold": 1.0
+      },
+      "unit": "fraction",
+      "evidence_id": null,
+      "status": "INSUFFICIENT",
+      "status_label": "DANGER",
+      "crop_scope": ["all"],
+      "source_data": "forecast",
+      "description": "Kondisi tanah jenuh melarang penyiraman.",
+      "notes": "Dinonaktifkan; ambang absolut 0.70 m³/m³ sebelumnya melebihi porositas tanah mineral. Memerlukan kurva retensi lokal terverifikasi."
+    },
+    {
+      "id": "RULE_WATERLOGGING_3D",
+      "action": "drainage_inspection",
+      "condition": {
+        "metric": "precip_3d_sum",
+        "operator": ">=",
+        "threshold": 100.0
+      },
+      "unit": "mm",
+      "evidence_id": null,
+      "status": "CONVENTION_PENDING",
+      "status_label": "DANGER",
+      "crop_scope": ["all"],
+      "source_data": "reanalysis_forecast",
+      "description": "Akumulasi presipitasi 3 hari >= 100 mm memicu potensi anoksia akar dan kebutuhan inspeksi saluran drainase.",
+      "notes": "aturan praktis ditetapkan tim, tanpa sumber ilmiah"
+    },
+    {
+      "id": "RULE_WATERLOGGING_CWD",
+      "action": "drainage_inspection",
+      "condition": {
+        "metric": "consecutive_wet_days",
+        "operator": ">=",
+        "threshold": 5
+      },
+      "unit": "hari",
+      "evidence_id": null,
+      "status": "CONVENTION_PENDING",
+      "status_label": "DANGER",
+      "crop_scope": ["all"],
+      "source_data": "reanalysis_forecast",
+      "description": "Hari hujan basah berurutan >= 5 hari memicu kejenuhan tanah berkepanjangan.",
+      "notes": "aturan praktis ditetapkan tim, tanpa sumber ilmiah"
+    },
+    {
+      "id": "RULE_OPT_LWD_HOURLY_RH90",
+      "action": "scouting_opt",
+      "condition": {
+        "metric": "daily_rh90_hours_sum",
+        "operator": ">=",
+        "threshold": 10
+      },
+      "unit": "jam/hari",
+      "evidence_id": "SENTELHAS_2008_LWD",
+      "status": "METHOD_UNCALIBRATED",
+      "status_label": "WARN",
+      "crop_scope": ["cabai", "tomat"],
+      "source_data": "forecast",
+      "description": "Jumlah jam per hari dengan kelembapan relatif (RH) >= 90% dari data cuaca jam-jaman (hourly) sebagai estimator durasi lama basah daun (LWD). Sentelhas et al. (2008) mendukung RH >= 90% sebagai estimator lama basah daun, BUKAN ambang 10 jam atau deteksi spora/antraknosa. Ambang batas 10 jam berstatus CONVENTION_PENDING ('ambang ditetapkan tim, tanpa sumber'). Indikator kondisi lembap panjang yang mendukung jamur.",
+      "notes": "Metode estimator LWD tercantum dalam jurnal (Sentelhas et al. 2008, Agric. For. Meteorol. 148(3):392–400); ambang 10 jam ditetapkan tim tanpa sumber. Berstatus METHOD_UNCALIBRATED: aturan ini TIDAK boleh mengisi kondisi_stres_abiotik atau kondisi_mendukung_OPT level atas. Jika data per jam tidak tersedia -> evidence_insufficient."
+    },
+    {
+      "id": "RULE_SPRAY_WIND_SAFE",
+      "action": "spraying",
+      "condition": {
+        "metric": "wind_speed",
+        "operator": "between",
+        "min": 3.0,
+        "max": 12.0
+      },
+      "unit": "km/h",
+      "evidence_id": null,
+      "status": "CONVENTION_PENDING",
+      "status_label": "SAFE",
+      "crop_scope": ["all"],
+      "source_data": "forecast",
+      "description": "Kecepatan angin 3–12 km/j aman dan ideal untuk penyemprotan kanopi.",
+      "notes": "aturan praktis ditetapkan tim, tanpa sumber ilmiah"
+    },
+    {
+      "id": "RULE_SPRAY_WIND_CALM_INVERSION",
+      "action": "spraying",
+      "condition": {
+        "metric": "wind_speed",
+        "operator": "<",
+        "threshold": 3.0
+      },
+      "unit": "km/h",
+      "evidence_id": null,
+      "status": "CONVENTION_PENDING",
+      "status_label": "WARN",
+      "crop_scope": ["all"],
+      "source_data": "forecast",
+      "description": "Kecepatan angin < 3 km/j memicu risiko inversi termal di mana droplet halus melayang di udara tanpa penetrasi ke kanopi.",
+      "notes": "aturan praktis ditetapkan tim, tanpa sumber ilmiah"
+    },
+    {
+      "id": "RULE_SPRAY_WIND_WARN_TRANSITION",
+      "action": "spraying",
+      "condition": {
+        "metric": "wind_speed",
+        "operator": "between",
+        "min": 12.0,
+        "max": 15.0
+      },
+      "unit": "km/h",
+      "evidence_id": null,
+      "status": "CONVENTION_PENDING",
+      "status_label": "WARN",
+      "crop_scope": ["all"],
+      "source_data": "forecast",
+      "description": "Kecepatan angin 12–15 km/j merupakan zona transisi: risiko drift mulai meningkat, gunakan nosel droplet kasar dan rendahkan boom.",
+      "notes": "aturan praktis ditetapkan tim, tanpa sumber ilmiah"
+    },
+    {
+      "id": "RULE_SPRAY_WIND_DANGER",
+      "action": "spraying",
+      "condition": {
+        "metric": "wind_speed",
+        "operator": ">",
+        "threshold": 15.0
+      },
+      "unit": "km/h",
+      "evidence_id": null,
+      "status": "CONVENTION_PENDING",
+      "status_label": "DANGER",
+      "crop_scope": ["all"],
+      "source_data": "forecast",
+      "description": "Kecepatan angin > 15 km/j berbahaya karena droplet terhempas (spray drift) keluar dari target tanaman.",
+      "notes": "aturan praktis ditetapkan tim, tanpa sumber ilmiah"
+    },
+    {
+      "id": "RULE_SPRAY_TEMP_SAFE",
+      "action": "spraying",
+      "condition": {
+        "metric": "temperature",
+        "operator": "<",
+        "threshold": 30.0
+      },
+      "unit": "°C",
+      "evidence_id": null,
+      "status": "CONVENTION_PENDING",
+      "status_label": "SAFE",
+      "crop_scope": ["all"],
+      "source_data": "forecast",
+      "description": "Suhu udara < 30°C mencegah penguapan droplet semprot dan fotodegradasi bahan aktif.",
+      "notes": "aturan praktis ditetapkan tim, tanpa sumber ilmiah"
+    },
+    {
+      "id": "RULE_FERT_RAIN_12H",
+      "action": "fertilizing",
+      "condition": {
+        "metric": "precip_12h_forecast",
+        "operator": ">=",
+        "threshold": 8.0
+      },
+      "unit": "mm",
+      "evidence_id": null,
+      "status": "CONVENTION_PENDING",
+      "status_label": "DANGER",
+      "crop_scope": ["all"],
+      "source_data": "forecast",
+      "description": "Prakiraan hujan >= 8.0 mm dalam 12 jam memicu risiko pupuk larut hanyut terbawa limpasan permukaan.",
+      "notes": "aturan praktis ditetapkan tim, tanpa sumber ilmiah"
+    },
+    {
+      "id": "RULE_HARVEST_RH_SAFE",
+      "action": "harvesting",
+      "condition": {
+        "metric": "relative_humidity",
+        "operator": "<=",
+        "threshold": 75.0
+      },
+      "unit": "%",
+      "evidence_id": null,
+      "status": "CONVENTION_PENDING",
+      "status_label": "SAFE",
+      "crop_scope": ["padi", "jagung", "kedelai"],
+      "source_data": "forecast",
+      "description": "Kelembapan relatif udara <= 75% mendukung pemanenan gabah dan polong kering.",
+      "notes": "aturan praktis ditetapkan tim, tanpa sumber ilmiah"
+    },
+    {
+      "id": "RULE_HARVEST_RH_WARN",
+      "action": "harvesting",
+      "condition": {
+        "metric": "relative_humidity",
+        "operator": "between",
+        "min": 75.0,
+        "max": 85.0
+      },
+      "unit": "%",
+      "evidence_id": null,
+      "status": "CONVENTION_PENDING",
+      "status_label": "WARN",
+      "crop_scope": ["padi", "jagung", "kedelai"],
+      "source_data": "forecast",
+      "description": "Kelembapan relatif udara 75–85% merupakan zona transisi kelembapan panen: perlu kewaspadaan dan pengeringan segera setelah panen.",
+      "notes": "aturan praktis ditetapkan tim, tanpa sumber ilmiah"
+    },
+    {
+      "id": "RULE_HARVEST_RH_DANGER",
+      "action": "harvesting",
+      "condition": {
+        "metric": "relative_humidity",
+        "operator": ">",
+        "threshold": 85.0
+      },
+      "unit": "%",
+      "evidence_id": null,
+      "status": "CONVENTION_PENDING",
+      "status_label": "DANGER",
+      "crop_scope": ["padi", "jagung", "kedelai"],
+      "source_data": "forecast",
+      "description": "Kelembapan udara > 85% memicu risiko pembasahan dan pembusukan biji hasil panen.",
+      "notes": "aturan praktis ditetapkan tim, tanpa sumber ilmiah"
+    },
+    {
+      "id": "RULE_PRUNE_RAIN_8H",
+      "action": "pruning",
+      "condition": {
+        "metric": "precip_8h_forecast",
+        "operator": ">=",
+        "threshold": 2.0
+      },
+      "unit": "mm",
+      "evidence_id": null,
+      "status": "CONVENTION_PENDING",
+      "status_label": "DANGER",
+      "crop_scope": ["tomat", "cabai"],
+      "source_data": "forecast",
+      "description": "Prakiraan hujan >= 2.0 mm dalam 8 jam ke depan meningkatkan risiko infeksi jamur pada luka pangkas yang belum membentuk kalus.",
+      "notes": "aturan praktis ditetapkan tim, tanpa sumber ilmiah"
+    },
+    {
+      "id": "RULE_FERT_LOCKOUT_14D",
+      "action": "fertilizing",
+      "condition": {
+        "metric": "days_since_last_fertilization",
+        "operator": "<",
+        "threshold": 14
+      },
+      "unit": "hari",
+      "evidence_id": null,
+      "status": "CONVENTION_PENDING",
+      "status_label": "DANGER",
+      "crop_scope": ["all"],
+      "source_data": "logbook",
+      "description": "Penguncian pemupukan selama 14 hari pasca aplikasi pupuk untuk mencegah akumulasi kimia dan toksisitas garam.",
+      "notes": "ditetapkan tim, tanpa sumber"
+    }
+  ]
+}

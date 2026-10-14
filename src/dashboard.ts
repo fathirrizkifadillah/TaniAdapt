@@ -4,7 +4,7 @@
 // ============================================================================
 
 import { INDONESIAN_LOCATIONS, CROP_MODELS, LITERATURE_DATABASE, LiteratureExtraction16 } from './data';
-import { fetchAgriculturalWeather, WeatherFetchResult } from './services';
+import { fetchAgriculturalWeather, WeatherFetchResult, askGroqAgronomist } from './services';
 import { runAgroDecisionEngine, resolveActiveGrowthStage, calculateVPD } from './engine';
 import { CropId, AgriculturalLocation, CropEngineResult, RiskLevel, TemporalFeatures } from './types';
 
@@ -963,46 +963,75 @@ function render() {
 }
 
 // ---------- RAG EXPLANATION ASSISTANT ----------
-function askQuestion(q: string) {
-  let answer = '';
-  let sourceDoc = '';
+async function askQuestion(q: string) {
+  state.thread.push({ me: true, text: q });
+  renderChat();
 
   const crop = CROP_MODELS[state.cropId];
   const res = state.engineResult;
   const f = state.features;
-  const qLower = q.toLowerCase();
 
-  if (qLower.includes('kenapa') || qLower.includes('mengapa') || qLower.includes('alasan') || qLower.includes('risiko')) {
-    answer = `Tingkat risiko ${res?.overallRisk} pada ${crop?.name} fase ${res?.stageName} (${state.currentHST} HST) disebabkan oleh akumulasi ${f?.consecutiveRainyDays || 0} hari hujan berturut-turut dengan kelembapan 7 hari rata-rata ${Math.round(f?.rolling7dRH || 85)}% dan VPD ${f?.currentVPD.toFixed(2)} kPa. Kondisi kebasahan daun ini melampaui ambang kritis sporulasi jamur yang diteliti oleh Balitsa (2020).`;
-    sourceDoc = 'Balitsa (2020)';
-  } else if (qLower.includes('pupuk') || qLower.includes('memupuk') || qLower.includes('fertil')) {
-    if (!res?.fertilization.safeToApply) {
-      answer = `Sistem MEREKOMENDASIKAN MENUNDA pemupukan nitrogen saat ini. Sesuai panduan FAO-56 (Allen et al., 1998), curah hujan atau prakiraan lebat dalam 48 jam ke depan memicu risiko pencucian (leaching) nitrat ke bawah zona perakaran hingga 65%, yang merugikan biaya petani dan mencemari air tanah. Tunggu jendela cerah stabil minimal 48 jam.`;
-    } else {
-      answer = `Kondisi aman untuk aplikasi pupuk susulan. Prakiraan 48 jam ke depan menunjukkan curah hujan rendah (<15 mm) sehingga pupuk dapat terserap optimal oleh perakaran aktif.`;
-    }
-    sourceDoc = 'FAO-56 (Allen et al.)';
-  } else if (qLower.includes('besok') || qLower.includes('tidak hujan') || qLower.includes('skenario') || qLower.includes('kering')) {
-    answer = `Jika prakiraan cuaca berubah menjadi kering selama 2–3 hari berturut-turut, defisit tekanan uap (VPD) akan naik ke kisaran 0.8–1.2 kPa dan akumulasi kelembapan tajuk menurun drastis. Indeks risiko akan turun otomatis dari ${res?.overallRisk} menjadi Sedang atau Rendah, membuka jendela aman untuk penyemprotan protektan dan pemupukan.`;
-    sourceDoc = 'Dynamic Scenario Engine';
-  } else if (qLower.includes('air') || qLower.includes('drainase') || qLower.includes('siram') || qLower.includes('genangan')) {
-    if (res?.irrigation.status === 'DRAINASE_MENDESAK') {
-      answer = `Status saat ini: DRAINASE MENDESAK! Hujan kumulatif 7 hari mencapai ${Math.round(f?.rolling7dRain || 0)} mm. Tanah telah berada di atas kapasitas lapang (waterlogging). Genangan air lebih dari 24 jam menyebabkan asfiksia perakaran (kekurangan oksigen) dan mempermudah penetrasi bakteri Ralstonia solanacearum. Segera bersihkan parit pembuangan!`;
-    } else {
-      answer = `Kadar lengas tanah berada dalam batas normal untuk fase ini. Tidak diperlukan pengairan tambahan maupun tindakan drainase darurat.`;
-    }
-    sourceDoc = 'Agro-Hydrology Engine';
-  } else if (qLower.includes('dasar') || qLower.includes('ilmiah') || qLower.includes('paper') || qLower.includes('bukti') || qLower.includes('riset')) {
-    const allDocs = Object.values(LITERATURE_DATABASE);
-    const relevantDoc = allDocs.find(l => l.crop.toLowerCase().includes(state.cropId)) || allDocs[0];
-    answer = `Keputusan ini mengacu pada riset "${relevantDoc.title}" oleh ${relevantDoc.authors} (${relevantDoc.year}) di ${relevantDoc.location}. Ambang batas kritis yang digunakan adalah: ${relevantDoc.applicableThreshold}. Anda dapat membuka modal "Bukti Ilmiah (16 Field)" untuk rincian dataset lengkapnya.`;
-    sourceDoc = `${relevantDoc.authors} (${relevantDoc.year})`;
-  } else {
-    answer = `Berdasarkan evaluasi engine TaniAdapt untuk ${crop?.name} di ${state.location.name}: Status risiko berada pada level ${res?.overallRisk}. Rekomendasi utama: ${res?.recommendations[0]?.title || 'Pantau perkembangan lahan rutin'}. Tanyakan skenario spesifik seperti pemupukan, drainase, atau dasar ilmiah jika membutuhkan penjelasan lebih dalam.`;
-    sourceDoc = 'TaniAdapt Agro-Engine';
+  // Coba panggil LLM Groq (model openai/gpt-oss-120b)
+  let groqResult = null;
+  if (res && crop) {
+    groqResult = await askGroqAgronomist(q, {
+      cropName: crop.name,
+      scientificName: crop.scientificName,
+      locationName: state.location.name,
+      hst: state.currentHST,
+      stageName: res.stageName,
+      overallRisk: res.overallRisk,
+      recommendations: res.recommendations.map(r => `${r.title}: ${r.action}`),
+      features: f ? {
+        consecutiveRainyDays: f.consecutiveRainyDays,
+        rolling3dRain: f.rolling3dRain,
+        rolling7dRain: f.rolling7dRain,
+        rolling7dRH: f.rolling7dRH,
+        currentVPD: f.currentVPD,
+      } : null,
+    });
   }
 
-  state.thread.push({ me: true, text: q });
+  let answer = '';
+  let sourceDoc = '';
+
+  if (groqResult && groqResult.text) {
+    answer = groqResult.text;
+    sourceDoc = groqResult.sourceDoc;
+  } else {
+    const qLower = q.toLowerCase();
+
+    if (qLower.includes('kenapa') || qLower.includes('mengapa') || qLower.includes('alasan') || qLower.includes('risiko')) {
+      answer = `Tingkat risiko ${res?.overallRisk} pada ${crop?.name} fase ${res?.stageName} (${state.currentHST} HST) disebabkan oleh akumulasi ${f?.consecutiveRainyDays || 0} hari hujan berturut-turut dengan kelembapan 7 hari rata-rata ${Math.round(f?.rolling7dRH || 85)}% dan VPD ${f?.currentVPD.toFixed(2)} kPa. Kondisi kebasahan daun ini melampaui ambang kritis sporulasi jamur yang diteliti oleh Balitsa (2020).`;
+      sourceDoc = 'Balitsa (2020)';
+    } else if (qLower.includes('pupuk') || qLower.includes('memupuk') || qLower.includes('fertil')) {
+      if (!res?.fertilization.safeToApply) {
+        answer = `Sistem MEREKOMENDASIKAN MENUNDA pemupukan nitrogen saat ini. Sesuai panduan FAO-56 (Allen et al., 1998), curah hujan atau prakiraan lebat dalam 48 jam ke depan memicu risiko pencucian (leaching) nitrat ke bawah zona perakaran hingga 65%, yang merugikan biaya petani dan mencemari air tanah. Tunggu jendela cerah stabil minimal 48 jam.`;
+      } else {
+        answer = `Kondisi aman untuk aplikasi pupuk susulan. Prakiraan 48 jam ke depan menunjukkan curah hujan rendah (<15 mm) sehingga pupuk dapat terserap optimal oleh perakaran aktif.`;
+      }
+      sourceDoc = 'FAO-56 (Allen et al.)';
+    } else if (qLower.includes('besok') || qLower.includes('tidak hujan') || qLower.includes('skenario') || qLower.includes('kering')) {
+      answer = `Jika prakiraan cuaca berubah menjadi kering selama 2–3 hari berturut-turut, defisit tekanan uap (VPD) akan naik ke kisaran 0.8–1.2 kPa dan akumulasi kelembapan tajuk menurun drastis. Indeks risiko akan turun otomatis dari ${res?.overallRisk} menjadi Sedang atau Rendah, membuka jendela aman untuk penyemprotan protektan dan pemupukan.`;
+      sourceDoc = 'Dynamic Scenario Engine';
+    } else if (qLower.includes('air') || qLower.includes('drainase') || qLower.includes('siram') || qLower.includes('genangan')) {
+      if (res?.irrigation.status === 'DRAINASE_MENDESAK') {
+        answer = `Status saat ini: DRAINASE MENDESAK! Hujan kumulatif 7 hari mencapai ${Math.round(f?.rolling7dRain || 0)} mm. Tanah telah berada di atas kapasitas lapang (waterlogging). Genangan air lebih dari 24 jam menyebabkan asfiksia perakaran (kekurangan oksigen) dan mempermudah penetrasi bakteri Ralstonia solanacearum. Segera bersihkan parit pembuangan!`;
+      } else {
+        answer = `Kadar lengas tanah berada dalam batas normal untuk fase ini. Tidak diperlukan pengairan tambahan maupun tindakan drainase darurat.`;
+      }
+      sourceDoc = 'Agro-Hydrology Engine';
+    } else if (qLower.includes('dasar') || qLower.includes('ilmiah') || qLower.includes('paper') || qLower.includes('bukti') || qLower.includes('riset')) {
+      const allDocs = Object.values(LITERATURE_DATABASE);
+      const relevantDoc = allDocs.find(l => l.crop.toLowerCase().includes(state.cropId)) || allDocs[0];
+      answer = `Keputusan ini mengacu pada riset "${relevantDoc.title}" oleh ${relevantDoc.authors} (${relevantDoc.year}) di ${relevantDoc.location}. Ambang batas kritis yang digunakan adalah: ${relevantDoc.applicableThreshold}. Anda dapat membuka modal "Bukti Ilmiah (16 Field)" untuk rincian dataset lengkapnya.`;
+      sourceDoc = `${relevantDoc.authors} (${relevantDoc.year})`;
+    } else {
+      answer = `Berdasarkan evaluasi engine TaniAdapt untuk ${crop?.name} di ${state.location.name}: Status risiko berada pada level ${res?.overallRisk}. Rekomendasi utama: ${res?.recommendations[0]?.title || 'Pantau perkembangan lahan rutin'}. Tanyakan skenario spesifik seperti pemupukan, drainase, atau dasar ilmiah jika membutuhkan penjelasan lebih dalam.`;
+      sourceDoc = 'TaniAdapt Agro-Engine';
+    }
+  }
+
   state.thread.push({ me: false, text: answer, sourceDoc });
   renderChat();
 }

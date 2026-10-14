@@ -1,0 +1,235 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://taniadapt.id/schemas/engine_output.schema.json",
+  "title": "TaniAdaptEngineOutput",
+  "description": "JSON Schema Draft 2020-12 untuk payload kontrak keluaran Decision Engine TaniAdapt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "crop",
+    "location",
+    "as_of",
+    "issue_time",
+    "timezone",
+    "rules_version",
+    "data_version",
+    "layer",
+    "indicators",
+    "actions",
+    "hourly",
+    "status",
+    "evidence_tier",
+    "evidence_refs",
+    "claim_allowed",
+    "claim_forbidden",
+    "limitations",
+    "action_ids"
+  ],
+  "properties": {
+    "crop": {
+      "type": "string",
+      "enum": ["padi", "jagung", "kedelai", "cabai", "tomat"]
+    },
+    "location": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kabkota", "cell_id", "weather_source"],
+      "properties": {
+        "kabkota": { "type": "string" },
+        "cell_id": { "type": "string" },
+        "weather_source": { "type": "string" }
+      }
+    },
+    "as_of": {
+      "type": "string",
+      "format": "date"
+    },
+    "issue_time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "timezone": {
+      "type": "string",
+      "enum": ["Asia/Jakarta"]
+    },
+    "rules_version": {
+      "type": "string"
+    },
+    "data_version": {
+      "type": "string"
+    },
+    "data_freshness_days": {
+      "type": ["integer", "null"]
+    },
+    "layer": {
+      "type": "string",
+      "enum": ["seasonal", "daily", "hourly"]
+    },
+    "source_data": {
+      "type": ["string", "null"],
+      "enum": ["forecast", "reanalysis", "reanalysis_forecast", "station", null]
+    },
+    "forecast_uncertainty": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Probabilitas presipitasi (%) dari model numerik cuaca, atau null jika tidak tersedia"
+    },
+    "indicators": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "value", "unit", "relative_rank", "rank_basis", "rank_basis_n"],
+        "properties": {
+          "id": { "type": "string" },
+          "rule_id": { "type": ["string", "null"] },
+          "value": { "type": ["number", "null"] },
+          "unit": { "type": "string" },
+          "relative_rank": {
+            "type": ["string", "null"],
+            "enum": ["low", "typical", "unusually_high", null]
+          },
+          "rank_basis": { "type": ["string", "null"] },
+          "rank_basis_n": { "type": ["integer", "null"] }
+        }
+      }
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["action", "window", "status_label", "rule_ids", "rule_status", "evidence_refs", "reason"],
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": ["irrigation", "fertilizing", "spraying", "harvesting", "pruning", "drainage_inspection", "scouting_opt"]
+          },
+          "window": { "type": "string" },
+          "status_label": {
+            "type": "string",
+            "enum": ["Sangat Aman", "Perlu Waspada", "Hindari"]
+          },
+          "rule_ids": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "rule_status": {
+            "type": "string",
+            "enum": ["VERIFIED_METHOD", "METHOD_UNCALIBRATED", "CONVENTION_PENDING", "INSUFFICIENT", "DEPRECATED"]
+          },
+          "evidence_refs": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "reason": { "type": "string" }
+        }
+      }
+    },
+    "hourly": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["hour", "status", "reason"],
+        "properties": {
+          "hour": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["SAFE", "WARN", "DANGER"]
+          },
+          "reason": { "type": "string" }
+        }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": ["normal", "kondisi_stres_abiotik", "evidence_insufficient"],
+      "description": "Status level atas engine. Status kondisi_mendukung_OPT tidak terjangkau (tak aktif) di level atas karena belum ada aturan OPT berstatus VERIFIED_METHOD."
+    },
+    "evidence_tier": {
+      "type": "string",
+      "enum": ["data_learned", "published_model", "literature_transfer", "convention_pending", "insufficient"]
+    },
+    "evidence_refs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "claim_allowed": {
+      "type": "string"
+    },
+    "claim_forbidden": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "limitations": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "action_ids": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "sensitif_terhadap_asumsi_tanah": {
+      "type": "boolean"
+    },
+    "sensitif_terhadap_asumsi_hujan_efektif": {
+      "type": "boolean"
+    },
+    "proyeksi_7hari": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["hari", "tanggal", "dr_prakiraan_mm", "dr_tanpa_hujan_mm", "raw_mm"],
+        "properties": {
+          "hari": { "type": "integer" },
+          "tanggal": { "type": "string" },
+          "dr_prakiraan_mm": { "type": "number" },
+          "dr_tanpa_hujan_mm": { "type": "number" },
+          "raw_mm": { "type": "number" }
+        }
+      }
+    },
+    "hari_pertama_melewati_raw_prakiraan": {
+      "type": ["string", "null"]
+    },
+    "hari_pertama_melewati_raw_tanpa_hujan": {
+      "type": ["string", "null"]
+    },
+    "dr_awal_status": {
+      "type": "string",
+      "enum": ["pasti", "interval"]
+    },
+    "dr_interval_mm": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "konvergen_pada": {
+      "type": ["string", "null"]
+    },
+    "asumsi_deplesi_awal_dr0": {
+      "type": "number"
+    }
+  },
+  "if": {
+    "properties": {
+      "status": {
+        "const": "kondisi_stres_abiotik"
+      }
+    }
+  },
+  "then": {
+    "properties": {
+      "evidence_refs": {
+        "minItems": 1,
+        "contains": {
+          "const": "RULE_WATER_FAO56_DEPLETION"
+        }
+      }
+    }
+  }
+}
