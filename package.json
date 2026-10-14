@@ -19,11 +19,16 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "@rolldown/binding-win32-x64-msvc": "^1.2.13",
     "@types/node": "^24.13.3",
     "oxlint": "^1.81.0",
     "typescript": "~6.0.2",
     "vite": "^8.3.0",
     "vitest": "^5.0.4"
+  },
+  "optionalDependencies": {
+    "@rolldown/binding-linux-x64-gnu": "^1.2.13",
+    "@rolldown/binding-win32-x64-msvc": "^1.2.13",
+    "lightningcss-linux-x64-gnu": "^1.29.1",
+    "lightningcss-win32-x64-msvc": "^1.29.1"
   }
 }
