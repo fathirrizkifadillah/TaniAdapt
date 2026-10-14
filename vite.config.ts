@@ -1,10 +1,22 @@
 import { defineConfig } from 'vitest/config';
 import { resolve } from 'path';
 import { fileURLToPath } from 'url';
+import { authMiddleware } from './src/server/authApi.ts';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 export default defineConfig({
+  plugins: [
+    {
+      name: 'taniadapt-auth-api',
+      configureServer(server) {
+        server.middlewares.use(authMiddleware);
+      },
+      configurePreviewServer(server) {
+        server.middlewares.use(authMiddleware);
+      },
+    },
+  ],
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),

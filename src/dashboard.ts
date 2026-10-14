@@ -4,13 +4,28 @@
 // ============================================================================
 
 import { INDONESIAN_LOCATIONS, CROP_MODELS, LITERATURE_DATABASE, LiteratureExtraction16 } from './data';
-import { fetchAgriculturalWeather, WeatherFetchResult, askGroqAgronomist } from './services';
+import {
+  fetchAgriculturalWeather,
+  WeatherFetchResult,
+  askGroqAgronomist,
+  getStoredUser,
+  getStoredProfile,
+  getStoredUIMode,
+  setStoredUIMode,
+  loginUser,
+  registerUser,
+  clearAuthSession,
+  generateAndDownloadWordReport,
+  AuthUser,
+  UserProfileData,
+} from './services';
 import { runAgroDecisionEngine, resolveActiveGrowthStage, calculateVPD } from './engine';
 import { CropId, AgriculturalLocation, CropEngineResult, RiskLevel, TemporalFeatures } from './types';
 
 // ---------- TYPES & INTERFACES ----------
 export type StressScenario = 'normal' | 'flood' | 'drought';
 export type MetricType = 'hujan' | 'rh' | 'suhu' | 'vpd';
+export type UIMode = 'default' | 'pro';
 
 interface PlotTrailItem {
   dayLabel: string;
@@ -41,11 +56,16 @@ interface ChatMessage {
 // ---------- STATE UTAMA ----------
 const state = {
   view: 'ringkasan' as 'ringkasan' | 'cuaca' | 'tanya' | 'lahan',
-  cropId: 'cabai' as CropId,
+  cropId: 'cabai' as CropId, // Default Cabai / Cabe Merah
   location: INDONESIAN_LOCATIONS[0],
   currentHST: 55,
   metric: 'hujan' as MetricType,
   stressMode: 'normal' as StressScenario,
+  uiMode: 'default' as UIMode,
+  authUser: null as AuthUser | null,
+  authProfile: null as UserProfileData | null,
+  isAuthModalOpen: false,
+  authTab: 'login' as 'login' | 'register',
   fieldIndex: 0,
   showForm: false,
   isEvidenceModalOpen: false,
@@ -65,7 +85,7 @@ const state = {
 
 // ---------- CONSTANTS & HELPER UI ----------
 const CROPS_LIST: { id: CropId; label: string; scientific: string }[] = [
-  { id: 'cabai', label: 'Cabai Merah', scientific: 'Capsicum annuum L.' },
+  { id: 'cabai', label: 'Cabai / Cabe Merah', scientific: 'Capsicum annuum L.' },
   { id: 'padi', label: 'Padi Sawah', scientific: 'Oryza sativa L.' },
   { id: 'bawang_merah', label: 'Bawang Merah', scientific: 'Allium ascalonicum' },
   { id: 'jagung', label: 'Jagung Hibrida', scientific: 'Zea mays L.' },
@@ -696,7 +716,6 @@ function renderChat() {
           <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; color: ${m.me ? 'var(--ink)' : 'var(--accent)'}">
             ${m.me ? 'Petani / Pengguna' : 'Asisten Agronomis TaniAdapt'}
           </span>
-          ${m.sourceDoc ? `<span style="font-size: 10px; background: rgba(0,0,0,0.25); padding: 2px 6px; border-radius: 4px; color: var(--dark-muted)">${m.sourceDoc}</span>` : ''}
         </div>
         <span style="line-height: 1.5; font-size: 14px">${esc(m.text)}</span>
       </div>`;
@@ -791,7 +810,7 @@ function renderFields() {
   const curPlot = state.plots[state.fieldIndex];
   if (curPlot) {
     bindText('fieldName', curPlot.name);
-    bindText('fieldLine', `${curPlot.name} &bull; ${curPlot.placeName}`);
+    bindText('fieldLine', `${curPlot.name} • ${curPlot.placeName}`);
 
     const trailCont = $('#trail');
     if (trailCont) {
@@ -937,9 +956,84 @@ function renderViews() {
   bindText('cropLabel', CROPS_LIST.find(c => c.id === state.cropId)?.label || 'Tanaman');
 }
 
+function renderUIMode() {
+  const defaultBtn = $('#mode-default-btn');
+  const proBtn = $('#mode-pro-btn');
+  const isDefault = state.uiMode === 'default';
+
+  if (defaultBtn) {
+    defaultBtn.style.background = isDefault ? 'var(--green)' : 'transparent';
+    defaultBtn.style.color = isDefault ? '#FFFFFF' : 'var(--ink)';
+  }
+  if (proBtn) {
+    proBtn.style.background = !isDefault ? 'var(--green)' : 'transparent';
+    proBtn.style.color = !isDefault ? '#FFFFFF' : 'var(--ink)';
+  }
+
+  // Toggle "Bukti Ilmiah (16 Field)" visibility based on Mode
+  const evBox = $('#evidence-sidebar-container');
+  if (evBox) {
+    evBox.style.display = state.uiMode === 'pro' ? 'block' : 'none';
+  }
+}
+
+function renderAuth() {
+  const container = $('#auth-status-container');
+  if (!container) return;
+
+  if (state.authUser) {
+    const isPro = state.authUser.user_type === 'farm_organisasi';
+    container.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 8px">
+        <div style="display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2">
+          <span style="font-size: 13px; font-weight: 700; color: var(--ink)">${esc(state.authUser.full_name)}</span>
+          <span style="font-size: 10px; font-family: 'IBM Plex Mono', monospace; background: var(--sage); color: var(--green); padding: 1px 6px; border-radius: 4px; font-weight: 700">
+            ${isPro ? '🏢 FARM / PRO' : '👨‍🌾 PETANI'}
+          </span>
+        </div>
+        <button type="button" id="btn-logout" style="min-height: 32px; padding: 0 12px; border-radius: 999px; background: transparent; border: 1px solid var(--line); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--muted)">Keluar</button>
+      </div>
+    `;
+  } else {
+    container.innerHTML = `
+      <button type="button" id="open-auth-btn" style="min-height: 36px; padding: 0 14px; border-radius: 999px; background: var(--green); color: #FFFFFF; border: none; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(30,77,53,0.15)">
+        <span>👤 Masuk / Profil</span>
+      </button>
+    `;
+  }
+}
+
+function renderAuthModal() {
+  const modal = $('#auth-modal');
+  if (!modal) return;
+  modal.hidden = !state.isAuthModalOpen;
+
+  const loginTab = $('#auth-tab-login');
+  const regTab = $('#auth-tab-register');
+  const loginForm = $('#login-form');
+  const regForm = $('#register-form');
+
+  const isLogin = state.authTab === 'login';
+  if (loginTab) {
+    loginTab.style.color = isLogin ? 'var(--green)' : 'var(--muted)';
+    loginTab.style.borderBottom = isLogin ? '2px solid var(--green)' : 'none';
+    loginTab.style.fontWeight = isLogin ? '700' : '600';
+  }
+  if (regTab) {
+    regTab.style.color = !isLogin ? 'var(--green)' : 'var(--muted)';
+    regTab.style.borderBottom = !isLogin ? '2px solid var(--green)' : 'none';
+    regTab.style.fontWeight = !isLogin ? '700' : '600';
+  }
+
+  if (loginForm) loginForm.style.display = isLogin ? 'flex' : 'none';
+  if (regForm) regForm.style.display = !isLogin ? 'flex' : 'none';
+}
+
 function render() {
   renderNav();
   renderViews();
+  renderUIMode();
+  renderAuth();
   renderLocationDropdown();
   renderCrops();
   renderGrowthStages();
@@ -960,6 +1054,7 @@ function render() {
 
   renderEvidenceModal();
   renderPrintModal();
+  renderAuthModal();
 }
 
 // ---------- RAG EXPLANATION ASSISTANT ----------
@@ -1253,12 +1348,14 @@ function setupEventListeners() {
     }
 
     // Direct Navigation Buttons
-    if (target.id === 'go-cuaca') {
+    const goCuaca = target.closest('#go-cuaca');
+    if (goCuaca) {
       state.view = 'cuaca';
       render();
       return;
     }
-    if (target.id === 'ask-why') {
+    const askWhy = target.closest('#ask-why');
+    if (askWhy) {
       state.view = 'tanya';
       askQuestion('Kenapa ini direkomendasikan saat ini?');
       render();
@@ -1268,7 +1365,147 @@ function setupEventListeners() {
       sendChat();
       return;
     }
+
+    // UI Mode Toggle (Petani Default vs Farm/Riset Pro)
+    const modeBtn = target.closest('[data-ui-mode]') as HTMLElement;
+    if (modeBtn && modeBtn.dataset.uiMode) {
+      state.uiMode = modeBtn.dataset.uiMode as UIMode;
+      setStoredUIMode(state.uiMode);
+      render();
+      return;
+    }
+
+    // Word Document Download (.docx)
+    const dlWordBtn = target.closest('#download-word-btn');
+    if (dlWordBtn) {
+      if (state.engineResult && state.features) {
+        generateAndDownloadWordReport({
+          engineResult: state.engineResult,
+          features: state.features,
+          currentWeather: state.weatherData?.current || null,
+          location: state.location,
+          plotName: state.plots[state.fieldIndex]?.name,
+          userName: state.authUser?.full_name,
+          userType: state.authUser?.user_type,
+          dailyForecast: state.weatherData?.dailyForecast,
+        });
+      }
+      return;
+    }
+
+    // Auth Modal Triggers
+    const openAuth = target.closest('#open-auth-btn');
+    if (openAuth) {
+      state.isAuthModalOpen = true;
+      renderAuthModal();
+      return;
+    }
+    const closeAuth = target.closest('#close-auth-modal');
+    if (closeAuth) {
+      state.isAuthModalOpen = false;
+      renderAuthModal();
+      return;
+    }
+    const tabLogin = target.closest('#auth-tab-login') || target.closest('#switch-to-login');
+    if (tabLogin) {
+      state.authTab = 'login';
+      renderAuthModal();
+      return;
+    }
+    const tabReg = target.closest('#auth-tab-register') || target.closest('#switch-to-register');
+    if (tabReg) {
+      state.authTab = 'register';
+      renderAuthModal();
+      return;
+    }
+    const btnLogout = target.closest('#btn-logout');
+    if (btnLogout) {
+      clearAuthSession();
+      state.authUser = null;
+      state.authProfile = null;
+      render();
+      return;
+    }
   });
+
+  // Login Form Submit (PostgreSQL / Local DB API)
+  const loginForm = $('#login-form') as HTMLFormElement;
+  if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = ($('#login-email') as HTMLInputElement)?.value.trim();
+      const password = ($('#login-password') as HTMLInputElement)?.value;
+      const errBox = $('#login-error');
+      if (errBox) errBox.style.display = 'none';
+
+      const res = await loginUser(email, password);
+      if (res.success && res.user) {
+        state.authUser = res.user;
+        state.authProfile = res.profile || null;
+        if (res.profile?.commodity && CROPS_LIST.some(c => c.id === res.profile?.commodity)) {
+          state.cropId = res.profile.commodity as CropId;
+        }
+        if (res.user.user_type === 'farm_organisasi') {
+          state.uiMode = 'pro';
+          setStoredUIMode('pro');
+        }
+        state.isAuthModalOpen = false;
+        renderAuthModal();
+        await recomputeEngine();
+      } else {
+        if (errBox) {
+          errBox.textContent = res.error || 'Gagal masuk akun';
+          errBox.style.display = 'block';
+        }
+      }
+    });
+  }
+
+  // Register Form Submit (PostgreSQL / Local DB API)
+  const regForm = $('#register-form') as HTMLFormElement;
+  if (regForm) {
+    regForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fullName = ($('#reg-fullname') as HTMLInputElement)?.value.trim();
+      const email = ($('#reg-email') as HTMLInputElement)?.value.trim();
+      const password = ($('#reg-password') as HTMLInputElement)?.value;
+      const userType = (document.querySelector('input[name="reg-user-type"]:checked') as HTMLInputElement)?.value as 'petani' | 'farm_organisasi' || 'petani';
+      const plotName = ($('#reg-plot-name') as HTMLInputElement)?.value.trim() || 'Lahan Pasirhuni';
+      const commodity = ($('#reg-commodity') as HTMLSelectElement)?.value as CropId || 'cabai';
+      const plantDate = ($('#reg-plantdate') as HTMLInputElement)?.value || '2026-08-19';
+      const farmArea = parseFloat(($('#reg-area') as HTMLInputElement)?.value || '1.0');
+
+      const errBox = $('#reg-error');
+      if (errBox) errBox.style.display = 'none';
+
+      const res = await registerUser(email, password, fullName, userType, {
+        commodity,
+        location_name: state.location.name,
+        latitude: state.location.latitude,
+        longitude: state.location.longitude,
+        planting_date: plantDate,
+        hst: 55,
+        farm_area_ha: farmArea,
+        organization_name: plotName,
+      });
+
+      if (res.success && res.user) {
+        state.authUser = res.user;
+        state.authProfile = res.profile || null;
+        state.cropId = commodity;
+        state.uiMode = userType === 'farm_organisasi' ? 'pro' : 'default';
+        setStoredUIMode(state.uiMode);
+        state.isAuthModalOpen = false;
+        renderAuthModal();
+        await recomputeEngine();
+      } else {
+        if (errBox) {
+          errBox.textContent = res.error || 'Gagal mendaftar akun';
+          errBox.style.display = 'block';
+        }
+      }
+    });
+  }
 
   // Location Dropdown Change
   const locSelect = $('#lokasi-select') as HTMLSelectElement;
@@ -1336,7 +1573,26 @@ function setupEventListeners() {
 
 // ---------- INIT ENTRY POINT ----------
 async function init() {
+  state.authUser = getStoredUser();
+  state.authProfile = getStoredProfile();
+  state.uiMode = getStoredUIMode();
+
   state.plots = initDefaultPlots();
+
+  // If user profile is saved from auth/PostgreSQL, synchronize crop, location, hst & mode
+  if (state.authProfile) {
+    if (state.authProfile.commodity && CROPS_LIST.some(c => c.id === state.authProfile?.commodity)) {
+      state.cropId = state.authProfile.commodity as CropId;
+    }
+    const matchedLoc = INDONESIAN_LOCATIONS.find(l => l.name.toLowerCase().includes((state.authProfile?.location_name || '').toLowerCase()));
+    if (matchedLoc) state.location = matchedLoc;
+    if (state.authProfile.hst) state.currentHST = state.authProfile.hst;
+    if (state.authUser?.user_type === 'farm_organisasi') {
+      state.uiMode = 'pro';
+      setStoredUIMode('pro');
+    }
+  }
+
   handleUrlParams();
   setupEventListeners();
   await recomputeEngine();

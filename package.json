@@ -30,5 +30,10 @@
     "@rolldown/binding-win32-x64-msvc": "^1.2.13",
     "lightningcss-linux-x64-gnu": "^1.29.1",
     "lightningcss-win32-x64-msvc": "^1.29.1"
+  },
+  "dependencies": {
+    "@types/pg": "^8.23.1",
+    "docx": "^9.11.0",
+    "pg": "^8.23.1"
   }
 }
