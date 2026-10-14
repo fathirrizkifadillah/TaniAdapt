@@ -69,7 +69,7 @@ export async function generateAndDownloadWordReport(input: ReportExportInput): P
               bold: true,
               color: 'FFFFFF',
               size: 20, // 10pt
-              font: 'Segoe UI',
+              font: 'Times New Roman',
             }),
           ],
         }),
@@ -88,7 +88,7 @@ export async function generateAndDownloadWordReport(input: ReportExportInput): P
               text,
               bold: isBold,
               size: 20, // 10pt
-              font: 'Segoe UI',
+              font: 'Times New Roman',
               color: '222222',
             }),
           ],
@@ -171,7 +171,7 @@ export async function generateAndDownloadWordReport(input: ReportExportInput): P
                   bold: true,
                   size: 22,
                   color: riskColor,
-                  font: 'Segoe UI',
+                  font: 'Times New Roman',
                 }),
               ],
             }),
@@ -315,7 +315,7 @@ export async function generateAndDownloadWordReport(input: ReportExportInput): P
                 bold: true,
                 size: 32, // 16pt
                 color: greenDark,
-                font: 'Segoe UI',
+                font: 'Times New Roman',
               }),
             ],
           }),
@@ -327,7 +327,7 @@ export async function generateAndDownloadWordReport(input: ReportExportInput): P
                 italics: true,
                 size: 20, // 10pt
                 color: grayText,
-                font: 'Segoe UI',
+                font: 'Times New Roman',
               }),
             ],
           }),
@@ -342,7 +342,7 @@ export async function generateAndDownloadWordReport(input: ReportExportInput): P
                 bold: true,
                 size: 24,
                 color: greenDark,
-                font: 'Segoe UI',
+                font: 'Times New Roman',
               }),
             ],
           }),
@@ -358,7 +358,7 @@ export async function generateAndDownloadWordReport(input: ReportExportInput): P
                 bold: true,
                 size: 24,
                 color: greenDark,
-                font: 'Segoe UI',
+                font: 'Times New Roman',
               }),
             ],
           }),
@@ -374,7 +374,7 @@ export async function generateAndDownloadWordReport(input: ReportExportInput): P
                 bold: true,
                 size: 24,
                 color: greenDark,
-                font: 'Segoe UI',
+                font: 'Times New Roman',
               }),
             ],
           }),
@@ -390,7 +390,7 @@ export async function generateAndDownloadWordReport(input: ReportExportInput): P
                 bold: true,
                 size: 24,
                 color: greenDark,
-                font: 'Segoe UI',
+                font: 'Times New Roman',
               }),
             ],
           }),
@@ -404,7 +404,7 @@ export async function generateAndDownloadWordReport(input: ReportExportInput): P
                 text: 'Catatan Pertanggungjawaban Ilmiah:',
                 bold: true,
                 size: 18,
-                font: 'Segoe UI',
+                font: 'Times New Roman',
               }),
             ],
           }),
@@ -415,7 +415,7 @@ export async function generateAndDownloadWordReport(input: ReportExportInput): P
                 italics: true,
                 size: 18,
                 color: grayText,
-                font: 'Segoe UI',
+                font: 'Times New Roman',
               }),
             ],
           }),
@@ -431,6 +431,137 @@ export async function generateAndDownloadWordReport(input: ReportExportInput): P
   a.href = url;
   const fileNameCrop = engineResult.cropId || 'tanaman';
   a.download = `Laporan_AgroAdvisory_TaniAdapt_${fileNameCrop}_HST${engineResult.currentHST}_${now.toISOString().slice(0, 10)}.docx`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+}
+
+export interface PortfolioReportPlot {
+  name: string;
+  cropName: string;
+  scientificName: string;
+  placeName: string;
+  hst: number;
+  stageName: string;
+  risk: string;
+  irrigationStatus: string;
+  fertilizationStatus: string;
+  topRecommendation: string;
+}
+
+export async function generatePortfolioWordReport(plots: PortfolioReportPlot[], userName?: string): Promise<void> {
+  const now = new Date();
+  const dateFormatted = now.toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+  const greenDark = '1E4D35';
+  const greenLight = 'EAF2EC';
+  const borderLight = 'D3E0D6';
+  const grayText = '555555';
+
+  const rows = [
+    new TableRow({
+      tableHeader: true,
+      children: [
+        new TableCell({
+          children: [new Paragraph({ children: [new TextRun({ text: 'No', bold: true, font: 'Times New Roman' })] })],
+          shading: { fill: greenLight, type: ShadingType.CLEAR, color: 'auto' },
+        }),
+        new TableCell({
+          children: [new Paragraph({ children: [new TextRun({ text: 'Petak Lahan', bold: true, font: 'Times New Roman' })] })],
+          shading: { fill: greenLight, type: ShadingType.CLEAR, color: 'auto' },
+        }),
+        new TableCell({
+          children: [new Paragraph({ children: [new TextRun({ text: 'Komoditas & HST', bold: true, font: 'Times New Roman' })] })],
+          shading: { fill: greenLight, type: ShadingType.CLEAR, color: 'auto' },
+        }),
+        new TableCell({
+          children: [new Paragraph({ children: [new TextRun({ text: 'Risiko', bold: true, font: 'Times New Roman' })] })],
+          shading: { fill: greenLight, type: ShadingType.CLEAR, color: 'auto' },
+        }),
+        new TableCell({
+          children: [new Paragraph({ children: [new TextRun({ text: 'Status Air', bold: true, font: 'Times New Roman' })] })],
+          shading: { fill: greenLight, type: ShadingType.CLEAR, color: 'auto' },
+        }),
+        new TableCell({
+          children: [new Paragraph({ children: [new TextRun({ text: 'Aksi Prioritas', bold: true, font: 'Times New Roman' })] })],
+          shading: { fill: greenLight, type: ShadingType.CLEAR, color: 'auto' },
+        }),
+      ],
+    }),
+    ...plots.map((p, i) => new TableRow({
+      children: [
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(i + 1), font: 'Times New Roman' })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: p.name, bold: true, font: 'Times New Roman' })] }), new Paragraph({ children: [new TextRun({ text: p.placeName, size: 18, color: grayText, font: 'Times New Roman' })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${p.cropName} (${p.hst} HST)`, font: 'Times New Roman' })] }), new Paragraph({ children: [new TextRun({ text: p.stageName, size: 18, color: grayText, font: 'Times New Roman' })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: p.risk, bold: true, color: p.risk === 'TINGGI' ? 'B91C1C' : greenDark, font: 'Times New Roman' })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: p.irrigationStatus, font: 'Times New Roman' })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: p.topRecommendation || '-', size: 18, font: 'Times New Roman' })] })] }),
+      ],
+    })),
+  ];
+
+  const doc = new Document({
+    sections: [
+      {
+        properties: {},
+        children: [
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: 'TaniAdapt — Laporan Portofolio Lahan Pertanian',
+                bold: true,
+                size: 28,
+                color: greenDark,
+                font: 'Times New Roman',
+              }),
+            ],
+            heading: HeadingLevel.TITLE,
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `Ringkasan Tindakan & Risiko Lintas Petak | Pemilik: ${userName || 'Pengguna TaniAdapt'} | Tanggal: ${dateFormatted}`,
+                size: 20,
+                color: grayText,
+                font: 'Times New Roman',
+              }),
+            ],
+          }),
+          new Paragraph({ text: '' }),
+          new Table({
+            rows,
+            width: { size: 100, type: WidthType.PERCENTAGE },
+          }),
+          new Paragraph({ text: '' }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: 'Catatan:',
+                bold: true,
+                size: 18,
+                font: 'Times New Roman',
+              }),
+              new TextRun({
+                text: ' Rekomendasi dihitung secara independen per petak menggunakan data mikroklimat lokasi dan tahapan fenologi tanaman masing-masing.',
+                size: 18,
+                font: 'Times New Roman',
+              }),
+            ],
+          }),
+        ],
+      },
+    ],
+  });
+
+  const blob = await Packer.toBlob(doc);
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Laporan_Portofolio_TaniAdapt_${now.toISOString().slice(0, 10)}.docx`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

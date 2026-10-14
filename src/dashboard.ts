@@ -16,6 +16,8 @@ import {
   registerUser,
   clearAuthSession,
   generateAndDownloadWordReport,
+  generatePortfolioWordReport,
+  PortfolioReportPlot,
   searchLocationsByApi,
   getCurrentGpsPosition,
   GeocodingResult,
@@ -78,6 +80,8 @@ const state = {
   engineResult: null as CropEngineResult | null,
   features: null as TemporalFeatures | null,
   plots: [] as PlotItem[],
+  activePlotForBiofisik: -1 as number,
+  plotEngineResults: {} as Record<string, { weatherData: WeatherFetchResult | null; engineResult: CropEngineResult | null; features: TemporalFeatures | null }>,
   selectedLanguage: (localStorage.getItem('taniadapt_lang') || 'id') as 'id' | 'su',
   customKnowledgeBase: JSON.parse(localStorage.getItem('taniadapt_custom_kb') || '[]') as string[],
   soilTexture: (localStorage.getItem('taniadapt_soil') || 'loam') as string,
@@ -101,12 +105,21 @@ const CROPS_LIST: { id: CropId; label: string; scientific: string }[] = [
   { id: 'bawang_merah', label: 'Bawang Merah', scientific: 'Allium ascalonicum' }
 ];
 
+// SVG nav icons (monochrome line icons, no emoji)
+const NAV_ICONS: Record<string, string> = {
+  ringkasan: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>',
+  cuaca: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>',
+  lahan: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>',
+  tanya: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>',
+  pengaturan: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>',
+};
+
 const VIEWS = [
-  { id: 'ringkasan', label: '📋 Rekomendasi Hari Ini' },
-  { id: 'cuaca', label: '📊 Analisis Biofisik' },
-  { id: 'lahan', label: '🌾 Lahan Saya' },
-  { id: 'tanya', label: '💬 Chat dengan Tania' },
-  { id: 'pengaturan', label: '⚙️ Pengaturan' }
+  { id: 'ringkasan', label: 'Rekomendasi Hari Ini' },
+  { id: 'cuaca', label: 'Analisis Biofisik' },
+  { id: 'lahan', label: 'Lahan Saya' },
+  { id: 'tanya', label: 'Chat dengan Tania' },
+  { id: 'pengaturan', label: 'Pengaturan' }
 ];
 
 const TITLES: Record<string, string> = {
@@ -254,17 +267,167 @@ async function recomputeEngine() {
   render();
 }
 
-// ---------- RENDER FUNCTIONS ----------
+// ---------- PER-PLOT ENGINE EXECUTION ----------
+async function recomputeEngineForPlot(plotIndex: number) {
+  const plot = state.plots[plotIndex];
+  if (!plot) return;
+  const loc = INDONESIAN_LOCATIONS.find(l => l.id === plot.locationId) || INDONESIAN_LOCATIONS[0];
+  const plantTime = new Date(plot.plantDate).getTime();
+  const nowTime = new Date().getTime();
+  const hst = Math.max(1, Math.floor((nowTime - plantTime) / 86400000));
+  plot.hst = hst;
+
+  const weatherRes = await fetchAgriculturalWeather(loc.id, loc.latitude, loc.longitude);
+  const { result, features } = runAgroDecisionEngine(
+    plot.cropId, hst,
+    { ...weatherRes.current },
+    [...weatherRes.history],
+    [...weatherRes.dailyForecast],
+    undefined
+  );
+  plot.risk = result.overallRisk;
+  plot.stageName = result.stageName;
+  state.plotEngineResults[plot.id] = { weatherData: weatherRes, engineResult: result, features };
+  localStorage.setItem('taniadapt_user_plots_v1', JSON.stringify(state.plots));
+}
+
+async function recomputeAllPlots() {
+  for (let i = 0; i < state.plots.length; i++) {
+    await recomputeEngineForPlot(i);
+  }
+}
+
+// ---------- PER-PLOT FEED RENDERER (Rekomendasi Hari Ini) ----------
+function renderPlotFeed() {
+  const container = $('#plot-feed-container');
+  if (!container) return;
+
+  if (state.plots.length === 0) {
+    container.innerHTML = `
+      <div style="flex: 1 1 100%; background: #FFFFFF; border: 2px dashed var(--line); border-radius: 18px; padding: 48px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.03)">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+        <h3 style="margin: 0; font-size: 20px; font-weight: 800; color: var(--ink)">Belum Ada Petak Lahan Terdaftar</h3>
+        <p style="margin: 0; font-size: 14px; color: var(--muted); max-width: 500px; line-height: 1.6">
+          Daftarkan petak lahan pertanian Anda agar Decision Engine dapat memberikan rekomendasi tindakan harian per lahan secara presisi.
+        </p>
+        <button type="button" data-go-lahan style="margin-top: 6px; min-height: 44px; padding: 0 24px; border-radius: 999px; background: var(--green); color: #FFF; border: none; font-weight: 700; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(30,77,53,0.2)">
+          <span>Buka Lahan Saya</span>
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  const isRingkas = state.uiMode === 'default';
+  container.innerHTML = state.plots.map((plot, idx) => {
+    const pr = state.plotEngineResults[plot.id];
+    const loc = INDONESIAN_LOCATIONS.find(l => l.id === plot.locationId);
+    const locName = loc ? loc.name : plot.placeName;
+    const elev = loc ? loc.elevationMeters : 0;
+
+    if (!pr || !pr.engineResult || !pr.features) {
+      return `<article style="background: #FFFFFF; border: 1px solid var(--line); border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 12px">
+        <h3 style="margin: 0; font-size: 17px; font-weight: 700">${esc(plot.name)}</h3>
+        <p style="margin: 0; font-size: 13px; color: var(--muted)">Memuat data cuaca dan analisis engine...</p>
+      </article>`;
+    }
+
+    const res = pr.engineResult;
+    const f = pr.features;
+    const cw = pr.weatherData?.current;
+    const riskStyle = RISK_BADGE[res.overallRisk] || RISK_BADGE['RENDAH'];
+
+    // Build 3 traffic-light action cards
+    const irrigStatus = res.irrigation.status;
+    const irrigColor = irrigStatus === 'DRAINASE_MENDESAK' ? '#8A470B' : irrigStatus === 'BUTUH_PENGAIRAN' ? '#1E4D35' : '#166534';
+    const irrigBg = irrigStatus === 'DRAINASE_MENDESAK' ? '#FBEFE2' : irrigStatus === 'BUTUH_PENGAIRAN' ? '#F0FDF4' : '#F0FDF4';
+    const irrigLabel = irrigStatus === 'DRAINASE_MENDESAK' ? 'Drainase Mendesak' : irrigStatus === 'BUTUH_PENGAIRAN' ? 'Perlu Pengairan' : 'Lengas Optimal';
+
+    const sprayOk = res.overallRisk !== 'TINGGI';
+    const sprayColor = sprayOk ? '#166534' : '#8A470B';
+    const sprayBg = sprayOk ? '#F0FDF4' : '#FBEFE2';
+    const sprayLabel = sprayOk ? 'Jendela Semprot Aman' : 'Tunda Semprot (Basah)';
+
+    const fertOk = res.fertilization.safeToApply;
+    const fertColor = fertOk ? '#166534' : '#8A470B';
+    const fertBg = fertOk ? '#F0FDF4' : '#FBEFE2';
+    const fertLabel = fertOk ? 'Jendela Pupuk Aman' : 'Tunda Pemupukan';
+
+    const metricRow = isRingkas ? '' : `
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; font-size: 12px; background: var(--ground); padding: 10px; border-radius: 10px; margin-top: 4px">
+        <div><div style="color: var(--muted)">ET0</div><div style="font-weight: 700">${res.fao56?.et0_daily_mm ?? '–'} mm/d</div></div>
+        <div><div style="color: var(--muted)">Kc</div><div style="font-weight: 700">${res.fao56?.kc_current ?? '–'}</div></div>
+        <div><div style="color: var(--muted)">Dr</div><div style="font-weight: 700">${res.fao56?.depletion_dr_mm ?? '–'} mm</div></div>
+        <div><div style="color: var(--muted)">VPD</div><div style="font-weight: 700">${f.currentVPD.toFixed(2)} kPa</div></div>
+      </div>
+    `;
+
+    return `<article style="background: #FFFFFF; border: 1.5px solid var(--line); border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.04)">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; flex-wrap: wrap">
+        <div>
+          <h3 style="margin: 0; font-size: 18px; font-weight: 700">${esc(plot.name)}</h3>
+          <div style="font-size: 13px; color: var(--muted)">${esc(locName)} · ${elev}m dpl · ${CROPS_LIST.find(c => c.id === plot.cropId)?.label || plot.cropId} · ${plot.hst} HST (${res.stageName})</div>
+        </div>
+        <span style="flex: none; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; ${riskStyle}">Risiko ${res.overallRisk}</span>
+      </div>
+
+      ${cw ? `<div style="display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; background: var(--ground); padding: 10px 14px; border-radius: 10px">
+        <span><strong>${cw.temperature.toFixed(1)}°C</strong></span>
+        <span>RH ${Math.round(cw.relativeHumidity)}%</span>
+        <span>Hujan ${cw.precipitation.toFixed(1)} mm</span>
+        <span>Hujan 7d: ${Math.round(f.rolling7dRain)} mm</span>
+      </div>` : ''}
+
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px">
+        <div style="background: ${irrigBg}; border-radius: 12px; padding: 12px; text-align: center">
+          <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px">Siram</div>
+          <div style="font-size: 13px; font-weight: 700; color: ${irrigColor}">${irrigLabel}</div>
+        </div>
+        <div style="background: ${sprayBg}; border-radius: 12px; padding: 12px; text-align: center">
+          <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px">Semprot</div>
+          <div style="font-size: 13px; font-weight: 700; color: ${sprayColor}">${sprayLabel}</div>
+        </div>
+        <div style="background: ${fertBg}; border-radius: 12px; padding: 12px; text-align: center">
+          <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px">Pupuk</div>
+          <div style="font-size: 13px; font-weight: 700; color: ${fertColor}">${fertLabel}</div>
+        </div>
+      </div>
+
+      ${metricRow}
+
+      <button type="button" data-open-biofisik="${idx}" style="align-self: flex-start; min-height: 38px; padding: 0 16px; border-radius: 999px; border: 1.5px solid var(--green); background: transparent; color: var(--green); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px">
+        Lihat Analisis Detail <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </article>`;
+  }).join('');
+}
+
+// ---------- BIOFISIK PLOT BANNER ----------
+function renderBiofisikPlotBanner() {
+  const nameEl = $('#biofisik-plot-name');
+  const metaEl = $('#biofisik-plot-meta');
+  const idx = state.activePlotForBiofisik;
+  const plot = state.plots[idx];
+  if (plot && nameEl) {
+    nameEl.textContent = plot.name;
+    const loc = INDONESIAN_LOCATIONS.find(l => l.id === plot.locationId);
+    if (metaEl) metaEl.textContent = `${loc?.name || plot.placeName} · ${CROPS_LIST.find(c => c.id === plot.cropId)?.label || plot.cropId} · ${plot.hst} HST`;
+  } else if (nameEl) {
+    nameEl.textContent = state.plots.length > 0 ? 'Pilih lahan dari Rekomendasi Hari Ini' : 'Belum ada lahan terdaftar';
+    if (metaEl) metaEl.textContent = '';
+  }
+}
 function renderNav() {
   const container = $('#nav');
   if (!container) return;
 
   container.innerHTML = VIEWS.map((v) => {
     const on = state.view === v.id;
+    const icon = NAV_ICONS[v.id] || '';
     const style = 'text-align: left; width: 100%; min-height: 44px; padding: 0 14px; border-radius: 10px; border: none; font: inherit; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; ' +
-      (on ? 'background: var(--accent); color: var(--ink); font-weight: 700' : 'background: transparent; color: #DCE5D8');
+      (on ? 'background: var(--accent); color: var(--ink); font-weight: 700' : 'background: transparent; color: #DCE8D8');
     return `<button type="button" data-view-btn="${v.id}" ${on ? 'aria-current="page"' : ''} style="${style}">
-      <span>${v.label}</span>
+      <span style="display: flex; align-items: center; gap: 8px">${icon}${v.label}</span>
       ${on ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>' : ''}
     </button>`;
   }).join('');
@@ -1338,12 +1501,14 @@ function render() {
   renderStressBar();
 
   if (state.view === 'ringkasan') {
+    renderPlotFeed();
     renderRiskCard();
     renderRecommendations();
     renderInfluentialFactors();
     renderWeatherSnapshot();
     renderFao56ProPanel();
   } else if (state.view === 'cuaca') {
+    renderBiofisikPlotBanner();
     renderWeatherView();
   } else if (state.view === 'tanya') {
     renderChat();
@@ -1558,6 +1723,40 @@ function setupEventListeners() {
       return;
     }
 
+    // "Buka Lahan Saya" from empty-state feed
+    const goLahan = target.closest('[data-go-lahan]') as HTMLElement;
+    if (goLahan) {
+      state.view = 'lahan';
+      render();
+      return;
+    }
+
+    // "Lihat Analisis Detail →" from per-plot feed
+    const openBiofisik = target.closest('[data-open-biofisik]') as HTMLElement;
+    if (openBiofisik && openBiofisik.dataset.openBiofisik !== undefined) {
+      const idx = Number(openBiofisik.dataset.openBiofisik);
+      const plot = state.plots[idx];
+      if (plot) {
+        state.activePlotForBiofisik = idx;
+        state.fieldIndex = idx;
+        state.cropId = plot.cropId;
+        state.currentHST = plot.hst;
+        const loc = INDONESIAN_LOCATIONS.find(l => l.id === plot.locationId);
+        if (loc) state.location = loc;
+        // Load cached engine result into global state for biofisik view
+        const pr = state.plotEngineResults[plot.id];
+        if (pr) {
+          state.weatherData = pr.weatherData;
+          state.engineResult = pr.engineResult;
+          state.features = pr.features;
+        }
+      }
+      state.view = 'cuaca';
+      render();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
     // Field Open in Ringkasan
     const fieldOpen = target.closest('[data-field-open]') as HTMLElement;
     if (fieldOpen && fieldOpen.dataset.fieldOpen !== undefined) {
@@ -1635,6 +1834,7 @@ function setupEventListeners() {
       localStorage.setItem('taniadapt_user_plots_v1', JSON.stringify(state.plots));
       nameInput.value = '';
       renderFields();
+      recomputeEngineForPlot(state.plots.length - 1).then(() => render());
       return;
     }
 
@@ -1785,6 +1985,30 @@ function setupEventListeners() {
           dailyForecast: state.weatherData?.dailyForecast,
         });
       }
+      return;
+    }
+
+    // Portfolio Report Download (.docx)
+    const dlPortBtn = target.closest('#download-portfolio-btn');
+    if (dlPortBtn) {
+      const portfolioPlots: PortfolioReportPlot[] = state.plots.map(p => {
+        const pr = state.plotEngineResults[p.id];
+        const res = pr?.engineResult;
+        const crop = CROPS_LIST.find(c => c.id === p.cropId);
+        return {
+          name: p.name,
+          cropName: crop?.label || p.cropId,
+          scientificName: crop?.scientific || '',
+          placeName: p.placeName,
+          hst: p.hst,
+          stageName: p.stageName,
+          risk: p.risk,
+          irrigationStatus: res ? (res.irrigation.status === 'DRAINASE_MENDESAK' ? 'Drainase Mendesak' : res.irrigation.status === 'BUTUH_PENGAIRAN' ? 'Perlu Air' : 'Optimal') : 'Memuat...',
+          fertilizationStatus: res ? (res.fertilization.safeToApply ? 'Aman' : 'Tunda') : 'Memuat...',
+          topRecommendation: res?.recommendations[0]?.action || 'Pantau perkembangan tanaman',
+        };
+      });
+      generatePortfolioWordReport(portfolioPlots, state.authUser?.full_name);
       return;
     }
 
@@ -2231,6 +2455,8 @@ async function init() {
   handleUrlParams();
   setupEventListeners();
   await recomputeEngine();
+  await recomputeAllPlots();
+  render();
 }
 
 // Jalankan inisialisasi saat DOM siap
