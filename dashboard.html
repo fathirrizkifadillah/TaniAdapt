@@ -63,6 +63,7 @@
     </h1>
   </div>
 
+<<<<<<< HEAD
   <!-- DESKTOP ACTIONS (Unified 36px aligned cluster, hidden on mobile) -->
   <div class="dashboard-desktop-actions">
     <!-- MODE TOGGLE -->
@@ -70,6 +71,15 @@
       <button type="button" id="btn-mode-default" data-ui-mode="default" class="mode-btn active">Petani (Biasa)</button>
       <button type="button" id="btn-mode-advance" data-ui-mode="pro" class="mode-btn">Riset (Advance)</button>
     </div>
+=======
+  <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px">
+    <!-- SINGLE MODE SWITCH TOGGLE -->
+    <button type="button" id="btn-toggle-ui-mode" class="btn-action-taktil" aria-label="Ganti Mode Tampilan" style="min-height: 36px; padding: 0 14px; border-radius: 999px; background: #FFFFFF; border: 1.5px solid var(--line); font-size: 12px; font-weight: 700; color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05)">
+      <span id="mode-toggle-indicator" style="width: 8px; height: 8px; border-radius: 4px; background: var(--green); display: inline-block"></span>
+      <span id="mode-toggle-label">Mode Petani</span>
+      <span style="font-size: 11px; color: var(--muted); font-weight: 500">(Ganti Mode)</span>
+    </button>
+>>>>>>> 39f2e004940b27c93a740b7424dbdb34b2eba7e9
 
     <!-- QUICK ADD BUTTON -->
     <button type="button" data-view-btn="lahan" class="btn-tambah-petak">
@@ -452,6 +462,7 @@ Memuat analisis risiko tanaman...
 
 <!-- RAG CONTEXT SIDEBAR -->
 <aside aria-label="Konteks yang dibaca asisten" style="flex: 1 1 280px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+<<<<<<< HEAD
 <section class="rag-engine-summary-card">
   <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); padding-bottom: 10px">
     <h2 style="margin: 0; font-size: 15px; font-weight: 800; color: var(--ink); display: flex; align-items: center; gap: 8px">
@@ -494,6 +505,17 @@ Memuat analisis risiko tanaman...
   </div>
 </section>
 
+=======
+<section style="background: #FFFFFF; border: 1px solid var(--line); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 15px; font-weight: 700">Hasil Engine yang Dijelaskan</h2>
+<div style="display: flex; justify-content: space-between; font-size: 14px"><span style="color: var(--muted)">Tanaman</span><span style="font-weight: 600"><span data-bind="cropLabel">Cabai Merah</span></span></div>
+<div style="display: flex; justify-content: space-between; font-size: 14px"><span style="color: var(--muted)">Fase Fenologi</span><span id="rag-stage-text" style="font-weight: 600">Pembungaan</span></div>
+<div style="display: flex; justify-content: space-between; font-size: 14px"><span style="color: var(--muted)">Tingkat Risiko</span><span id="rag-risk-text" style="font-weight: 600; color: var(--risk-strong)">Tinggi</span></div>
+<div style="display: flex; justify-content: space-between; font-size: 14px"><span style="color: var(--muted)">Faktor Dominan</span><span id="rag-factor-text" style="font-weight: 600">Hujan Berturut-turut</span></div>
+<div style="display: flex; justify-content: space-between; font-size: 14px"><span style="color: var(--muted)">Irigasi / Drainase</span><span id="rag-water-text" style="font-weight: 600">Drainase Mendesak</span></div>
+</section>
+
+>>>>>>> 39f2e004940b27c93a740b7424dbdb34b2eba7e9
 <!-- PANEL KNOWLEDGE BASE MANDIRI / SOP PETANI DI DALAM TAB CHAT -->
 <section style="background: #FFFFFF; border: 1px solid var(--line); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
   <div style="display: flex; justify-content: space-between; align-items: center">
@@ -518,11 +540,14 @@ Memuat analisis risiko tanaman...
 <div style="display: flex; flex-direction: column; gap: 24px">
 <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: center">
 <p style="margin: 0; color: var(--muted); max-width: 42rem">
-Daftarkan petak lahan sejak hari tanam agar engine dapat memantau akumulasi kebasahan daun, sejarah stres cuaca, dan perkembangan HST secara akurat.
+Daftarkan petak lahan sejak hari tanam agar engine dapat memantau akumulasi kebasahan daun, sejarah stres cuaca, dan perkembangan umur tanaman secara akurat.
 </p>
-<button type="button" data-action="toggle-form" style="min-height: 44px; padding: 0 20px; border-radius: 999px; border: none; background: var(--green); color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px">
-<span data-bind="formButton">Tambah Lahan Baru</span>
-</button>
+<div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+  <div id="portfolio-export-container"></div>
+  <button type="button" data-action="toggle-form" class="btn-action-taktil" style="min-height: 44px; padding: 0 20px; border-radius: 999px; border: none; background: var(--green); color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px">
+    <span data-bind="formButton">Tambah Lahan Baru</span>
+  </button>
+</div>
 </div>
 
 <!-- FORM TAMBAH LAHAN -->
@@ -705,44 +730,46 @@ Daftarkan petak lahan sejak hari tanam agar engine dapat memantau akumulasi keba
     </div>
   </section>
 
-  <!-- CARD 4: STATUS API & INTEGRASI MESIN -->
+  <!-- CARD 4: STATUS PEMANTAUAN AGROMETEOROLOGI -->
   <section style="background: #FFFFFF; border: 1px solid var(--line); border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 16px">
     <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--line); padding-bottom: 12px">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
-      <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--ink)">Status Layanan &amp; Integrasi Mesin</h3>
+      <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--ink)">Status Pemantauan &amp; Telemetri Kebun</h3>
     </div>
     <div style="display: flex; flex-direction: column; gap: 10px; font-size: 13px">
       <div style="display: flex; justify-content: space-between; align-items: center; background: var(--ground); padding: 10px 14px; border-radius: 10px">
-        <span>Decision Engine Biofisik (FAO-56 PM)</span>
-        <span style="color: var(--green); font-weight: 700">Aktif (Lokal)</span>
+        <span>Model Neraca Air Lapangan (FAO-56 PM)</span>
+        <span style="color: var(--green); font-weight: 700">Aktif Terkalibrasi</span>
       </div>
       <div style="display: flex; justify-content: space-between; align-items: center; background: var(--ground); padding: 10px 14px; border-radius: 10px">
-        <span>Open-Meteo Weather API</span>
-        <span style="color: var(--green); font-weight: 700">Terhubung</span>
+        <span>Stasiun Agroklimat Satelit Open-Meteo</span>
+        <span style="color: var(--green); font-weight: 700">Terhubung Sinkron</span>
       </div>
       <div style="display: flex; justify-content: space-between; align-items: center; background: var(--ground); padding: 10px 14px; border-radius: 10px">
-        <span>Groq LLM API (Asisten Tania)</span>
-        <span style="color: var(--green); font-weight: 700">Siap</span>
+        <span>Mesin Diagnosa Asisten Kebun Tania</span>
+        <span style="color: var(--green); font-weight: 700">Siap Layanan</span>
       </div>
     </div>
     <p style="margin: 0; font-size: 12px; color: var(--muted); line-height: 1.4">
-      Pengaturan Knowledge Base &amp; SOP Kebun (RAG) telah dipusatkan di tab <strong>Chat dengan Tania</strong>.
+      Sistem menyinkronkan radiasi, angin, kelembapan, dan presipitasi lokal untuk menghitung kebutuhan transpirasi tanaman dan risiko patogen daun secara deterministik.
     </p>
   </section>
 
 </div>
 
-<!-- CARD 5: WATER LEDGER & RESET DATA -->
+<!-- CARD 5: PENCATATAN & KALIBRASI LENGAS TANAH (WATER BALANCE LEDGER) -->
 <section style="background: #FFFFFF; border: 1px solid var(--line); border-radius: 18px; padding: 24px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px">
-  <div>
-    <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--ink)">Buku Kas Air (Water Ledger) &amp; Manajemen Data</h3>
-    <p style="margin: 2px 0 0; font-size: 13px; color: var(--muted)">Reset riwayat penyiraman tanah kembali ke kapasitas lapang (Dr = 0 mm) atau bersihkan cache lahan.</p>
+  <div style="max-width: 600px">
+    <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--ink)">Pencatatan &amp; Kalibrasi Lengas Tanah (Water Balance Ledger)</h3>
+    <p style="margin: 6px 0 0; font-size: 13px; color: var(--muted); line-height: 1.5">
+      Mencatat debit air siraman manual dan mengalibrasi status deplesi zona perakaran kembali ke Kapasitas Lapang (Field Capacity, Dr = 0 mm) setelah hujan lebat atau penggenangan irigasi jenuh.
+    </p>
   </div>
   <div style="display: flex; gap: 10px; flex-wrap: wrap">
-    <button type="button" id="btn-reset-water-ledger" style="min-height: 40px; padding: 0 16px; border-radius: 10px; background: #F0FDF4; border: 1.5px solid var(--green); color: var(--green); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer">
-      Reset Deplesi Air (Dr = 0 mm)
+    <button type="button" id="btn-reset-water-ledger" class="btn-action-taktil" style="min-height: 40px; padding: 0 16px; border-radius: 10px; background: #F0FDF4; border: 1.5px solid var(--green); color: var(--green); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer">
+      Kalibrasi Kapasitas Lapang (Dr = 0 mm)
     </button>
-    <button type="button" id="btn-clear-all-plots" style="min-height: 40px; padding: 0 16px; border-radius: 10px; background: transparent; border: 1px solid #DC2626; color: #DC2626; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">
+    <button type="button" id="btn-clear-all-plots" class="btn-action-taktil" style="min-height: 40px; padding: 0 16px; border-radius: 10px; background: transparent; border: 1px solid #DC2626; color: #DC2626; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">
       Hapus Seluruh Data Petak Lahan
     </button>
   </div>
@@ -914,7 +941,7 @@ Daftarkan petak lahan sejak hari tanam agar engine dapat memantau akumulasi keba
   <span style="font-size: 13px; font-weight: 700; color: var(--green)">Profil Lahan &amp; Komoditas Awal</span>
   <div>
     <label for="reg-plot-name" style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px">Nama Petak Lahan</label>
-    <input type="text" id="reg-plot-name" value="Lahan Pasirhuni" placeholder="mis. Blok A Pasirhuni" style="width: 100%; height: 40px; padding: 0 12px; border: 1px solid var(--field-line); border-radius: 8px; font: inherit; box-sizing: border-box; background: var(--field)">
+    <input type="text" id="reg-plot-name" value="" placeholder="mis. Blok Kebun Sayur Depan" style="width: 100%; height: 40px; padding: 0 12px; border: 1px solid var(--field-line); border-radius: 8px; font: inherit; box-sizing: border-box; background: var(--field)">
   </div>
   <div>
     <label for="reg-commodity" style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px">Komoditas Utama</label>
