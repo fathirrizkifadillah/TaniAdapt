@@ -30,41 +30,51 @@ const UI_MODE_KEY = 'taniadapt_ui_mode';
 
 export function getStoredUser(): AuthUser | null {
   if (typeof window === 'undefined') return null;
-  const raw = localStorage.getItem(AUTH_USER_KEY);
+  // Sesi aktif tersimpan di sessionStorage agar anti-bypass saat membuka link di tab/jendela baru
+  const raw = sessionStorage.getItem(AUTH_USER_KEY);
   return raw ? JSON.parse(raw) : null;
 }
 
 export function getStoredProfile(): UserProfileData | null {
   if (typeof window === 'undefined') return null;
-  const raw = localStorage.getItem(AUTH_PROFILE_KEY);
+  const raw = sessionStorage.getItem(AUTH_PROFILE_KEY);
   return raw ? JSON.parse(raw) : null;
 }
 
 export function getStoredUIMode(): 'default' | 'pro' {
   if (typeof window === 'undefined') return 'default';
-  const mode = localStorage.getItem(UI_MODE_KEY);
+  const mode = sessionStorage.getItem(UI_MODE_KEY) || localStorage.getItem(UI_MODE_KEY);
   return mode === 'pro' ? 'pro' : 'default';
 }
 
 export function setStoredUIMode(mode: 'default' | 'pro'): void {
   if (typeof window !== 'undefined') {
+    sessionStorage.setItem(UI_MODE_KEY, mode);
     localStorage.setItem(UI_MODE_KEY, mode);
   }
 }
 
 export function saveAuthSession(user: AuthUser, profile: UserProfileData | null): void {
   if (typeof window !== 'undefined') {
-    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+    // Simpan ke sessionStorage untuk proteksi sesi aktif tab
+    sessionStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
     if (profile) {
-      localStorage.setItem(AUTH_PROFILE_KEY, JSON.stringify(profile));
+      sessionStorage.setItem(AUTH_PROFILE_KEY, JSON.stringify(profile));
     }
+    // Hapus sesi legacy dari localStorage agar tidak bisa di-bypass
+    localStorage.removeItem(AUTH_USER_KEY);
+    localStorage.removeItem(AUTH_PROFILE_KEY);
   }
 }
 
 export function clearAuthSession(): void {
   if (typeof window !== 'undefined') {
+    sessionStorage.removeItem(AUTH_USER_KEY);
+    sessionStorage.removeItem(AUTH_PROFILE_KEY);
     localStorage.removeItem(AUTH_USER_KEY);
     localStorage.removeItem(AUTH_PROFILE_KEY);
+    sessionStorage.removeItem('taniadapt_demo_guest');
+    localStorage.removeItem('taniadapt_demo_guest');
   }
 }
 

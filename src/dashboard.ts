@@ -221,46 +221,8 @@ function initDefaultPlots(): PlotItem[] {
     }
   }
 
-  const now = new Date();
-  const d55 = new Date(now.getTime() - 55 * 86400000).toISOString().split('T')[0];
-  const d20 = new Date(now.getTime() - 20 * 86400000).toISOString().split('T')[0];
-
-  const defaults: PlotItem[] = [
-    {
-      id: 'plot-1',
-      name: 'Lahan Sentra Pasirhuni',
-      locationId: 'lembang',
-      placeName: 'Lembang, Kab. Bandung Barat (1.312 mdpl)',
-      cropId: 'cabai',
-      plantDate: d55,
-      hst: 55,
-      stageName: 'Mulai Keluar Bunga Banyak (46–65 HST)',
-      risk: 'TINGGI',
-      trail: [
-        { dayLabel: 'HST 1', weather: 'Cerah', status: 'Catatan Petani', note: 'Penanaman bibit cabai merah' },
-        { dayLabel: 'HST 49', weather: 'Cerah Berawan', status: 'Aplikasi Pupuk', note: 'Aplikasi pupuk susulan' },
-        { dayLabel: 'HST 55 (Hari Ini)', weather: 'Hujan Ringan', status: 'Penyiraman & Pengamatan', note: 'Monitoring kebasahan daun' }
-      ]
-    },
-    {
-      id: 'plot-2',
-      name: 'Kebun Sentra Bayongbong',
-      locationId: 'garut',
-      placeName: 'Bayongbong, Garut (1252 mdpl)',
-      cropId: 'tomat',
-      plantDate: d20,
-      hst: 20,
-      stageName: 'Vegetatif Lanjut (16–30 HST)',
-      risk: 'SEDANG',
-      trail: [
-        { dayLabel: 'HST 1', weather: 'Cerah', status: 'Catatan Petani', note: 'Pindah tanam bibit tomat' },
-        { dayLabel: 'HST 20 (Hari Ini)', weather: 'Berawan', status: 'Kegiatan Lahan', note: 'Pemasangan ajir bambu' }
-      ]
-    }
-  ];
-
-  localStorage.setItem('taniadapt_user_plots_v1', JSON.stringify(defaults));
-  return defaults;
+  // Clean state: mulai dari 0 lahan terdaftar (tanpa dummy mock data)
+  return [];
 }
 
 // ---------- WEATHER DATA & DECISION CALCULATION ----------
@@ -515,7 +477,7 @@ function renderPlotFeed() {
       <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; flex-wrap: wrap">
         <div>
           <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--ink)">${esc(plot.name)}</h3>
-          <div style="font-size: 13px; color: var(--muted); margin-top: 2px">${esc(locName)} · ${elev}m dpl · ${CROPS_LIST.find(c => c.id === plot.cropId)?.label || plot.cropId} · Umur Tanaman: ${plot.hst} Hari Setelah Tanam (${res.stageName})</div>
+          <div style="font-size: 13px; color: var(--muted); margin-top: 2px">${esc(locName)} · ${elev}m dpl · ${CROPS_LIST.find(c => c.id === plot.cropId)?.label || plot.cropId} · ${isRingkas ? `Hari ke-${plot.hst} sejak tanam` : `${plot.hst} HST`} (${res.stageName.replace(/\(\d+–\d+\s*HST\)/g, '').trim()})</div>
         </div>
         <span style="flex: none; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; ${riskStyle}">Risiko ${res.overallRisk}</span>
       </div>
@@ -547,10 +509,21 @@ function renderPlotFeed() {
       ${metricRow}
 
       <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 4px" onclick="event.stopPropagation()">
-        <button type="button" data-open-detail-plot="${idx}" style="min-height: 38px; padding: 0 16px; border-radius: 999px; border: 1.5px solid var(--green); background: #FFFFFF; color: var(--green); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px">
+        <button type="button" data-open-detail-plot="${idx}" class="btn-action-taktil" style="min-height: 38px; padding: 0 16px; border-radius: 999px; border: 1.5px solid var(--green); background: #FFFFFF; color: var(--green); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px">
           Buka Detail Lahan Ini &rarr;
         </button>
-        <button type="button" data-ask-tania-plot="${idx}" style="min-height: 38px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--ground); color: var(--ink); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px">
+        ${isRingkas ? `
+          <button type="button" data-export-single-docx="default" data-plot-id="${plot.id}" class="btn-action-taktil" title="Unduh Panduan Lahan Word" style="min-height: 38px; padding: 0 14px; border-radius: 999px; border: 1.5px solid var(--green); background: #FFFFFF; color: var(--green); font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Unduh Panduan (.docx)
+          </button>
+        ` : `
+          <button type="button" data-export-single-docx="advance" data-plot-id="${plot.id}" class="btn-action-taktil" title="Unduh Dossier Riset Word" style="min-height: 38px; padding: 0 14px; border-radius: 999px; border: 1.5px solid #1E3A8A; background: #FFFFFF; color: #1E3A8A; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Unduh Dossier (.docx)
+          </button>
+        `}
+        <button type="button" data-ask-tania-plot="${idx}" class="btn-action-taktil" style="min-height: 38px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--ground); color: var(--ink); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px">
           Tanya Tania
         </button>
       </div>
@@ -963,14 +936,10 @@ function renderDetailLahan() {
   ` : '';
 
   container.innerHTML = `
-    <!-- TOP ACTION BAR: BACK & SINGLE PLOT PRINT -->
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 4px">
-      <button type="button" data-view-btn="ringkasan" style="background: none; border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--ink)">
-        &larr; Kembali ke Ringkasan
-      </button>
-      <button type="button" id="btn-print-single-plot" style="min-height: 38px; padding: 0 16px; border-radius: 999px; background: var(--green); color: #FFF; border: none; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 6px rgba(30,77,53,0.2)">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
-        <span>Cetak Laporan Lahan Ini (.docx)</span>
+    <!-- TOP ACTION BAR: BACK BUTTON ONLY (PRINT MOVED OUTSIDE AS REQUESTED) -->
+    <div style="display: flex; justify-content: flex-start; align-items: center; margin-bottom: 8px">
+      <button type="button" data-view-btn="ringkasan" class="btn-action-taktil" style="background: none; border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--ink); display: inline-flex; align-items: center; gap: 6px">
+        &larr; Kembali ke Ringkasan Lahan
       </button>
     </div>
 
@@ -1088,12 +1057,22 @@ function renderNav() {
   const container = $('#nav');
   if (!container) return;
 
-  container.innerHTML = VIEWS.map((v) => {
+  const activeViews = state.uiMode === 'pro'
+    ? [
+        { id: 'ringkasan', label: 'Rekomendasi Hari Ini' },
+        { id: 'cuaca', label: 'Riset FAO-56' },
+        { id: 'lahan', label: 'Lahan Saya' },
+        { id: 'tanya', label: 'Chat dengan Tania' },
+        { id: 'pengaturan', label: 'Pengaturan' }
+      ]
+    : VIEWS;
+
+  container.innerHTML = activeViews.map((v) => {
     const on = state.view === v.id;
     const icon = NAV_ICONS[v.id] || '';
     const style = 'text-align: left; width: 100%; min-height: 44px; padding: 0 14px; border-radius: 10px; border: none; font: inherit; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; ' +
       (on ? 'background: var(--accent); color: var(--ink); font-weight: 700' : 'background: transparent; color: #DCE8D8');
-    return `<button type="button" data-view-btn="${v.id}" ${on ? 'aria-current="page"' : ''} style="${style}">
+    return `<button type="button" data-view-btn="${v.id}" class="btn-action-taktil" ${on ? 'aria-current="page"' : ''} style="${style}">
       <span style="display: flex; align-items: center; gap: 8px">${icon}${v.label}</span>
       ${on ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>' : ''}
     </button>`;
@@ -1649,7 +1628,10 @@ function renderFields() {
 
   const trailSection = document.querySelector('[aria-label="Jejak kondisi tanaman"]') as HTMLElement;
 
+  const portfolioCont = $('#portfolio-export-container');
+
   if (state.plots.length === 0) {
+    if (portfolioCont) portfolioCont.innerHTML = '';
     fieldsCont.innerHTML = `
       <div style="flex: 1 1 100%; background: #FFFFFF; border: 2px dashed var(--line); border-radius: 18px; padding: 48px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.03)">
         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
@@ -1657,7 +1639,7 @@ function renderFields() {
         <p style="margin: 0; font-size: 14px; color: var(--muted); max-width: 500px; line-height: 1.6">
           Daftarkan petak lahan pertanian Anda sejak hari tanam agar Decision Engine dapat memantau akumulasi kebasahan daun, neraca air FAO-56, dan peringatan OPT secara akurat.
         </p>
-        <button type="button" data-action="toggle-form" style="margin-top: 6px; min-height: 44px; padding: 0 24px; border-radius: 999px; background: var(--green); color: #FFF; border: none; font-weight: 700; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(30,77,53,0.2)">
+        <button type="button" data-action="toggle-form" class="btn-action-taktil" style="margin-top: 6px; min-height: 44px; padding: 0 24px; border-radius: 999px; background: var(--green); color: #FFF; border: none; font-weight: 700; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(30,77,53,0.2)">
           <span>+ Daftarkan Lahan Baru</span>
         </button>
       </div>
@@ -1669,6 +1651,33 @@ function renderFields() {
     if (addForm) addForm.hidden = !state.showForm;
     bindText('formButton', state.showForm ? 'Batal Tambah' : 'Tambah Lahan Baru');
     return;
+  }
+
+  if (portfolioCont) {
+    const isAdv = state.uiMode === 'pro';
+    portfolioCont.innerHTML = isAdv ? `
+      <div style="background: #F0F9FF; border: 1.5px solid #BAE6FD; border-radius: 14px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 8px">
+        <div>
+          <strong style="font-size: 13.5px; color: #0369A1; display: block">Dossier Audit Portofolio Riset Biofisika</strong>
+          <span style="font-size: 12px; color: #4B5563">Unduh matriks agregat FAO-56 PM untuk seluruh ${state.plots.length} petak riset dalam satu berkas Word (.docx).</span>
+        </div>
+        <button type="button" data-export-portfolio-docx="advance" class="btn-action-taktil" style="min-height: 38px; padding: 0 16px; border-radius: 999px; background: #1E3A8A; color: #FFF; border: none; font-size: 12.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(30,58,138,0.2)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+          Unduh Dossier Riset Portofolio (.docx)
+        </button>
+      </div>
+    ` : `
+      <div style="background: #F0FDF4; border: 1.5px solid #BBF7D0; border-radius: 14px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 8px">
+        <div>
+          <strong style="font-size: 13.5px; color: #166534; display: block">Laporan Portofolio Seluruh Kebun</strong>
+          <span style="font-size: 12px; color: #4B5563">Unduh rangkuman panduan lapangan untuk seluruh ${state.plots.length} petak kebun Anda dalam satu berkas Word (.docx).</span>
+        </div>
+        <button type="button" data-export-portfolio-docx="default" class="btn-action-taktil" style="min-height: 38px; padding: 0 16px; border-radius: 999px; background: var(--green); color: #FFF; border: none; font-size: 12.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(30,77,53,0.15)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+          Unduh Portofolio Semua Lahan (.docx)
+        </button>
+      </div>
+    `;
   }
 
   if (trailSection) trailSection.style.display = 'flex';
@@ -1689,14 +1698,25 @@ function renderFields() {
       <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; font-size: 13px; background: var(--ground); padding: 10px; border-radius: 10px">
         <div><div style="color: var(--muted); font-size: 11px">Tanaman</div><div style="font-weight: 700">${CROPS_LIST.find(c => c.id === f.cropId)?.label || f.cropId}</div></div>
         <div><div style="color: var(--muted); font-size: 11px">Fase</div><div style="font-weight: 700">${f.stageName}</div></div>
-        <div><div style="color: var(--muted); font-size: 11px">Umur</div><div style="font-weight: 700">${f.hst} Hari</div></div>
+        <div><div style="color: var(--muted); font-size: 11px">Umur</div><div style="font-weight: 700">${state.uiMode === 'pro' ? `${f.hst} HST` : `Hari ke-${f.hst}`}</div></div>
       </div>
       <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
-        <button type="button" data-field-select="${i}" aria-pressed="${on}" style="min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--field-line); background: var(--field); font: inherit; font-size: 13px; cursor: pointer; font-weight: 600">Lihat Jejak</button>
-        <button type="button" data-field-open="${i}" style="min-height: 40px; padding: 0 16px; border-radius: 999px; border: none; background: var(--green); color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px">
-          Lihat Detail Lahan Ini &rarr;
+        <button type="button" data-field-select="${i}" class="btn-action-taktil" aria-pressed="${on}" style="min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--field-line); background: var(--field); font: inherit; font-size: 13px; cursor: pointer; font-weight: 600">Lihat Jejak</button>
+        <button type="button" data-field-open="${i}" class="btn-action-taktil" style="min-height: 40px; padding: 0 16px; border-radius: 999px; border: none; background: var(--green); color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px">
+          Detail Lahan &rarr;
         </button>
-        <button type="button" data-delete-plot="${i}" title="Hapus petak ini" style="min-height: 40px; width: 40px; border-radius: 999px; border: 1px solid #FCA5A5; background: #FEF2F2; color: #DC2626; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-left: auto">
+        ${state.uiMode === 'pro' ? `
+          <button type="button" data-export-single-docx="advance" data-plot-id="${f.id}" title="Unduh Dossier Riset Word" class="btn-action-taktil" style="min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1.5px solid #1E3A8A; background: #FFFFFF; color: #1E3A8A; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Unduh Dossier (.docx)
+          </button>
+        ` : `
+          <button type="button" data-export-single-docx="default" data-plot-id="${f.id}" title="Unduh Panduan Lahan Word" class="btn-action-taktil" style="min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1.5px solid var(--green); background: #FFFFFF; color: var(--green); font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Unduh Panduan (.docx)
+          </button>
+        `}
+        <button type="button" data-delete-plot="${i}" title="Hapus petak ini" class="btn-action-taktil" style="min-height: 40px; width: 40px; border-radius: 999px; border: 1px solid #FCA5A5; background: #FEF2F2; color: #DC2626; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-left: auto">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
         </button>
       </div>
@@ -2082,9 +2102,10 @@ function renderViews() {
 }
 
 function renderUIMode() {
+  const isDefault = state.uiMode === 'default';
+
   const defaultBtn = $('#mode-default-btn');
   const proBtn = $('#mode-pro-btn');
-  const isDefault = state.uiMode === 'default';
 
   if (defaultBtn) {
     defaultBtn.style.background = isDefault ? 'var(--green)' : 'transparent';
@@ -2093,6 +2114,23 @@ function renderUIMode() {
   if (proBtn) {
     proBtn.style.background = !isDefault ? 'var(--green)' : 'transparent';
     proBtn.style.color = !isDefault ? '#FFFFFF' : 'var(--ink)';
+  }
+
+  // Header Single Mode Toggle Button & Indicator
+  const toggleBtn = $('#btn-toggle-ui-mode');
+  const toggleLabel = $('#mode-toggle-label');
+  const toggleIndicator = $('#mode-toggle-indicator');
+
+  if (toggleLabel) {
+    toggleLabel.textContent = isDefault ? 'Mode Petani (Sederhana)' : 'Mode Riset (Advance)';
+  }
+  if (toggleIndicator) {
+    toggleIndicator.style.background = isDefault ? 'var(--green)' : '#1E3A8A';
+  }
+  if (toggleBtn) {
+    toggleBtn.style.borderColor = isDefault ? 'var(--line)' : '#93C5FD';
+    toggleBtn.style.background = isDefault ? '#FFFFFF' : '#EFF6FF';
+    toggleBtn.title = isDefault ? 'Klik untuk beralih ke Mode Riset (Advance)' : 'Klik untuk beralih ke Mode Petani (Sederhana)';
   }
 
   // Toggle "Bukti Ilmiah (16 Field)" visibility based on Mode
@@ -2942,8 +2980,9 @@ function setupEventListeners() {
     const exportSingleDocx = target.closest('[data-export-single-docx]') as HTMLElement;
     if (exportSingleDocx && exportSingleDocx.dataset.exportSingleDocx) {
       const mode = exportSingleDocx.dataset.exportSingleDocx as 'default' | 'advance';
-      const curPlot = state.plots[state.fieldIndex] || state.plots[0];
-      const pr = state.plotEngineResults[curPlot?.id];
+      const plotId = exportSingleDocx.dataset.plotId;
+      const curPlot = (plotId ? state.plots.find(p => p.id === plotId) : null) || state.plots[state.fieldIndex] || state.plots[0];
+      const pr = curPlot ? state.plotEngineResults[curPlot.id] : null;
       const res = pr?.engineResult || state.engineResult;
       const f = pr?.features || state.features;
       const cw = pr?.weatherData?.current || state.weatherData?.current || null;
@@ -3342,11 +3381,25 @@ function setupEventListeners() {
       return;
     }
 
-    // UI Mode Toggle (Petani Default vs Farm/Riset Pro)
+    // UI Mode Toggle (Single Header Toggle or Mode Buttons)
+    const singleToggle = target.closest('#btn-toggle-ui-mode') as HTMLElement;
+    if (singleToggle) {
+      state.uiMode = state.uiMode === 'pro' ? 'default' : 'pro';
+      setStoredUIMode(state.uiMode);
+      if (state.uiMode === 'default' && state.view === 'cuaca') {
+        state.view = 'ringkasan';
+      }
+      render();
+      return;
+    }
+
     const modeBtn = target.closest('[data-ui-mode]') as HTMLElement;
     if (modeBtn && modeBtn.dataset.uiMode) {
       state.uiMode = modeBtn.dataset.uiMode as UIMode;
       setStoredUIMode(state.uiMode);
+      if (state.uiMode === 'default' && state.view === 'cuaca') {
+        state.view = 'ringkasan';
+      }
       render();
       return;
     }
