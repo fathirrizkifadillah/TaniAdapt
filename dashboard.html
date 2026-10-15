@@ -17,13 +17,15 @@
 <!-- ASIDE / SIDEBAR -->
 <aside id="app-sidebar" class="app-sidebar" style="padding: 24px 18px; box-sizing: border-box">
   <div style="display: flex; flex-direction: column; gap: 20px">
-    <a href="dashboard.html" style="text-decoration: none; display: flex; align-items: center; gap: 10px; color: inherit">
-      <svg width="32" height="32" viewBox="0 0 34 34" aria-hidden="true" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="32" height="32" rx="9" fill="#1E4D35"></rect><path d="M10 24c0-8 5-13 14-14-1 9-6 14-14 14z" stroke="#F2F4EC"></path><path d="M10 24l7-7" stroke="#B8DB5A"></path></svg>
-      <div>
-        <div style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px; line-height: 1">TaniAdapt</div>
-        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--dark-muted)">Agro-Workstation</div>
-      </div>
-    </a>
+    <div class="sidebar-header" style="display: flex; align-items: center; justify-content: space-between">
+      <a href="dashboard.html" class="sidebar-brand-link" style="text-decoration: none; display: flex; align-items: center; gap: 10px; color: inherit">
+        <svg width="32" height="32" viewBox="0 0 34 34" aria-hidden="true" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="32" height="32" rx="9" fill="#1E4D35"></rect><path d="M10 24c0-8 5-13 14-14-1 9-6 14-14 14z" stroke="#F2F4EC"></path><path d="M10 24l7-7" stroke="#B8DB5A"></path></svg>
+        <span class="sidebar-brand-text" style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px; line-height: 1">TaniAdapt</span>
+      </a>
+      <button type="button" id="collapse-sidebar-btn" class="sidebar-collapse-btn" title="Ciutkan / Lebarkan Menu" aria-label="Toggle sidebar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/></svg>
+      </button>
+    </div>
 
     <nav aria-label="Menu aplikasi" style="display: flex; flex-direction: column; gap: 6px">
       <div id="nav" style="display: contents"></div>
@@ -33,66 +35,109 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
           <span style="display: flex; align-items: center; justify-content: space-between; width: 100%">
             <span>Bukti Ilmiah (16 Field)</span>
-            <span style="font-size: 10px; background: var(--accent); color: var(--ink); padding: 1px 6px; border-radius: 4px; font-weight: 700">DETAIL</span>
           </span>
         </button>
       </div>
     </nav>
   </div>
-  <div style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--dark-muted); text-align: center; padding-top: 16px; border-top: 1px solid var(--dark-line)">
-    Engine v2.4 · Jabar
-  </div>
 </aside>
 
 <!-- MAIN CONTENT -->
-<main class="app-main" style="padding: 24px clamp(16px, 3vw, 36px) 48px; display: flex; flex-direction: column; gap: 20px; box-sizing: border-box">
+<main class="app-main">
 
 <!-- TOP HEADER BAR -->
-<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 14px; border-bottom: 1px solid var(--line); padding-bottom: 16px">
-  <div style="display: flex; align-items: center; gap: 12px">
-    <button type="button" id="toggle-sidebar-btn" title="Buka / Tutup Sidebar" style="min-height: 40px; width: 40px; border-radius: 10px; background: #FFFFFF; border: 1px solid var(--line); color: var(--ink); cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05)">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-    </button>
-    <button type="button" id="btn-nav-dashboard" style="min-height: 40px; padding: 0 14px; border-radius: 10px; background: #FFFFFF; border: 1px solid var(--line); color: var(--green); font-weight: 700; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05)">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-      <span>Dashboard</span>
-    </button>
-    <div>
-      <h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px; letter-spacing: -0.03em; line-height: 1.1">
-        <span data-bind="title">Rekomendasi tindakan hari ini</span>
-      </h1>
+<header class="dashboard-topbar">
+  <!-- BRAND TITLE -->
+  <div class="dashboard-brand-title">
+    <div class="mobile-brand">
+      <svg width="26" height="26" viewBox="0 0 34 34" aria-hidden="true" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="1" y="1" width="32" height="32" rx="9" fill="#1E4D35"></rect>
+        <path d="M10 24c0-8 5-13 14-14-1 9-6 14-14 14z" stroke="#F2F4EC"></path>
+        <path d="M10 24l7-7" stroke="#B8DB5A"></path>
+      </svg>
+      <span class="mobile-brand-name">TaniAdapt</span>
+      <span class="mobile-sep">/</span>
     </div>
+    <h1 class="dashboard-title">
+      <span data-bind="title">Rekomendasi tindakan hari ini</span>
+    </h1>
   </div>
 
-  <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px">
+  <!-- DESKTOP ACTIONS (Unified 36px aligned cluster, hidden on mobile) -->
+  <div class="dashboard-desktop-actions">
     <!-- MODE TOGGLE -->
-    <div id="header-mode-toggle" role="group" aria-label="Pilih Mode Tampilan" style="display: flex; align-items: center; gap: 4px; background: #FFFFFF; border: 1px solid var(--line); padding: 3px 4px; border-radius: 999px; box-shadow: 0 1px 3px rgba(0,0,0,0.04)">
-      <button type="button" id="btn-mode-default" style="min-height: 30px; padding: 0 12px; border-radius: 999px; border: none; font-size: 12px; font-weight: 700; cursor: pointer; background: var(--green); color: #FFF">Petani (Biasa)</button>
-      <button type="button" id="btn-mode-advance" style="min-height: 30px; padding: 0 12px; border-radius: 999px; border: none; font-size: 12px; font-weight: 700; cursor: pointer; background: transparent; color: var(--muted)">Riset (Advance)</button>
+    <div id="header-mode-toggle" class="dashboard-mode-toggle" role="group" aria-label="Pilih Mode Tampilan">
+      <button type="button" id="btn-mode-default" data-ui-mode="default" class="mode-btn active">Petani (Biasa)</button>
+      <button type="button" id="btn-mode-advance" data-ui-mode="pro" class="mode-btn">Riset (Advance)</button>
     </div>
-    <span id="active-mode-badge" style="font-size: 11px; padding: 4px 10px; border-radius: 999px; font-weight: 700; background: rgba(30,77,53,0.1); color: var(--green); border: 1px solid rgba(30,77,53,0.2); white-space: nowrap">Mode Aktif: Petani (Bahasa Sederhana)</span>
 
-    <!-- AUTH STATUS BUTTON -->
-    <div id="auth-status-container">
-      <button type="button" id="open-auth-btn" style="min-height: 36px; padding: 0 14px; border-radius: 999px; background: var(--green); color: #FFFFFF; border: none; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(30,77,53,0.15)">
+    <!-- QUICK ADD BUTTON -->
+    <button type="button" data-view-btn="lahan" class="btn-tambah-petak">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+      <span>Tambah Petak</span>
+    </button>
+
+    <!-- AUTH STATUS -->
+    <div id="auth-status-container" class="dashboard-auth-area">
+      <button type="button" id="open-auth-btn" class="btn-login-chip">
         <span>Masuk / Profil</span>
       </button>
     </div>
   </div>
-</div>
+
+  <!-- MOBILE TOGGLE BUTTON (Visible only on mobile) -->
+  <button type="button" id="mobile-navbar-toggle" class="mobile-navbar-toggle-btn" aria-expanded="false" aria-label="Buka menu navigasi">
+    <svg class="icon-hamburger" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="17" x2="20" y2="17"></line></svg>
+    <svg class="icon-close" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+  </button>
+
+  <!-- MOBILE DROPDOWN MENU (Collapsible) -->
+  <div id="mobile-navbar-dropdown" class="mobile-navbar-dropdown" hidden>
+    <div class="mobile-dropdown-inner">
+      <div id="mobile-auth-status-container" class="mobile-auth-row">
+        <!-- Injected by renderAuth() -->
+      </div>
+
+      <div class="mobile-mode-row">
+        <span class="mobile-row-label">Mode Tampilan:</span>
+        <div class="dashboard-mode-toggle mobile-mode-toggle" role="group" aria-label="Pilih Mode Tampilan">
+          <button type="button" data-ui-mode="default" class="mode-btn active">Petani (Biasa)</button>
+          <button type="button" data-ui-mode="pro" class="mode-btn">Riset (Advance)</button>
+        </div>
+      </div>
+
+      <button type="button" data-view-btn="lahan" class="btn-tambah-petak mobile-add-plot-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        <span>Tambah Petak Lahan</span>
+      </button>
+
+      <nav class="mobile-dropdown-nav" aria-label="Navigasi Menu Mobile">
+        <button type="button" data-view-btn="ringkasan" class="mobile-dropdown-nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+          <span>Rekomendasi Tindakan</span>
+        </button>
+        <button type="button" data-view-btn="lahan" class="mobile-dropdown-nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          <span>Lahan Saya</span>
+        </button>
+        <button type="button" data-view-btn="tanya" class="mobile-dropdown-nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+          <span>Chat dengan Tania</span>
+        </button>
+        <button type="button" data-view-btn="pengaturan" class="mobile-dropdown-nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          <span>Pengaturan Sistem</span>
+        </button>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<div class="dashboard-content-wrapper">
 
 <!-- ============ VIEW 1: REKOMENDASI HARI INI (Per-Plot Feed) ============ -->
 <div data-view="ringkasan">
   <div style="display: flex; flex-direction: column; gap: 20px">
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px">
-      <p style="margin: 0; font-size: 14px; color: var(--muted)">
-        Rekomendasi tindakan operasional lapangan real-time per petak lahan berbasis Decision Engine biofisik.
-      </p>
-      <button type="button" data-view-btn="lahan" style="min-height: 36px; padding: 0 14px; border-radius: 999px; background: var(--sage); color: var(--ink); border: 1px solid var(--line); font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px">
-        + Tambah Petak Lahan
-      </button>
-    </div>
-
     <!-- 2-COLUMNS DESKTOP GRID -->
     <div id="plot-feed-container" class="plot-feed-grid">
       <!-- Per-plot action cards rendered by JS -->
@@ -259,12 +304,9 @@ Memuat analisis risiko tanaman...
 
 <!-- INFLUENTIAL FACTORS (EVIDENCE WEIGHTS) -->
 <section id="factors-section" aria-label="Faktor paling berpengaruh" style="flex: 1 1 300px; min-width: 0; background: #FFFFFF; border: 1px solid var(--line); border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 14px">
-<h2 style="margin: 0; font-size: 17px; font-weight: 700">Evidence: Faktor Berpengaruh</h2>
+<h2 style="margin: 0; font-size: 17px; font-weight: 700">Faktor Berpengaruh</h2>
 <div id="factors-container" style="display: flex; flex-direction: column; gap: 10px">
 </div>
-<p style="margin: 0; font-size: 13px; color: var(--muted); border-top: 1px solid var(--sage); padding-top: 10px">
-Sumber: Engine <span data-bind="cropLabel"></span> + Repository Literatur Terverifikasi.
-</p>
 </section>
 </div>
 
@@ -319,16 +361,13 @@ Sumber: Engine <span data-bind="cropLabel"></span> + Repository Literatur Terver
 <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: center">
 <div>
 <h2 style="margin: 0; font-size: 17px; font-weight: 700">Riwayat 14 Hari + Prakiraan 7 Hari</h2>
-<p style="margin: 2px 0 0; font-size: 13px; color: var(--muted)">Jejak temporal lengkap yang dikonsumsi decision engine</p>
 </div>
 <div role="group" aria-label="Pilih variabel" style="display: flex; flex-wrap: wrap; gap: 6px">
 <div id="metrics" style="display: contents"></div>
 </div>
 </div>
 
-<div id="chart-tooltip" style="min-height: 24px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--green); font-weight: 600">
-Arahkan kursor pada batang untuk melihat rincian tanggal &amp; angka
-</div>
+<div id="chart-tooltip" style="min-height: 20px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--green); font-weight: 600"></div>
 
 <div role="img" aria-label="Grafik batang riwayat 14 hari dan forecast 7 hari" style="display: flex; align-items: flex-end; gap: 6px; height: 170px; padding-bottom: 4px; border-bottom: 1px solid var(--line)">
 <div id="bars" style="display: contents"></div>
@@ -365,11 +404,10 @@ Arahkan kursor pada batang untuk melihat rincian tanggal &amp; angka
 <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: baseline">
 <div>
 <h2 style="margin: 0; font-size: 18px; font-weight: 800; color: #FFF; display: flex; align-items: center; gap: 8px">
-  Chat dengan Tania (Asisten Agronomis AI)
+  Chat dengan Tania (Asisten Agronomis)
 </h2>
-<span style="font-size: 13px; color: var(--dark-muted)">Tania menjelaskan keputusan engine, dasar ilmiah FAO-56, dan SOP khusus kebun Anda</span>
+<span style="font-size: 13px; color: var(--dark-muted)">Tania menjelaskan keputusan engine, dasar ilmiah, dan catatan kebun Anda</span>
 </div>
-<span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; background: var(--accent); color: var(--ink); padding: 3px 8px; border-radius: 6px">RAG 16 Paper + Custom KB</span>
 </div>
 
 <div id="thread-box" style="display: flex; flex-direction: column; gap: 12px; min-height: 280px; max-height: 480px; overflow-y: auto; padding-right: 4px">
@@ -414,29 +452,52 @@ Arahkan kursor pada batang untuk melihat rincian tanggal &amp; angka
 
 <!-- RAG CONTEXT SIDEBAR -->
 <aside aria-label="Konteks yang dibaca asisten" style="flex: 1 1 280px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
-<section style="background: #FFFFFF; border: 1px solid var(--line); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
-<h2 style="margin: 0; font-size: 15px; font-weight: 700">Hasil Engine yang Dijelaskan</h2>
-<div style="display: flex; justify-content: space-between; font-size: 14px"><span style="color: var(--muted)">Tanaman</span><span style="font-weight: 600"><span data-bind="cropLabel">Cabai Merah</span></span></div>
-<div style="display: flex; justify-content: space-between; font-size: 14px"><span style="color: var(--muted)">Fase Fenologi</span><span id="rag-stage-text" style="font-weight: 600">Pembungaan (55 HST)</span></div>
-<div style="display: flex; justify-content: space-between; font-size: 14px"><span style="color: var(--muted)">Tingkat Risiko</span><span id="rag-risk-text" style="font-weight: 600; color: var(--risk-strong)">Tinggi</span></div>
-<div style="display: flex; justify-content: space-between; font-size: 14px"><span style="color: var(--muted)">Faktor Dominan</span><span id="rag-factor-text" style="font-weight: 600">Hujan Berturut-turut</span></div>
-<div style="display: flex; justify-content: space-between; font-size: 14px"><span style="color: var(--muted)">Irigasi / Drainase</span><span id="rag-water-text" style="font-weight: 600">Drainase Mendesak</span></div>
+<section class="rag-engine-summary-card">
+  <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); padding-bottom: 10px">
+    <h2 style="margin: 0; font-size: 15px; font-weight: 800; color: var(--ink); display: flex; align-items: center; gap: 8px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+      <span>Hasil Engine yang Dijelaskan</span>
+    </h2>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 2px">
+    <div class="rag-summary-item">
+      <span class="rag-summary-label">Tanaman</span>
+      <span class="rag-summary-value"><span data-bind="cropLabel">Cabai Merah</span></span>
+    </div>
+    <div class="rag-summary-item">
+      <span class="rag-summary-label">Fase Fenologi</span>
+      <span id="rag-stage-text" class="rag-summary-value">Pembungaan (55 HST)</span>
+    </div>
+    <div class="rag-summary-item">
+      <span class="rag-summary-label">Tingkat Risiko</span>
+      <span id="rag-risk-text" class="rag-summary-value" style="color: var(--risk-strong)">Tinggi</span>
+    </div>
+    <div class="rag-summary-item">
+      <span class="rag-summary-label">Faktor Dominan</span>
+      <span id="rag-factor-text" class="rag-summary-value">Hujan Berturut-turut</span>
+    </div>
+    <div class="rag-summary-item">
+      <span class="rag-summary-label">Irigasi / Drainase</span>
+      <span id="rag-water-text" class="rag-summary-value">Drainase Mendesak</span>
+    </div>
+  </div>
 </section>
 
-<section style="background: #FFFFFF; border: 1px solid var(--line); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 10px">
-<div style="display: flex; justify-content: space-between; align-items: center">
-<h2 style="margin: 0; font-size: 15px; font-weight: 700">Sumber Evidence (RAG)</h2>
-<button type="button" id="trigger-evidence-modal-btn" style="background: none; border: none; padding: 0; color: var(--green); font-size: 12px; font-weight: 600; cursor: pointer; text-decoration: underline">Lihat Semua &rarr;</button>
-</div>
-<div id="rag-evidence-list" style="display: flex; flex-direction: column; gap: 8px">
-</div>
+<!-- SUMBER EVIDENCE (RAG) - KHUSUS MODE ADVANCED -->
+<section id="chat-evidence-section" style="background: #FFFFFF; border: 1px solid var(--line); border-radius: 18px; padding: 20px; display: none; flex-direction: column; gap: 10px">
+  <div style="display: flex; justify-content: space-between; align-items: center">
+    <h2 style="margin: 0; font-size: 15px; font-weight: 700; color: var(--ink)">Sumber Evidence (RAG)</h2>
+    <button type="button" id="trigger-evidence-modal-btn" style="background: none; border: none; padding: 0; color: var(--green); font-size: 12px; font-weight: 600; cursor: pointer; text-decoration: underline">Lihat Semua &rarr;</button>
+  </div>
+  <div id="rag-evidence-list" style="display: flex; flex-direction: column; gap: 8px">
+  </div>
 </section>
 
 <!-- PANEL KNOWLEDGE BASE MANDIRI / SOP PETANI DI DALAM TAB CHAT -->
 <section style="background: #FFFFFF; border: 1px solid var(--line); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
   <div style="display: flex; justify-content: space-between; align-items: center">
-    <h3 style="margin: 0; font-size: 14px; font-weight: 700; color: var(--green)">Personalisasi SOP Kebun (RAG)</h3>
-    <span style="font-size: 10px; background: var(--sage); color: var(--green); padding: 2px 6px; border-radius: 4px; font-weight: 700">TERHUBUNG</span>
+    <h3 style="margin: 0; font-size: 14px; font-weight: 700; color: var(--green)">Catatan Kebun &amp; SOP Petani</h3>
   </div>
   <p style="margin: 0; font-size: 12px; color: var(--muted); line-height: 1.4">
     Catat kebiasaan pupuk, varietas benih, atau riwayat lahan. Tania akan membaca catatan ini saat menjawab chat Anda.
@@ -527,13 +588,10 @@ Daftarkan petak lahan sejak hari tanam agar engine dapat memantau akumulasi keba
 <h2 style="margin: 0; font-size: 17px; font-weight: 700">Jejak Kondisi &bull; <span data-bind="fieldName">Lahan Pasirhuni</span></h2>
 <span style="font-size: 13px; color: var(--muted)">Prediksi engine harian + catatan pengamatan petani</span>
 </div>
-<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: var(--ground); border: 1px solid var(--line); padding: 4px 10px; border-radius: 999px">Audit Trail Aktif</span>
 </div>
 
-<div style="overflow-x: auto">
-<ol style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(7, minmax(130px, 1fr)); gap: 10px">
-<div id="trail" style="display: contents"></div>
-</ol>
+<div class="trail-grid-container">
+<ol id="trail" class="trail-grid-list"></ol>
 </div>
 
 <!-- TAMBAH CATATAN HARIAN -->
@@ -692,6 +750,8 @@ Daftarkan petak lahan sejak hari tanam agar engine dapat memantau akumulasi keba
 
 </div>
 </div>
+
+</div> <!-- end dashboard-content-wrapper -->
 
 </main>
 </div>
@@ -963,6 +1023,26 @@ Daftarkan petak lahan sejak hari tanam agar engine dapat memantau akumulasi keba
     </div>
   </div>
 </div>
+
+<!-- MOBILE BOTTOM NAVIGATION (Smartphones <= 860px) -->
+<nav class="mobile-bottom-nav" aria-label="Navigasi bawah mobile">
+  <button type="button" data-view-btn="ringkasan" class="mobile-nav-tab active" data-tab="ringkasan" aria-current="page">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+    <span>Tindakan</span>
+  </button>
+  <button type="button" data-view-btn="lahan" class="mobile-nav-tab" data-tab="lahan">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+    <span>Lahan</span>
+  </button>
+  <button type="button" data-view-btn="tanya" class="mobile-nav-tab" data-tab="tanya">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+    <span>Tanya</span>
+  </button>
+  <button type="button" data-view-btn="pengaturan" class="mobile-nav-tab" data-tab="pengaturan">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+    <span>Setelan</span>
+  </button>
+</nav>
 
 <!-- SCRIPT DRIVER -->
 <script type="module" src="/src/dashboard.ts"></script>

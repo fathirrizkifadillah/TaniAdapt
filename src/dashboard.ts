@@ -409,13 +409,13 @@ function renderHourlyTimeline(hourlyList: any[] = [], currentTemp: number = 24):
     }
 
     slots.push(`
-      <div style="flex: 1; min-width: 90px; background: ${adviceBg}; border: 1px solid var(--line); border-radius: 12px; padding: 10px 8px; text-align: center; display: flex; flex-direction: column; gap: 4px">
+      <div style="flex: 0 0 94px; width: 94px; min-width: 94px; background: ${adviceBg}; border: 1px solid var(--line); border-radius: 12px; padding: 8px 6px; text-align: center; display: flex; flex-direction: column; gap: 3px; box-sizing: border-box">
         <div style="font-size: 11px; font-weight: 700; color: var(--muted)">${hourLabel}</div>
-        <div style="font-size: 13.5px; font-weight: 800; color: var(--ink)">${tempVal}°C</div>
+        <div style="font-size: 13px; font-weight: 800; color: var(--ink)">${tempVal}°C</div>
         <div style="font-size: 11px; font-weight: 600; color: ${rainVal > 0 ? '#DC2626' : 'var(--muted)'}">
           ${rainVal > 0 ? `${rainVal.toFixed(1)} mm` : `${probVal}% prob`}
         </div>
-        <div style="font-size: 10px; font-weight: 700; color: ${adviceColor}; margin-top: 2px">
+        <div style="font-size: 10.5px; font-weight: 700; color: ${adviceColor}; margin-top: 1px; line-height: 1.2" title="${advice}">
           ${advice}
         </div>
       </div>
@@ -423,12 +423,12 @@ function renderHourlyTimeline(hourlyList: any[] = [], currentTemp: number = 24):
   }
 
   return `
-    <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px; padding-top: 10px; border-top: 1px dashed var(--line)">
-      <div style="display: flex; justify-content: space-between; align-items: center">
+    <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px; padding-top: 10px; border-top: 1px dashed var(--line); width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap">
         <span style="font-size: 12px; font-weight: 700; color: var(--ink)">Prakiraan Agroklimat 6 Jam ke Depan:</span>
         <span style="font-size: 11px; color: var(--muted)">Peluang hujan &amp; jendela tindakan per jam</span>
       </div>
-      <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px">
+      <div class="hourly-timeline-strip">
         ${slots.join('')}
       </div>
     </div>
@@ -511,34 +511,34 @@ function renderPlotFeed() {
       </div>
     `);
 
-    return `<article style="background: #FFFFFF; border: 1.5px solid var(--line); border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); cursor: pointer" data-open-detail-plot="${idx}">
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; flex-wrap: wrap">
-        <div>
-          <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--ink)">${esc(plot.name)}</h3>
-          <div style="font-size: 13px; color: var(--muted); margin-top: 2px">${esc(locName)} · ${elev}m dpl · ${CROPS_LIST.find(c => c.id === plot.cropId)?.label || plot.cropId} · Umur Tanaman: ${plot.hst} Hari Setelah Tanam (${res.stageName})</div>
+    return `<article class="plot-card" data-open-detail-plot="${idx}">
+      <div class="plot-card-header">
+        <div class="plot-card-titles">
+          <h3 class="plot-card-name">${esc(plot.name)}</h3>
+          <div class="plot-card-meta">${esc(locName)} · ${elev}m dpl · ${CROPS_LIST.find(c => c.id === plot.cropId)?.label || plot.cropId} · Umur: ${plot.hst} HST (${res.stageName})</div>
         </div>
-        <span style="flex: none; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; ${riskStyle}">Risiko ${res.overallRisk}</span>
+        <span class="plot-card-badge" style="${riskStyle}">Risiko ${res.overallRisk}</span>
       </div>
 
-      ${cw ? `<div style="display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; background: var(--ground); padding: 10px 14px; border-radius: 10px">
+      ${cw ? `<div class="plot-weather-strip">
         <span><strong>${cw.temperature.toFixed(1)}°C</strong></span>
         <span>RH ${Math.round(cw.relativeHumidity)}%</span>
         <span>Hujan ${cw.precipitation.toFixed(1)} mm</span>
         <span>Hujan 7d: ${Math.round(f.rolling7dRain)} mm</span>
       </div>` : ''}
 
-      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px">
-        <div style="background: ${irrigBg}; border-radius: 12px; padding: 12px; text-align: center">
+      <div class="plot-action-grid">
+        <div style="background: ${irrigBg}; border-radius: 12px; padding: 12px; text-align: center; min-width: 0; box-sizing: border-box">
           <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px">Kondisi Air Tanah</div>
-          <div style="font-size: 13px; font-weight: 700; color: ${irrigColor}">${irrigLabel}</div>
+          <div style="font-size: 13px; font-weight: 700; color: ${irrigColor}; word-break: break-word">${irrigLabel}</div>
         </div>
-        <div style="background: ${sprayBg}; border-radius: 12px; padding: 12px; text-align: center">
+        <div style="background: ${sprayBg}; border-radius: 12px; padding: 12px; text-align: center; min-width: 0; box-sizing: border-box">
           <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px">Penyemprotan</div>
-          <div style="font-size: 13px; font-weight: 700; color: ${sprayColor}">${sprayLabel}</div>
+          <div style="font-size: 13px; font-weight: 700; color: ${sprayColor}; word-break: break-word">${sprayLabel}</div>
         </div>
-        <div style="background: ${fertBg}; border-radius: 12px; padding: 12px; text-align: center">
+        <div style="background: ${fertBg}; border-radius: 12px; padding: 12px; text-align: center; min-width: 0; box-sizing: border-box">
           <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px">Pemupukan</div>
-          <div style="font-size: 13px; font-weight: 700; color: ${fertColor}">${fertLabel}</div>
+          <div style="font-size: 13px; font-weight: 700; color: ${fertColor}; word-break: break-word">${fertLabel}</div>
         </div>
       </div>
 
@@ -546,11 +546,11 @@ function renderPlotFeed() {
 
       ${metricRow}
 
-      <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 4px" onclick="event.stopPropagation()">
-        <button type="button" data-open-detail-plot="${idx}" style="min-height: 38px; padding: 0 16px; border-radius: 999px; border: 1.5px solid var(--green); background: #FFFFFF; color: var(--green); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px">
+      <div class="plot-card-actions" onclick="event.stopPropagation()">
+        <button type="button" data-open-detail-plot="${idx}" class="btn-detail-plot">
           Buka Detail Lahan Ini &rarr;
         </button>
-        <button type="button" data-ask-tania-plot="${idx}" style="min-height: 38px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--ground); color: var(--ink); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px">
+        <button type="button" data-ask-tania-plot="${idx}" class="btn-ask-tania">
           Tanya Tania
         </button>
       </div>
@@ -1086,18 +1086,31 @@ function renderBiofisikPlotBanner() {
 }
 function renderNav() {
   const container = $('#nav');
-  if (!container) return;
+  if (container) {
+    container.innerHTML = VIEWS.map((v) => {
+      const on = state.view === v.id;
+      const icon = NAV_ICONS[v.id] || '';
+      const style = 'text-align: left; width: 100%; min-height: 44px; padding: 0 14px; border-radius: 10px; border: none; font: inherit; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; ' +
+        (on ? 'background: var(--accent); color: var(--ink); font-weight: 700' : 'background: transparent; color: #DCE8D8');
+      return `<button type="button" class="ta-nav-item" data-view-btn="${v.id}" title="${v.label}" ${on ? 'aria-current="page"' : ''} style="${style}">
+        <span style="display: flex; align-items: center; gap: 8px">${icon}<span class="ta-nav-text">${v.label}</span></span>
+        ${on ? '<svg class="ta-nav-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>' : ''}
+      </button>`;
+    }).join('');
+  }
 
-  container.innerHTML = VIEWS.map((v) => {
-    const on = state.view === v.id;
-    const icon = NAV_ICONS[v.id] || '';
-    const style = 'text-align: left; width: 100%; min-height: 44px; padding: 0 14px; border-radius: 10px; border: none; font: inherit; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; ' +
-      (on ? 'background: var(--accent); color: var(--ink); font-weight: 700' : 'background: transparent; color: #DCE8D8');
-    return `<button type="button" data-view-btn="${v.id}" ${on ? 'aria-current="page"' : ''} style="${style}">
-      <span style="display: flex; align-items: center; gap: 8px">${icon}${v.label}</span>
-      ${on ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>' : ''}
-    </button>`;
-  }).join('');
+  // Update mobile bottom nav active tabs
+  document.querySelectorAll('.mobile-nav-tab').forEach((tab) => {
+    const btn = tab as HTMLElement;
+    const isActive = btn.dataset.tab === state.view;
+    if (isActive) {
+      btn.classList.add('active');
+      btn.setAttribute('aria-current', 'page');
+    } else {
+      btn.classList.remove('active');
+      btn.removeAttribute('aria-current');
+    }
+  });
 }
 
 function updateCoordinateDisplay() {
@@ -1309,6 +1322,7 @@ function renderRecommendations() {
   if (list) {
     list.innerHTML = res.recommendations.map((r, i) => {
       const isUrgent = r.urgency === 'HARI_INI';
+      const urgencyLabel = r.urgency === 'HARI_INI' ? 'Hari ini' : r.urgency === '24_48_JAM' ? '24–48 Jam' : 'Rutin';
       return `<li style="display: flex; gap: 12px; align-items: flex-start; background: var(--ground); padding: 12px 14px; border-radius: 12px">
         <span style="flex: none; width: 26px; height: 26px; border-radius: 8px; background: ${isUrgent ? 'var(--risk)' : 'var(--green)'}; color: #FFFFFF; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center">
           ${i + 1}
@@ -1316,12 +1330,12 @@ function renderRecommendations() {
         <div style="flex: 1; display: flex; flex-direction: column; gap: 3px">
           <div style="display: flex; justify-content: space-between; align-items: center">
             <strong style="font-size: 14px; color: var(--ink)">${r.title}</strong>
-            <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; ${isUrgent ? 'color: var(--risk-strong)' : 'color: var(--green)'}">[${r.urgency}]</span>
+            <span style="font-size: 11px; font-weight: 700; ${isUrgent ? 'color: var(--risk-strong)' : 'color: var(--green)'}">${urgencyLabel}</span>
           </div>
           <span style="font-size: 13px; color: var(--text-2); line-height: 1.4">${r.action}</span>
           ${state.uiMode === 'pro'
-            ? `<span style="font-size: 11px; color: var(--muted); margin-top: 4px; font-family: 'IBM Plex Mono', monospace">Kategori: ${r.category} &bull; Rationale: ${r.rationale} &bull; Sumber: ${r.literatureSource || 'FAO-56'}</span>`
-            : `<span style="font-size: 12px; color: var(--green); margin-top: 4px; font-weight: 600">Catatan Petani: ${r.rationale}</span>`
+            ? `<span style="font-size: 11px; color: var(--muted); margin-top: 4px; font-family: 'IBM Plex Mono', monospace">${r.category} &bull; ${r.rationale} &bull; ${r.literatureSource || 'FAO-56'}</span>`
+            : `<span style="font-size: 12px; color: var(--green); margin-top: 4px; font-weight: 600">${r.rationale}</span>`
           }
         </div>
       </li>`;
@@ -1604,8 +1618,17 @@ function renderChat() {
       riskText.textContent = r.overallRisk === 'TINGGI' ? 'Tinggi' : r.overallRisk === 'SEDANG' ? 'Sedang' : 'Rendah';
       riskText.style.color = r.overallRisk === 'TINGGI' ? 'var(--risk-strong)' : 'var(--green)';
     }
-    if (factorText) factorText.textContent = `${state.features?.consecutiveRainyDays || 0} hari hujan berturut-turut`;
+    if (factorText) {
+      const days = state.features?.consecutiveRainyDays || 0;
+      factorText.textContent = days > 0 ? `${days} hari hujan berturut-turut` : 'Nihil hari hujan';
+    }
     if (waterText) waterText.textContent = r.irrigation.status === 'DRAINASE_MENDESAK' ? 'Drainase Mendesak' : 'Aman';
+  }
+
+  // Toggle chat evidence section based on UI mode (Khusus mode advanced)
+  const chatEvidenceSection = $('#chat-evidence-section');
+  if (chatEvidenceSection) {
+    chatEvidenceSection.style.display = state.uiMode === 'pro' ? 'flex' : 'none';
   }
 
   // Relevant RAG Literature Citations
@@ -1711,15 +1734,23 @@ function renderFields() {
     const trailCont = $('#trail');
     if (trailCont) {
       trailCont.innerHTML = curPlot.trail.map((t, idx) => {
-        const isToday = idx === curPlot.trail.length - 1;
-        const box = 'display: flex; flex-direction: column; gap: 6px; padding: 14px 12px; border-radius: 14px; ' +
-          (isToday ? 'background: var(--sage); border: 2px solid var(--green)' : 'background: var(--ground); border: 1px solid var(--line)');
+        const isToday = idx === curPlot.trail.length - 1 || t.dayLabel.toLowerCase().includes('hari ini');
+        const cleanDayLabel = t.dayLabel.replace(/\s*\(Hari\s*Ini\)/i, '').trim();
 
-        return `<li style="${box}">
-          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 700; color: var(--muted)">${t.dayLabel}</span>
-          <span style="font-size: 13px; font-weight: 500">${t.weather}</span>
-          <span style="align-self: flex-start; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px; ${STATUS_CHIP[t.status]}">${t.status}</span>
-          <span style="font-size: 12px; color: var(--text-2); min-height: 32px; line-height: 1.3">${t.note}</span>
+        return `<li class="trail-card ${isToday ? 'active-today' : ''}">
+          <div class="trail-card-header">
+            <span class="trail-day-label">${esc(cleanDayLabel)}</span>
+            ${isToday ? '<span class="trail-today-badge">Hari Ini</span>' : ''}
+          </div>
+          <div class="trail-weather-row">
+            <span>${esc(t.weather)}</span>
+          </div>
+          <div class="trail-category-row">
+            <span class="trail-category-chip">${esc(t.status)}</span>
+          </div>
+          <div class="trail-note-row">
+            <span>${esc(t.note)}</span>
+          </div>
         </li>`;
       }).join('');
     }
@@ -2082,18 +2113,23 @@ function renderViews() {
 }
 
 function renderUIMode() {
-  const defaultBtn = $('#mode-default-btn');
-  const proBtn = $('#mode-pro-btn');
   const isDefault = state.uiMode === 'default';
 
-  if (defaultBtn) {
-    defaultBtn.style.background = isDefault ? 'var(--green)' : 'transparent';
-    defaultBtn.style.color = isDefault ? '#FFFFFF' : 'var(--ink)';
-  }
-  if (proBtn) {
-    proBtn.style.background = !isDefault ? 'var(--green)' : 'transparent';
-    proBtn.style.color = !isDefault ? '#FFFFFF' : 'var(--ink)';
-  }
+  // Update all mode toggle buttons
+  document.querySelectorAll('[data-ui-mode]').forEach((el) => {
+    const btn = el as HTMLElement;
+    const mode = btn.dataset.uiMode;
+    const active = (mode === 'default' && isDefault) || (mode === 'pro' && !isDefault);
+    if (active) {
+      btn.style.background = 'var(--green)';
+      btn.style.color = '#FFFFFF';
+      btn.classList.add('active');
+    } else {
+      btn.style.background = 'transparent';
+      btn.style.color = 'var(--muted)';
+      btn.classList.remove('active');
+    }
+  });
 
   // Toggle "Bukti Ilmiah (16 Field)" visibility based on Mode
   const evBox = $('#evidence-sidebar-container');
@@ -2116,6 +2152,12 @@ function renderUIMode() {
   const chartSection = $('#chart-section');
   if (chartSection) {
     chartSection.style.display = !isDefault ? 'flex' : 'none';
+  }
+
+  // Sembunyikan Sumber Evidence di Chat Tania pada Mode Ringkas (Petani), tampilkan khusus di Mode Advance
+  const chatEvidenceSection = $('#chat-evidence-section');
+  if (chatEvidenceSection) {
+    chatEvidenceSection.style.display = !isDefault ? 'flex' : 'none';
   }
 
   // Banner Penjelas Perbedaan Mode
@@ -2331,28 +2373,28 @@ function renderFao56ProPanel() {
 
 function renderAuth() {
   const container = $('#auth-status-container');
-  if (!container) return;
+  const mobileContainer = $('#mobile-auth-status-container');
+  if (!container && !mobileContainer) return;
 
-  if (state.authUser) {
-    const isPro = state.authUser.user_type === 'farm_organisasi';
-    container.innerHTML = `
-      <div style="display: flex; align-items: center; gap: 8px">
-        <div style="display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2">
-          <span style="font-size: 13px; font-weight: 700; color: var(--ink)">${esc(state.authUser.full_name)}</span>
-          <span style="font-size: 10px; font-family: 'IBM Plex Mono', monospace; background: var(--sage); color: var(--green); padding: 1px 6px; border-radius: 4px; font-weight: 700">
-            ${isPro ? 'PENGELOLA / AKADEMISI' : 'PETANI'}
-          </span>
-        </div>
-        <button type="button" id="btn-logout" style="min-height: 32px; padding: 0 12px; border-radius: 999px; background: transparent; border: 1px solid var(--line); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--muted)">Keluar</button>
+  const isPro = state.authUser?.user_type === 'farm_organisasi';
+  const authHtml = state.authUser ? `
+    <div class="user-chip">
+      <div class="user-chip-text">
+        <span class="user-chip-name" title="${esc(state.authUser.full_name)}">${esc(state.authUser.full_name)}</span>
+        <span class="user-chip-role">${isPro ? 'AKADEMISI' : 'PETANI'}</span>
       </div>
-    `;
-  } else {
-    container.innerHTML = `
-      <button type="button" id="open-auth-btn" style="min-height: 36px; padding: 0 14px; border-radius: 999px; background: var(--green); color: #FFFFFF; border: none; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(30,77,53,0.15)">
-        <span>Masuk / Profil</span>
+      <button type="button" id="btn-logout" class="btn-logout-chip" title="Keluar dari akun">
+        Keluar
       </button>
-    `;
-  }
+    </div>
+  ` : `
+    <button type="button" id="open-auth-btn" class="btn-login-chip">
+      <span>Masuk / Profil</span>
+    </button>
+  `;
+
+  if (container) container.innerHTML = authHtml;
+  if (mobileContainer) mobileContainer.innerHTML = authHtml;
 }
 
 function renderAuthModal() {
@@ -2618,6 +2660,44 @@ function setupEventListeners() {
   document.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
 
+    // Toggle Mobile Navbar Dropdown Menu
+    const mobileNavToggle = target.closest('#mobile-navbar-toggle');
+    if (mobileNavToggle) {
+      const dropdown = $('#mobile-navbar-dropdown');
+      const toggleBtn = $('#mobile-navbar-toggle');
+      if (dropdown && toggleBtn) {
+        const isOpen = !dropdown.hidden;
+        dropdown.hidden = isOpen;
+        toggleBtn.setAttribute('aria-expanded', String(!isOpen));
+        toggleBtn.classList.toggle('active', !isOpen);
+      }
+      return;
+    }
+
+    // Auto-close mobile navbar dropdown when clicking any item inside it
+    if (target.closest('#mobile-navbar-dropdown button, #mobile-navbar-dropdown a')) {
+      const dropdown = $('#mobile-navbar-dropdown');
+      const toggleBtn = $('#mobile-navbar-toggle');
+      if (dropdown) dropdown.hidden = true;
+      if (toggleBtn) {
+        toggleBtn.setAttribute('aria-expanded', 'false');
+        toggleBtn.classList.remove('active');
+      }
+    }
+
+    // Auto-close dropdown when clicking outside
+    if (!target.closest('.dashboard-topbar')) {
+      const dropdown = $('#mobile-navbar-dropdown');
+      const toggleBtn = $('#mobile-navbar-toggle');
+      if (dropdown && !dropdown.hidden) {
+        dropdown.hidden = true;
+        if (toggleBtn) {
+          toggleBtn.setAttribute('aria-expanded', 'false');
+          toggleBtn.classList.remove('active');
+        }
+      }
+    }
+
     // View Navigation
     const viewBtn = target.closest('[data-view-btn]') as HTMLElement;
     if (viewBtn && viewBtn.dataset.viewBtn) {
@@ -2626,16 +2706,19 @@ function setupEventListeners() {
       return;
     }
 
-    // Toggle Sidebar Collapsible
-    const toggleSidebarBtn = target.closest('#toggle-sidebar-btn');
-    if (toggleSidebarBtn) {
+    // Toggle Sidebar Collapsible (Desktop 68px Icon Rail)
+    const collapseSidebarBtn = target.closest('#collapse-sidebar-btn, .sidebar-brand-link');
+    if (collapseSidebarBtn) {
       const sidebar = $('#app-sidebar');
-      if (sidebar) sidebar.classList.toggle('sidebar-collapsed');
+      if (sidebar) {
+        sidebar.classList.toggle('sidebar-collapsed');
+        document.body.classList.toggle('sidebar-collapsed');
+      }
       return;
     }
 
     // Back to Dashboard / Ringkasan
-    const backToDashboard = target.closest('#btn-nav-dashboard') || target.closest('#back-to-ringkasan-btn');
+    const backToDashboard = target.closest('#back-to-ringkasan-btn');
     if (backToDashboard) {
       state.view = 'ringkasan';
       render();
