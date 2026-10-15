@@ -43,3 +43,25 @@ Pemeriksa: Hermes Agent.
   - Seluruh panggilan Groq akan dialihkan melalui server proxy lokal `POST /api/tania`.
   - Kunci hanya dibaca dari environment variable server Node (`process.env.GROQ_API_KEY`).
   - Seluruh referensi `VITE_GROQ_API_KEY` dan penyimpanan kunci di browser (localStorage) dihapus tuntas.
+
+---
+
+## 4. TABEL PEMETAAN BERKAS ENGINE (M1 / M2 / M3) KE `src/engine`
+
+Tabel di bawah mencatat pemetaan berkas engine hasil riset (Milestone 1, 2, dan 3) ke dalam `src/engine/` di repo `TaniAdapt`, termasuk status apakah berkas tersebut ADA atau TIDAK ADA:
+
+| Berkas Riset / Mandat (M1–M3) | Status di `TaniAdapt/src/engine/` | Path Real / Padanan di Repo | Keterangan & Catatan |
+| :--- | :--- | :--- | :--- |
+| `rules.json` | **ADA** | `src/engine/rules.json` | Identik dengan rujukan kanonik riset (hash SHA-256 cocok). |
+| `engine_output.schema.json` | **ADA** | `src/engine/engine_output.schema.json` | JSON Schema Draft 2020-12 valid, disinkronkan dari riset. |
+| `golden_engine_vectors.json` | **ADA** | `src/engine/golden_engine_vectors.json` | Vektor uji benchmark FAO-56 & AgERA5 untuk paritas numerik. |
+| `fao56.ts` / `fao56_penman_monteith.py` | **ADA** | `src/engine/waterBalance.ts` | Rumus FAO-56 PM diimplementasikan di `waterBalance.ts`. |
+| `crop_water_stress.ts` | **ADA** | `src/engine/waterBalance.ts` | Logika TAW, RAW, dan kurva deplesi Dr terintegrasi di `waterBalance.ts`. |
+| `crop_engines.ts` | **ADA** | `src/engine/cropEngines.ts` | Aturan fenologi dan OPT per komoditas. |
+| `decision_engine.ts` | **ADA** | `src/engine/decisionEngine.ts` | Master orchestrator penggabung cuaca, biofisik, dan rules. |
+| `feature_engineering.ts` | **ADA** | `src/engine/featureEngineering.ts` | Ekstraksi lag temporal hujan, RH, dan formula VPD Tetens. |
+| `percentile.ts` / `climatology.ts` | **TIDAK ADA** | *(Tidak ada)* | Logika persentil klimatologi dieksekusi di backend riset Python, belum di-port ke modul terpisah di TS. |
+| `taniaService.ts` / `ragService.ts` | **TIDAK ADA** | `src/services/groqService.ts` | Chatbot dan RAG dilayani oleh modul monolitik `groqService.ts`. |
+| `localNarrativeFallback.ts` | **TIDAK ADA** | `src/dashboard.ts` | Templat narasi offline ditanam langsung di fungsi render UI `dashboard.ts`. |
+| `modals.ts` | **TIDAK ADA** | `src/dashboard.ts` & `dashboard.html` | Modal interaktif masih menjadi bagian monolitik HTML dan `dashboard.ts`. |
+

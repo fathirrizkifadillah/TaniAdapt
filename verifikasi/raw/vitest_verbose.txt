@@ -1,0 +1,40 @@
+[TaniAdapt Auth] PostgreSQL not reachable, using persistent local fallback DB: connect ECONNREFUSED 127.0.0.1:5432
+
+ RUN  v5.0.4 /mnt/c/CODING/TaniAdapt
+
+ ✓ src/test/cropEngines.test.ts > Crop Engines: Indonesian Scientific Validation > Cabai Merah: Memvalidasi alarm antraknosa tingkat TINGGI saat hujan 4 hari berturut-turut 10ms
+ ✓ src/test/cropEngines.test.ts > Crop Engines: Indonesian Scientific Validation > Padi Sawah: Memvalidasi alarm Blas tingkat TINGGI saat fase bunting di cuaca basah 1ms
+ ✓ src/test/cropEngines.test.ts > Crop Engines: Indonesian Scientific Validation > Bawang Merah: Memvalidasi instruksi DRAINASE MENDESAK saat akumulasi hujan tinggi 1ms
+ ✓ src/test/cropEngines.test.ts > Crop Engines: Indonesian Scientific Validation > Jagung: Memvalidasi alarm kebutuhan air kritis saat kemarau pada fase silking R1 1ms
+ ✓ src/test/cropEngines.test.ts > Crop Engines: Indonesian Scientific Validation > Tomat: Memvalidasi late blight tingkat TINGGI di suhu sejuk dataran tinggi (19°C) dan RH jenuh 1ms
+ ✓ src/test/featureEngineering.test.ts > Feature Engineering: VPD and Temporal Lag Features > menghitung VPD dengan formula Tetens secara akurat 7ms
+ ✓ src/test/featureEngineering.test.ts > Feature Engineering: VPD and Temporal Lag Features > mengekstrak fitur lag hujan dan hari berturut-turut dengan benar 2ms
+ ✓ src/test/literatureAndStress.test.ts > 16-Component Literature Extraction Evidence Repository > contains all required research papers from docx #1 7ms
+ ✓ src/test/literatureAndStress.test.ts > 16-Component Literature Extraction Evidence Repository > guarantees complete 16-field extraction for every paper 8ms
+ ✓ src/test/literatureAndStress.test.ts > Adversarial Worst-Case Stress Tests (break-ui standard) > handles extreme flood deluge (120mm rain, 98% RH, 7 consecutive wet days) without throwing 5ms
+ ✓ src/test/literatureAndStress.test.ts > Adversarial Worst-Case Stress Tests (break-ui standard) > handles extreme drought heatwave (37°C, 35% RH, 18 consecutive dry days) without throwing 2ms
+ ✓ src/test/fao56AndResearchParity.test.ts > FAO-56 Penman-Monteith & Agronomic Parity Suite > 1. Memvalidasi benchmark Contoh 18 Bab 4 FAO-56 (Brussels/Uccle) mendekati 3.88 mm/hari 5ms
+ ✓ src/test/fao56AndResearchParity.test.ts > FAO-56 Penman-Monteith & Agronomic Parity Suite > 2. Memverifikasi fraksi deplesi p dan kedalaman akar Zr dari FAO-56 Tabel 22 1ms
+ ✓ src/test/fao56AndResearchParity.test.ts > FAO-56 Penman-Monteith & Agronomic Parity Suite > 3. Memvalidasi TAW (Eq. 82) dan RAW (Eq. 83) Contoh 36 FAO-56 pada 3 tekstur tanah (toleransi <= 1 mm) 1ms
+ ✓ src/test/fao56AndResearchParity.test.ts > FAO-56 Penman-Monteith & Agronomic Parity Suite > 4. Memvalidasi kurva dinamis Kc jagung (0.35 panen kering vs 0.60 panen basah) 1ms
+ ✓ src/test/fao56AndResearchParity.test.ts > FAO-56 Penman-Monteith & Agronomic Parity Suite > 5. Memverifikasi status evidence_insufficient untuk air padi sawah (rezim tergenang) 1ms
+ ✓ src/test/fao56AndResearchParity.test.ts > FAO-56 Penman-Monteith & Agronomic Parity Suite > 6. Memverifikasi simulasi maju 7 hari dua skenario (prakiraan vs tanpa_hujan) 2ms
+ ✓ src/test/fao56AndResearchParity.test.ts > FAO-56 Penman-Monteith & Agronomic Parity Suite > 7. Memverifikasi rekonstruksi cold-start ledger (pasti vs interval) 2ms
+ ✓ src/test/fao56AndResearchParity.test.ts > FAO-56 Penman-Monteith & Agronomic Parity Suite > 8. Memverifikasi aturan penguncian pupuk 14 hari (RULE_FERT_LOCKOUT_14D) 2ms
+ ✓ src/test/decisionEngine.test.ts > Master Decision Engine Orchestrator > dapat menentukan fase fenologi (growth stage) secara akurat dari nilai HST 4ms
+ ✓ src/test/decisionEngine.test.ts > Master Decision Engine Orchestrator > menjalankan pipeline lengkap dan menghasilkan structured decision output yang terkalibrasi 8ms
+ ✓ src/test/goldenVectorsParity.test.ts > Golden Engine Vectors Parity Test (FAO-56 & Water Balance) > 1. Memvalidasi ET0 Contoh 18 Bab 4 FAO-56 (Brussels/Uccle) 5ms
+ ✓ src/test/goldenVectorsParity.test.ts > Golden Engine Vectors Parity Test (FAO-56 & Water Balance) > 2. Memvalidasi 3 sampel tropis AgERA5 (Subang, Lembang, Indramayu) 3ms
+ ✓ src/test/goldenVectorsParity.test.ts > Golden Engine Vectors Parity Test (FAO-56 & Water Balance) > 3. Memvalidasi kurva dinamik Kc pada titik-titik jangkar fase (ini, mid, late) 4ms
+ ✓ src/test/goldenVectorsParity.test.ts > Golden Engine Vectors Parity Test (FAO-56 & Water Balance) > 4. Memvalidasi determinisme evaluasi stres air FAO-56 2ms
+ ✓ src/test/schemaValidation.test.ts > Engine Output Contract JSON Schema Draft 2020-12 Test Suite > 1. Memvalidasi payload dasar yang sah lulus validasi schema 27ms
+ ✓ src/test/schemaValidation.test.ts > Engine Output Contract JSON Schema Draft 2020-12 Test Suite > 2. Menolak payload dengan properti tambahan tak terduga (additionalProperties: false) 1ms
+ ✓ src/test/schemaValidation.test.ts > Engine Output Contract JSON Schema Draft 2020-12 Test Suite > 3. Menolak format tanggal/waktu yang melanggar RFC 3339 / ISO 8601 1ms
+ ✓ src/test/schemaValidation.test.ts > Engine Output Contract JSON Schema Draft 2020-12 Test Suite > 4. Menolak status kondisi_stres_abiotik jika tidak dipicu oleh aturan VERIFIED_METHOD 1ms
+ ✓ src/test/schemaValidation.test.ts > Engine Output Contract JSON Schema Draft 2020-12 Test Suite > 5. Menolak status kondisi_mendukung_OPT di level atas (tak aktif di schema) 1ms
+
+ Test Files  7 passed (7)
+      Tests  30 passed (30)
+   Start at  10:07:14
+   Duration  8.30s (import 63%, transform 22%, worker 13%, tests 1%)
+
