@@ -1047,7 +1047,7 @@ export async function generatePortfolioWordReport(plots: PortfolioReportPlot[], 
             alignment: AlignmentType.CENTER,
             children: [
               new TextRun({
-                text: 'TANIADAPT — RINGKASAN PORTOFOLIO KEBUN TANI',
+                text: 'TANIADAPT: RINGKASAN PORTOFOLIO KEBUN TANI',
                 bold: true,
                 size: 26,
                 color: greenDark,
@@ -1173,7 +1173,7 @@ export async function generatePortfolioAdvanceWordReport(plots: PortfolioAdvance
             alignment: AlignmentType.CENTER,
             children: [
               new TextRun({
-                text: 'TANIADAPT — DOSSIER AUDIT BIOFISIK PORTOFOLIO LINTAS PETAK (ADVANCE)',
+                text: 'TANIADAPT: DOSSIER AUDIT BIOFISIK PORTOFOLIO LINTAS PETAK (ADVANCE)',
                 bold: true,
                 size: 26,
                 color: greenDark,

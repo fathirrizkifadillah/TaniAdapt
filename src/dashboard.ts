@@ -1,5 +1,5 @@
 // ============================================================================
-// TaniAdapt — Precision Agro-Workstation (TypeScript Driver)
+// TaniAdapt: Precision Agro-Workstation (TypeScript Driver)
 // Mengintegrasikan Decision Engine, Fitur Temporal, Weather API, dan RAG Ilmiah
 // ============================================================================
 
@@ -154,12 +154,12 @@ const VIEWS = [
 ];
 
 const TITLES: Record<string, string> = {
-  ringkasan: 'Rekomendasi tindakan hari ini',
-  'detail-lahan': 'Detail lahan & tindakan lapangan',
-  cuaca: 'Analisis biofisik FAO-56',
-  lahan: 'Petak lahan saya & registrasi',
+  ringkasan: 'Rekomendasi Tindakan Hari Ini',
+  'detail-lahan': 'Detail Lahan & Tindakan Lapangan',
+  cuaca: 'Analisis Biofisik FAO-56',
+  lahan: 'Petak Lahan Saya & Registrasi',
   tanya: 'Chat dengan Tania (Asisten AI RAG)',
-  pengaturan: 'Pengaturan sistem'
+  pengaturan: 'Pengaturan Sistem'
 };
 
 const RISK_BADGE: Record<string, string> = {
@@ -473,19 +473,11 @@ function renderPlotFeed() {
       </div>
     `);
 
-<<<<<<< HEAD
     return `<article class="plot-card" data-open-detail-plot="${idx}">
       <div class="plot-card-header">
         <div class="plot-card-titles">
           <h3 class="plot-card-name">${esc(plot.name)}</h3>
-          <div class="plot-card-meta">${esc(locName)} · ${elev}m dpl · ${CROPS_LIST.find(c => c.id === plot.cropId)?.label || plot.cropId} · Umur: ${plot.hst} HST (${res.stageName})</div>
-=======
-    return `<article style="background: #FFFFFF; border: 1.5px solid var(--line); border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); cursor: pointer" data-open-detail-plot="${idx}">
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; flex-wrap: wrap">
-        <div>
-          <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--ink)">${esc(plot.name)}</h3>
-          <div style="font-size: 13px; color: var(--muted); margin-top: 2px">${esc(locName)} · ${elev}m dpl · ${CROPS_LIST.find(c => c.id === plot.cropId)?.label || plot.cropId} · ${isRingkas ? `Hari ke-${plot.hst} sejak tanam` : `${plot.hst} HST`} (${res.stageName.replace(/\(\d+–\d+\s*HST\)/g, '').trim()})</div>
->>>>>>> 39f2e004940b27c93a740b7424dbdb34b2eba7e9
+          <div class="plot-card-meta">${esc(locName)} · ${elev}m dpl · ${CROPS_LIST.find(c => c.id === plot.cropId)?.label || plot.cropId} · ${isRingkas ? `Hari ke-${plot.hst} sejak tanam` : `${plot.hst} HST`} (${res.stageName.replace(/\(\d+–\d+\s*HST\)/g, '').trim()})</div>
         </div>
         <span class="plot-card-badge" style="${riskStyle}">Risiko ${res.overallRisk}</span>
       </div>
@@ -516,30 +508,22 @@ function renderPlotFeed() {
 
       ${metricRow}
 
-<<<<<<< HEAD
-      <div class="plot-card-actions" onclick="event.stopPropagation()">
-        <button type="button" data-open-detail-plot="${idx}" class="btn-detail-plot">
-          Buka Detail Lahan Ini &rarr;
-        </button>
-        <button type="button" data-ask-tania-plot="${idx}" class="btn-ask-tania">
-=======
-      <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 4px" onclick="event.stopPropagation()">
-        <button type="button" data-open-detail-plot="${idx}" class="btn-action-taktil" style="min-height: 38px; padding: 0 16px; border-radius: 999px; border: 1.5px solid var(--green); background: #FFFFFF; color: var(--green); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px">
+      <div class="plot-card-actions">
+        <button type="button" data-open-detail-plot="${idx}" class="btn-detail-plot btn-action-taktil">
           Buka Detail Lahan Ini &rarr;
         </button>
         ${isRingkas ? `
-          <button type="button" data-export-single-docx="default" data-plot-id="${plot.id}" class="btn-action-taktil" title="Unduh Panduan Lahan Word" style="min-height: 38px; padding: 0 14px; border-radius: 999px; border: 1.5px solid var(--green); background: #FFFFFF; color: var(--green); font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px">
+          <button type="button" data-export-single-docx="default" data-plot-id="${plot.id}" class="btn-action-taktil btn-detail-plot" title="Unduh Panduan Lahan Word" style="font-size: 12.5px">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
             Unduh Panduan (.docx)
           </button>
         ` : `
-          <button type="button" data-export-single-docx="advance" data-plot-id="${plot.id}" class="btn-action-taktil" title="Unduh Dossier Riset Word" style="min-height: 38px; padding: 0 14px; border-radius: 999px; border: 1.5px solid #1E3A8A; background: #FFFFFF; color: #1E3A8A; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px">
+          <button type="button" data-export-single-docx="advance" data-plot-id="${plot.id}" class="btn-action-taktil btn-detail-plot" title="Unduh Dossier Riset Word" style="border-color: #1E3A8A; color: #1E3A8A; font-size: 12.5px">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
             Unduh Dossier (.docx)
           </button>
         `}
-        <button type="button" data-ask-tania-plot="${idx}" class="btn-action-taktil" style="min-height: 38px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--ground); color: var(--ink); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px">
->>>>>>> 39f2e004940b27c93a740b7424dbdb34b2eba7e9
+        <button type="button" data-ask-tania-plot="${idx}" class="btn-ask-tania btn-action-taktil">
           Tanya Tania
         </button>
       </div>
@@ -1072,19 +1056,28 @@ function renderBiofisikPlotBanner() {
 function renderNav() {
   const container = $('#nav');
   if (container) {
-    container.innerHTML = VIEWS.map((v) => {
+    const activeViews = state.uiMode === 'pro'
+      ? [
+          { id: 'ringkasan', label: 'Rekomendasi Hari Ini' },
+          { id: 'cuaca', label: 'Riset FAO-56' },
+          { id: 'lahan', label: 'Lahan Saya' },
+          { id: 'tanya', label: 'Chat dengan Tania' },
+          { id: 'pengaturan', label: 'Pengaturan' }
+        ]
+      : VIEWS;
+
+    container.innerHTML = activeViews.map((v) => {
       const on = state.view === v.id;
       const icon = NAV_ICONS[v.id] || '';
       const style = 'text-align: left; width: 100%; min-height: 44px; padding: 0 14px; border-radius: 10px; border: none; font: inherit; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; ' +
         (on ? 'background: var(--accent); color: var(--ink); font-weight: 700' : 'background: transparent; color: #DCE8D8');
-      return `<button type="button" class="ta-nav-item" data-view-btn="${v.id}" title="${v.label}" ${on ? 'aria-current="page"' : ''} style="${style}">
+      return `<button type="button" class="ta-nav-item btn-action-taktil" data-view-btn="${v.id}" title="${v.label}" ${on ? 'aria-current="page"' : ''} style="${style}">
         <span style="display: flex; align-items: center; gap: 8px">${icon}<span class="ta-nav-text">${v.label}</span></span>
         ${on ? '<svg class="ta-nav-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>' : ''}
       </button>`;
     }).join('');
   }
 
-<<<<<<< HEAD
   // Update mobile bottom nav active tabs
   document.querySelectorAll('.mobile-nav-tab').forEach((tab) => {
     const btn = tab as HTMLElement;
@@ -1097,28 +1090,6 @@ function renderNav() {
       btn.removeAttribute('aria-current');
     }
   });
-=======
-  const activeViews = state.uiMode === 'pro'
-    ? [
-        { id: 'ringkasan', label: 'Rekomendasi Hari Ini' },
-        { id: 'cuaca', label: 'Riset FAO-56' },
-        { id: 'lahan', label: 'Lahan Saya' },
-        { id: 'tanya', label: 'Chat dengan Tania' },
-        { id: 'pengaturan', label: 'Pengaturan' }
-      ]
-    : VIEWS;
-
-  container.innerHTML = activeViews.map((v) => {
-    const on = state.view === v.id;
-    const icon = NAV_ICONS[v.id] || '';
-    const style = 'text-align: left; width: 100%; min-height: 44px; padding: 0 14px; border-radius: 10px; border: none; font: inherit; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; ' +
-      (on ? 'background: var(--accent); color: var(--ink); font-weight: 700' : 'background: transparent; color: #DCE8D8');
-    return `<button type="button" data-view-btn="${v.id}" class="btn-action-taktil" ${on ? 'aria-current="page"' : ''} style="${style}">
-      <span style="display: flex; align-items: center; gap: 8px">${icon}${v.label}</span>
-      ${on ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>' : ''}
-    </button>`;
-  }).join('');
->>>>>>> 39f2e004940b27c93a740b7424dbdb34b2eba7e9
 }
 
 function updateCoordinateDisplay() {
@@ -1156,7 +1127,7 @@ function renderLocationDropdown() {
   const isPredefined = INDONESIAN_LOCATIONS.some(l => l.id === state.location.id);
   let optionsHtml = INDONESIAN_LOCATIONS.map((loc) => {
     const sel = loc.id === state.location.id ? 'selected' : '';
-    return `<option value="${loc.id}" ${sel}>${loc.name} — ${loc.elevationMeters}m dpl</option>`;
+    return `<option value="${loc.id}" ${sel}>${loc.name} (${loc.elevationMeters}m dpl)</option>`;
   }).join('');
 
   if (!isPredefined) {
@@ -1708,23 +1679,23 @@ function renderFields() {
   if (portfolioCont) {
     const isAdv = state.uiMode === 'pro';
     portfolioCont.innerHTML = isAdv ? `
-      <div style="background: #F0F9FF; border: 1.5px solid #BAE6FD; border-radius: 14px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 8px">
+      <div style="background: #F0F9FF; border: 1.5px solid #BAE6FD; border-radius: 16px; padding: 18px 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; width: 100%; box-sizing: border-box; box-shadow: 0 2px 6px rgba(3, 105, 161, 0.05)">
         <div>
-          <strong style="font-size: 13.5px; color: #0369A1; display: block">Dossier Audit Portofolio Riset Biofisika</strong>
-          <span style="font-size: 12px; color: #4B5563">Unduh matriks agregat FAO-56 PM untuk seluruh ${state.plots.length} petak riset dalam satu berkas Word (.docx).</span>
+          <strong style="font-size: 14px; color: #0369A1; display: block">Dossier Audit Portofolio Riset Biofisika</strong>
+          <span style="font-size: 12.5px; color: #4B5563">Unduh matriks agregat FAO-56 PM untuk seluruh ${state.plots.length} petak riset dalam satu berkas Word (.docx).</span>
         </div>
-        <button type="button" data-export-portfolio-docx="advance" class="btn-action-taktil" style="min-height: 38px; padding: 0 16px; border-radius: 999px; background: #1E3A8A; color: #FFF; border: none; font-size: 12.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(30,58,138,0.2)">
+        <button type="button" data-export-portfolio-docx="advance" class="btn-action-taktil" style="min-height: 40px; padding: 0 18px; border-radius: 999px; background: #1E3A8A; color: #FFF; border: none; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 6px rgba(30,58,138,0.25)">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
           Unduh Dossier Riset Portofolio (.docx)
         </button>
       </div>
     ` : `
-      <div style="background: #F0FDF4; border: 1.5px solid #BBF7D0; border-radius: 14px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 8px">
+      <div style="background: #F0FDF4; border: 1.5px solid #BBF7D0; border-radius: 16px; padding: 18px 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; width: 100%; box-sizing: border-box; box-shadow: 0 2px 6px rgba(22, 101, 52, 0.05)">
         <div>
-          <strong style="font-size: 13.5px; color: #166534; display: block">Laporan Portofolio Seluruh Kebun</strong>
-          <span style="font-size: 12px; color: #4B5563">Unduh rangkuman panduan lapangan untuk seluruh ${state.plots.length} petak kebun Anda dalam satu berkas Word (.docx).</span>
+          <strong style="font-size: 14px; color: #166534; display: block">Laporan Portofolio Seluruh Kebun</strong>
+          <span style="font-size: 12.5px; color: #4B5563">Unduh rangkuman panduan lapangan untuk seluruh ${state.plots.length} petak kebun Anda dalam satu berkas Word (.docx).</span>
         </div>
-        <button type="button" data-export-portfolio-docx="default" class="btn-action-taktil" style="min-height: 38px; padding: 0 16px; border-radius: 999px; background: var(--green); color: #FFF; border: none; font-size: 12.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(30,77,53,0.15)">
+        <button type="button" data-export-portfolio-docx="default" class="btn-action-taktil" style="min-height: 40px; padding: 0 18px; border-radius: 999px; background: var(--green); color: #FFF; border: none; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 6px rgba(30,77,53,0.2)">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
           Unduh Portofolio Semua Lahan (.docx)
         </button>
@@ -1959,7 +1930,7 @@ function renderSinglePlotPreviewHtml(): string {
   return `
     <div style="border-bottom: 2px solid #1E4D35; padding-bottom: 12px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-end">
       <div>
-        <h1 style="margin: 0; font-family: 'Times New Roman', serif; font-size: 22px; color: #1E4D35">TaniAdapt &mdash; Lembar Rekomendasi Lahan</h1>
+        <h1 style="margin: 0; font-family: 'Times New Roman', serif; font-size: 22px; color: #1E4D35">TaniAdapt: Lembar Rekomendasi Lahan</h1>
         <div style="color: #555555; font-size: 13px">Hyperlocal Precision Agro-Advisory &bull; Terverifikasi Bukti Ilmiah (Mode Petani)</div>
       </div>
       <div style="text-align: right; font-family: 'Times New Roman', serif; font-size: 12px">
@@ -1995,8 +1966,8 @@ function renderSinglePlotPreviewHtml(): string {
     <div style="margin-bottom: 18px">
       <h3 style="margin: 0 0 8px; font-size: 15px; color: #1E4D35">3. Status Manajemen Air &amp; Nutrisi</h3>
       <div style="font-size: 13px">
-        <div><strong>Irigasi:</strong> ${res.irrigation.status === 'DRAINASE_MENDESAK' ? 'DRAINASE MENDESAK &mdash; Segera perdalam parit buangan' : 'LENGAS OPTIMAL'}</div>
-        <div><strong>Pemupukan:</strong> ${res.fertilization.safeToApply ? 'Aman diaplikasikan' : 'TUNDA PEMUPUKAN &mdash; Risiko pencucian/hanyut akibat kebasahan tanah tinggi'}</div>
+        <div><strong>Irigasi:</strong> ${res.irrigation.status === 'DRAINASE_MENDESAK' ? 'DRAINASE MENDESAK: Segera perdalam parit buangan' : 'LENGAS OPTIMAL'}</div>
+        <div><strong>Pemupukan:</strong> ${res.fertilization.safeToApply ? 'Aman diaplikasikan' : 'TUNDA PEMUPUKAN: Risiko pencucian/hanyut akibat kebasahan tanah tinggi'}</div>
       </div>
     </div>
 
@@ -2020,7 +1991,7 @@ function renderAdvanceSinglePlotPreviewHtml(): string {
     <div style="font-family: 'Times New Roman', Times, serif; color: #111; line-height: 1.5; font-size: 11pt;">
       <div style="border-bottom: 2px solid #1E4D35; padding-bottom: 8px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-end;">
         <div>
-          <h2 style="font-size: 16pt; color: #1E4D35; margin: 0; text-transform: uppercase;">TaniAdapt &mdash; Dossier Biofisik &amp; Agrometeorologi</h2>
+          <h2 style="font-size: 16pt; color: #1E4D35; margin: 0; text-transform: uppercase;">TaniAdapt: Dossier Biofisik &amp; Agrometeorologi</h2>
           <p style="font-size: 10pt; color: #555; margin: 4px 0 0 0; font-style: italic;">Spesifikasi Komputasional Mekanistik FAO-56 Penman-Monteith (Mode Advance)</p>
         </div>
         <div style="text-align: right; font-size: 10pt; color: #555;">
@@ -2076,7 +2047,7 @@ function renderPortfolioPreviewHtml(): string {
   return `
     <div style="font-family: 'Times New Roman', Times, serif; color: #111; line-height: 1.5; font-size: 11pt;">
       <div style="border-bottom: 2px solid #1E4D35; padding-bottom: 8px; margin-bottom: 16px;">
-        <h2 style="font-size: 16pt; color: #1E4D35; margin: 0; text-transform: uppercase;">TaniAdapt &mdash; Ikhtisar Portofolio Seluruh Lahan</h2>
+        <h2 style="font-size: 16pt; color: #1E4D35; margin: 0; text-transform: uppercase;">TaniAdapt: Ikhtisar Portofolio Seluruh Lahan</h2>
         <p style="font-size: 10pt; color: #555; margin: 4px 0 0 0; font-style: italic;">Rangkuman Operasional Harian Lapangan (Mode Petani / Mandor)</p>
       </div>
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 9.5pt;">
@@ -2123,7 +2094,7 @@ function renderAdvancePortfolioPreviewHtml(): string {
     <div style="font-family: 'Times New Roman', Times, serif; color: #111; line-height: 1.5; font-size: 11pt;">
       <div style="border-bottom: 2px solid #1E4D35; padding-bottom: 8px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-end;">
         <div>
-          <h2 style="font-size: 16pt; color: #1E4D35; margin: 0; text-transform: uppercase;">TaniAdapt &mdash; Matriks Biofisik Portofolio Lintas Petak</h2>
+          <h2 style="font-size: 16pt; color: #1E4D35; margin: 0; text-transform: uppercase;">TaniAdapt: Matriks Biofisik Portofolio Lintas Petak</h2>
           <p style="font-size: 10pt; color: #555; margin: 4px 0 0 0; font-style: italic;">Kompilasi Agrometeorologi FAO-56 &amp; Mikroklimat Komparatif (Mode Advance)</p>
         </div>
         <div style="text-align: right; font-size: 10pt; color: #555;">
@@ -2163,12 +2134,6 @@ function renderViews() {
 
 function renderUIMode() {
   const isDefault = state.uiMode === 'default';
-<<<<<<< HEAD
-=======
-
-  const defaultBtn = $('#mode-default-btn');
-  const proBtn = $('#mode-pro-btn');
->>>>>>> 39f2e004940b27c93a740b7424dbdb34b2eba7e9
 
   // Update all mode toggle buttons
   document.querySelectorAll('[data-ui-mode]').forEach((el) => {
@@ -2798,32 +2763,42 @@ function setupEventListeners() {
       return;
     }
 
-    // Open Dedicated Detail Lahan View
-    const openDetailPlot = target.closest('[data-open-detail-plot]') as HTMLElement;
-    if (openDetailPlot && openDetailPlot.dataset.openDetailPlot !== undefined) {
-      const idx = Number(openDetailPlot.dataset.openDetailPlot);
-      const plot = state.plots[idx];
-      if (plot) {
-        state.fieldIndex = idx;
-        state.activePlotForBiofisik = idx;
-        state.cropId = plot.cropId;
-        state.currentHST = plot.hst;
-        const loc = INDONESIAN_LOCATIONS.find(l => l.id === plot.locationId);
-        if (loc) state.location = loc;
-        const pr = state.plotEngineResults[plot.id];
-        if (pr) {
-          state.weatherData = pr.weatherData;
-          state.engineResult = pr.engineResult;
-          state.features = pr.features;
+    // 1. Direct 1-Click DOCX Export Buttons (Single Plot)
+    const exportSingleDocx = target.closest('[data-export-single-docx], #btn-export-single-default, #btn-export-single-advance') as HTMLElement;
+    if (exportSingleDocx) {
+      const mode = (exportSingleDocx.dataset.exportSingleDocx as 'default' | 'advance') ||
+                   (exportSingleDocx.id === 'btn-export-single-advance' ? 'advance' : 'default');
+      const plotId = exportSingleDocx.dataset.plotId;
+      const curPlot = (plotId ? state.plots.find(p => p.id === plotId) : null) || state.plots[state.fieldIndex] || state.plots[0];
+      const pr = curPlot ? state.plotEngineResults[curPlot.id] : null;
+      const res = pr?.engineResult || state.engineResult;
+      const f = pr?.features || state.features;
+      const cw = pr?.weatherData?.current || state.weatherData?.current || null;
+      const daily = pr?.weatherData?.dailyForecast || state.weatherData?.dailyForecast;
+
+      if (res && f) {
+        const exportInput = {
+          engineResult: res,
+          features: f,
+          currentWeather: cw,
+          location: state.location,
+          plotName: curPlot?.name,
+          userName: state.authUser?.full_name,
+          userType: state.authUser?.user_type,
+          dailyForecast: daily,
+          adminHierarchy: (curPlot as any)?.adminHierarchy || (state.location as any)?.adminHierarchy,
+          trail: curPlot?.trail,
+        };
+        if (mode === 'advance') {
+          generateSinglePlotAdvanceWordReport(exportInput);
+        } else {
+          generateAndDownloadWordReport(exportInput);
         }
       }
-      state.view = 'detail-lahan';
-      render();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
-    // Ask Tania About Specific Plot
+    // 2. Ask Tania About Specific Plot
     const askTaniaPlot = target.closest('[data-ask-tania-plot]') as HTMLElement;
     if (askTaniaPlot && askTaniaPlot.dataset.askTaniaPlot !== undefined) {
       const idx = Number(askTaniaPlot.dataset.askTaniaPlot);
@@ -2848,6 +2823,88 @@ function setupEventListeners() {
       const cropName = crop?.label || plot?.cropId || 'tanaman';
       const promptQ = `Bagaimana kondisi dan prioritas tindakan untuk petak ${plot?.name || 'lahan'} (${cropName}, ${plot?.hst || state.currentHST} HST) hari ini?`;
       askQuestion(promptQ);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // 3. Export Portfolio DOCX
+    const exportPortfolioDocx = target.closest('[data-export-portfolio-docx], #btn-export-portfolio-default, #btn-export-portfolio-advance') as HTMLElement;
+    if (exportPortfolioDocx) {
+      const mode = (exportPortfolioDocx.dataset.exportPortfolioDocx as 'default' | 'advance') ||
+                   (exportPortfolioDocx.id === 'btn-export-portfolio-advance' ? 'advance' : 'default');
+      if (mode === 'advance') {
+        const portfolioAdvancePlots: PortfolioAdvancePlot[] = state.plots.map(p => {
+          const pr = state.plotEngineResults[p.id];
+          const res = pr?.engineResult;
+          const f56 = res?.fao56;
+          const crop = CROPS_LIST.find(c => c.id === p.cropId);
+          return {
+            name: p.name,
+            cropName: crop?.label || p.cropId,
+            scientificName: crop?.scientific || '',
+            placeName: p.placeName,
+            hst: p.hst,
+            stageName: p.stageName,
+            risk: p.risk,
+            irrigationStatus: res ? (res.irrigation.status === 'DRAINASE_MENDESAK' ? 'Drainase Mendesak' : 'Optimal') : '-',
+            fertilizationStatus: res ? (res.fertilization.safeToApply ? 'Aman' : 'Tunda') : '-',
+            topRecommendation: res?.recommendations[0]?.action || '-',
+            etcMmDay: f56?.etc_daily_mm,
+            etoMmDay: f56?.et0_daily_mm,
+            kc: f56?.kc_current,
+            drMm: f56?.depletion_dr_mm,
+            rawMm: f56?.raw_mm,
+            vpdKpa: pr?.features?.currentVPD,
+            tempC: state.weatherData?.current?.temperature,
+            rhPercent: state.weatherData?.current?.relativeHumidity,
+            rolling7dRain: pr?.features?.rolling7dRain,
+          };
+        });
+        generatePortfolioAdvanceWordReport(portfolioAdvancePlots, state.authUser?.full_name);
+      } else {
+        const portfolioPlots: PortfolioReportPlot[] = state.plots.map(p => {
+          const pr = state.plotEngineResults[p.id];
+          const res = pr?.engineResult;
+          const crop = CROPS_LIST.find(c => c.id === p.cropId);
+          return {
+            name: p.name,
+            cropName: crop?.label || p.cropId,
+            scientificName: crop?.scientific || '',
+            placeName: p.placeName,
+            hst: p.hst,
+            stageName: p.stageName,
+            risk: p.risk,
+            irrigationStatus: res ? (res.irrigation.status === 'DRAINASE_MENDESAK' ? 'Drainase Mendesak' : res.irrigation.status === 'BUTUH_PENGAIRAN' ? 'Perlu Air' : 'Optimal') : 'Optimal',
+            fertilizationStatus: res ? (res.fertilization.safeToApply ? 'Aman' : 'Tunda') : 'Aman',
+            topRecommendation: res?.recommendations[0]?.action || 'Pantau perkembangan tanaman',
+          };
+        });
+        generatePortfolioWordReport(portfolioPlots, state.authUser?.full_name);
+      }
+      return;
+    }
+
+    // 4. Open Dedicated Detail Lahan View
+    const openDetailPlot = target.closest('[data-open-detail-plot]') as HTMLElement;
+    if (openDetailPlot && openDetailPlot.dataset.openDetailPlot !== undefined) {
+      const idx = Number(openDetailPlot.dataset.openDetailPlot);
+      const plot = state.plots[idx];
+      if (plot) {
+        state.fieldIndex = idx;
+        state.activePlotForBiofisik = idx;
+        state.cropId = plot.cropId;
+        state.currentHST = plot.hst;
+        const loc = INDONESIAN_LOCATIONS.find(l => l.id === plot.locationId);
+        if (loc) state.location = loc;
+        const pr = state.plotEngineResults[plot.id];
+        if (pr) {
+          state.weatherData = pr.weatherData;
+          state.engineResult = pr.engineResult;
+          state.features = pr.features;
+        }
+      }
+      state.view = 'detail-lahan';
+      render();
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
@@ -3093,95 +3150,6 @@ function setupEventListeners() {
       return;
     }
 
-    // Direct 1-Click DOCX Export Buttons
-    const exportSingleDocx = target.closest('[data-export-single-docx]') as HTMLElement;
-    if (exportSingleDocx && exportSingleDocx.dataset.exportSingleDocx) {
-      const mode = exportSingleDocx.dataset.exportSingleDocx as 'default' | 'advance';
-      const plotId = exportSingleDocx.dataset.plotId;
-      const curPlot = (plotId ? state.plots.find(p => p.id === plotId) : null) || state.plots[state.fieldIndex] || state.plots[0];
-      const pr = curPlot ? state.plotEngineResults[curPlot.id] : null;
-      const res = pr?.engineResult || state.engineResult;
-      const f = pr?.features || state.features;
-      const cw = pr?.weatherData?.current || state.weatherData?.current || null;
-      const daily = pr?.weatherData?.dailyForecast || state.weatherData?.dailyForecast;
-
-      if (res && f) {
-        const exportInput = {
-          engineResult: res,
-          features: f,
-          currentWeather: cw,
-          location: state.location,
-          plotName: curPlot?.name,
-          userName: state.authUser?.full_name,
-          userType: state.authUser?.user_type,
-          dailyForecast: daily,
-          adminHierarchy: (curPlot as any)?.adminHierarchy || (state.location as any)?.adminHierarchy,
-          trail: curPlot?.trail,
-        };
-        if (mode === 'advance') {
-          generateSinglePlotAdvanceWordReport(exportInput);
-        } else {
-          generateAndDownloadWordReport(exportInput);
-        }
-      }
-      return;
-    }
-
-    const exportPortfolioDocx = target.closest('[data-export-portfolio-docx]') as HTMLElement;
-    if (exportPortfolioDocx && exportPortfolioDocx.dataset.exportPortfolioDocx) {
-      const mode = exportPortfolioDocx.dataset.exportPortfolioDocx as 'default' | 'advance';
-      if (mode === 'advance') {
-        const portfolioAdvancePlots: PortfolioAdvancePlot[] = state.plots.map(p => {
-          const pr = state.plotEngineResults[p.id];
-          const res = pr?.engineResult;
-          const f56 = res?.fao56;
-          const crop = CROPS_LIST.find(c => c.id === p.cropId);
-          return {
-            name: p.name,
-            cropName: crop?.label || p.cropId,
-            scientificName: crop?.scientific || '',
-            placeName: p.placeName,
-            hst: p.hst,
-            stageName: p.stageName,
-            risk: p.risk,
-            irrigationStatus: res ? (res.irrigation.status === 'DRAINASE_MENDESAK' ? 'Drainase Mendesak' : 'Optimal') : '-',
-            fertilizationStatus: res ? (res.fertilization.safeToApply ? 'Aman' : 'Tunda') : '-',
-            topRecommendation: res?.recommendations[0]?.action || '-',
-            etcMmDay: f56?.etc_daily_mm,
-            etoMmDay: f56?.et0_daily_mm,
-            kc: f56?.kc_current,
-            drMm: f56?.depletion_dr_mm,
-            rawMm: f56?.raw_mm,
-            vpdKpa: pr?.features?.currentVPD,
-            tempC: state.weatherData?.current?.temperature,
-            rhPercent: state.weatherData?.current?.relativeHumidity,
-            rolling7dRain: pr?.features?.rolling7dRain,
-          };
-        });
-        generatePortfolioAdvanceWordReport(portfolioAdvancePlots, state.authUser?.full_name);
-      } else {
-        const portfolioPlots: PortfolioReportPlot[] = state.plots.map(p => {
-          const pr = state.plotEngineResults[p.id];
-          const res = pr?.engineResult;
-          const crop = CROPS_LIST.find(c => c.id === p.cropId);
-          return {
-            name: p.name,
-            cropName: crop?.label || p.cropId,
-            scientificName: crop?.scientific || '',
-            placeName: p.placeName,
-            hst: p.hst,
-            stageName: p.stageName,
-            risk: p.risk,
-            irrigationStatus: res ? (res.irrigation.status === 'DRAINASE_MENDESAK' ? 'Drainase Mendesak' : res.irrigation.status === 'BUTUH_PENGAIRAN' ? 'Perlu Air' : 'Optimal') : 'Optimal',
-            fertilizationStatus: res ? (res.fertilization.safeToApply ? 'Aman' : 'Tunda') : 'Aman',
-            topRecommendation: res?.recommendations[0]?.action || 'Pantau perkembangan tanaman',
-          };
-        });
-        generatePortfolioWordReport(portfolioPlots, state.authUser?.full_name);
-      }
-      return;
-    }
-
     // Modal Triggers
     const openEvidenceBtn = target.closest('#open-evidence-modal') || target.closest('#trigger-evidence-modal-btn');
     if (openEvidenceBtn) {
@@ -3270,7 +3238,7 @@ function setupEventListeners() {
       renderPrintModal();
       return;
     }
-    const printSinglePlotBtn = target.closest('#btn-print-single-plot');
+    const printSinglePlotBtn = target.closest('#btn-print-single-plot, #btn-print-single');
     if (printSinglePlotBtn) {
       state.reportExportScope = 'single';
       state.reportExportMode = state.uiMode === 'pro' ? 'advance' : 'default';

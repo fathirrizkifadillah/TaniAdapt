@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TaniAdapt — Workstation Keputusan Lahan</title>
+<title>TaniAdapt: Workstation Keputusan Lahan</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
@@ -59,11 +59,10 @@
       <span class="mobile-sep">/</span>
     </div>
     <h1 class="dashboard-title">
-      <span data-bind="title">Rekomendasi tindakan hari ini</span>
+      <span data-bind="title">Rekomendasi Tindakan Hari Ini</span>
     </h1>
   </div>
 
-<<<<<<< HEAD
   <!-- DESKTOP ACTIONS (Unified 36px aligned cluster, hidden on mobile) -->
   <div class="dashboard-desktop-actions">
     <!-- MODE TOGGLE -->
@@ -71,15 +70,6 @@
       <button type="button" id="btn-mode-default" data-ui-mode="default" class="mode-btn active">Petani (Biasa)</button>
       <button type="button" id="btn-mode-advance" data-ui-mode="pro" class="mode-btn">Riset (Advance)</button>
     </div>
-=======
-  <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px">
-    <!-- SINGLE MODE SWITCH TOGGLE -->
-    <button type="button" id="btn-toggle-ui-mode" class="btn-action-taktil" aria-label="Ganti Mode Tampilan" style="min-height: 36px; padding: 0 14px; border-radius: 999px; background: #FFFFFF; border: 1.5px solid var(--line); font-size: 12px; font-weight: 700; color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05)">
-      <span id="mode-toggle-indicator" style="width: 8px; height: 8px; border-radius: 4px; background: var(--green); display: inline-block"></span>
-      <span id="mode-toggle-label">Mode Petani</span>
-      <span style="font-size: 11px; color: var(--muted); font-weight: 500">(Ganti Mode)</span>
-    </button>
->>>>>>> 39f2e004940b27c93a740b7424dbdb34b2eba7e9
 
     <!-- QUICK ADD BUTTON -->
     <button type="button" data-view-btn="lahan" class="btn-tambah-petak">
@@ -160,13 +150,13 @@
         <p style="margin: 2px 0 0; font-size: 13px; color: var(--muted)">Unduh dokumen formal rekap seluruh petak untuk mandor lapangan atau tim riset agroklimat.</p>
       </div>
       <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center">
-        <button type="button" id="btn-export-portfolio-default" style="padding: 8px 16px; border-radius: 999px; background: #FFFFFF; border: 1.5px solid var(--green); color: var(--green); font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px">
+        <button type="button" id="btn-export-portfolio-default" data-export-portfolio-docx="default" class="btn-action-taktil" style="padding: 8px 16px; border-radius: 999px; background: #FFFFFF; border: 1.5px solid var(--green); color: var(--green); font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px">
           Unduh Word Portofolio (Biasa)
         </button>
-        <button type="button" id="btn-export-portfolio-advance" style="padding: 8px 16px; border-radius: 999px; background: var(--green); border: none; color: #FFFFFF; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px">
+        <button type="button" id="btn-export-portfolio-advance" data-export-portfolio-docx="advance" class="btn-action-taktil" style="padding: 8px 16px; border-radius: 999px; background: var(--green); border: none; color: #FFFFFF; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px">
           Unduh Word Portofolio (Advance)
         </button>
-        <button type="button" id="btn-print-portfolio" style="padding: 8px 16px; border-radius: 999px; background: var(--ground); border: 1px solid var(--line); color: var(--ink); font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px">
+        <button type="button" id="btn-print-portfolio" class="btn-action-taktil" style="padding: 8px 16px; border-radius: 999px; background: var(--ground); border: 1px solid var(--line); color: var(--ink); font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px">
           Cetak / PDF
         </button>
       </div>
@@ -193,13 +183,13 @@
       </div>
       
       <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center">
-        <button type="button" id="btn-export-single-default" style="padding: 8px 16px; border-radius: 999px; background: #FFFFFF; border: 1.5px solid var(--green); color: var(--green); font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px">
+        <button type="button" id="btn-export-single-default" data-export-single-docx="default" class="btn-action-taktil" style="padding: 8px 16px; border-radius: 999px; background: #FFFFFF; border: 1.5px solid var(--green); color: var(--green); font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px">
           Unduh Word Lahan (Biasa)
         </button>
-        <button type="button" id="btn-export-single-advance" style="padding: 8px 16px; border-radius: 999px; background: var(--green); border: none; color: #FFFFFF; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px">
+        <button type="button" id="btn-export-single-advance" data-export-single-docx="advance" class="btn-action-taktil" style="padding: 8px 16px; border-radius: 999px; background: var(--green); border: none; color: #FFFFFF; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px">
           Unduh Dossier Biofisik (Advance)
         </button>
-        <button type="button" id="btn-print-single" style="padding: 8px 16px; border-radius: 999px; background: var(--ground); border: 1px solid var(--line); color: var(--ink); font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px">
+        <button type="button" id="btn-print-single" class="btn-action-taktil" style="padding: 8px 16px; border-radius: 999px; background: var(--ground); border: 1px solid var(--line); color: var(--ink); font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px">
           Cetak / PDF
         </button>
       </div>
@@ -462,7 +452,6 @@ Memuat analisis risiko tanaman...
 
 <!-- RAG CONTEXT SIDEBAR -->
 <aside aria-label="Konteks yang dibaca asisten" style="flex: 1 1 280px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
-<<<<<<< HEAD
 <section class="rag-engine-summary-card">
   <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); padding-bottom: 10px">
     <h2 style="margin: 0; font-size: 15px; font-weight: 800; color: var(--ink); display: flex; align-items: center; gap: 8px">
@@ -504,18 +493,6 @@ Memuat analisis risiko tanaman...
   <div id="rag-evidence-list" style="display: flex; flex-direction: column; gap: 8px">
   </div>
 </section>
-
-=======
-<section style="background: #FFFFFF; border: 1px solid var(--line); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
-<h2 style="margin: 0; font-size: 15px; font-weight: 700">Hasil Engine yang Dijelaskan</h2>
-<div style="display: flex; justify-content: space-between; font-size: 14px"><span style="color: var(--muted)">Tanaman</span><span style="font-weight: 600"><span data-bind="cropLabel">Cabai Merah</span></span></div>
-<div style="display: flex; justify-content: space-between; font-size: 14px"><span style="color: var(--muted)">Fase Fenologi</span><span id="rag-stage-text" style="font-weight: 600">Pembungaan</span></div>
-<div style="display: flex; justify-content: space-between; font-size: 14px"><span style="color: var(--muted)">Tingkat Risiko</span><span id="rag-risk-text" style="font-weight: 600; color: var(--risk-strong)">Tinggi</span></div>
-<div style="display: flex; justify-content: space-between; font-size: 14px"><span style="color: var(--muted)">Faktor Dominan</span><span id="rag-factor-text" style="font-weight: 600">Hujan Berturut-turut</span></div>
-<div style="display: flex; justify-content: space-between; font-size: 14px"><span style="color: var(--muted)">Irigasi / Drainase</span><span id="rag-water-text" style="font-weight: 600">Drainase Mendesak</span></div>
-</section>
-
->>>>>>> 39f2e004940b27c93a740b7424dbdb34b2eba7e9
 <!-- PANEL KNOWLEDGE BASE MANDIRI / SOP PETANI DI DALAM TAB CHAT -->
 <section style="background: #FFFFFF; border: 1px solid var(--line); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
   <div style="display: flex; justify-content: space-between; align-items: center">
@@ -537,18 +514,18 @@ Memuat analisis risiko tanaman...
 
 <!-- ============ VIEW 4: LAHAN SAYA ============ -->
 <div data-view="lahan">
-<div style="display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 20px">
 <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: center">
 <p style="margin: 0; color: var(--muted); max-width: 42rem">
 Daftarkan petak lahan sejak hari tanam agar engine dapat memantau akumulasi kebasahan daun, sejarah stres cuaca, dan perkembangan umur tanaman secara akurat.
 </p>
-<div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
-  <div id="portfolio-export-container"></div>
-  <button type="button" data-action="toggle-form" class="btn-action-taktil" style="min-height: 44px; padding: 0 20px; border-radius: 999px; border: none; background: var(--green); color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px">
-    <span data-bind="formButton">Tambah Lahan Baru</span>
-  </button>
+<button type="button" data-action="toggle-form" class="btn-action-taktil" style="min-height: 44px; padding: 0 20px; border-radius: 999px; border: none; background: var(--green); color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px">
+  <span data-bind="formButton">Tambah Lahan Baru</span>
+</button>
 </div>
-</div>
+
+<!-- PORTFOLIO EXPORT CONTAINER (100% CONTAINER WIDTH) -->
+<div id="portfolio-export-container" style="width: 100%"></div>
 
 <!-- FORM TAMBAH LAHAN -->
 <div id="add-form" hidden>

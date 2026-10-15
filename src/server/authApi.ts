@@ -4,15 +4,45 @@ import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 
-// PostgreSQL Pool configuration
-// Uses process.env.DATABASE_URL or default local connection
-const dbUrl = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/taniadapt';
+// Load .env or .env.local automatically in Node.js server context
+function loadLocalEnv() {
+  const envFiles = ['.env.local', '.env'];
+  for (const file of envFiles) {
+    const fullPath = path.resolve(process.cwd(), file);
+    if (fs.existsSync(fullPath)) {
+      try {
+        const content = fs.readFileSync(fullPath, 'utf-8');
+        for (const line of content.split('\n')) {
+          const trimmed = line.trim();
+          if (!trimmed || trimmed.startsWith('#')) continue;
+          const eqIdx = trimmed.indexOf('=');
+          if (eqIdx !== -1) {
+            const key = trimmed.slice(0, eqIdx).trim();
+            let val = trimmed.slice(eqIdx + 1).trim();
+            if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+              val = val.slice(1, -1);
+            }
+            if (!process.env[key]) {
+              process.env[key] = val;
+            }
+          }
+        }
+      } catch (err: any) {
+        console.warn(`[TaniAdapt Auth] Gagal membaca ${file}:`, err.message);
+      }
+    }
+  }
+}
+loadLocalEnv();
 
+// PostgreSQL Pool configuration
 let pool: Pool | null = null;
 let isDbConnected = false;
+let lastConnectionAttempt = 0;
 
-// Fallback local storage file if PostgreSQL is not yet configured or credentials mismatch
+// Fallback local storage files if PostgreSQL is not yet configured or offline
 const LOCAL_DB_PATH = path.resolve(process.cwd(), 'data', 'local_users_db.json');
+const LOCAL_PLOTS_PATH = path.resolve(process.cwd(), 'data', 'local_plots.json');
 
 interface UserRecord {
   id: number;
@@ -34,6 +64,22 @@ interface ProfileRecord {
   farm_area_ha: number;
   organization_name?: string;
   updated_at: string;
+}
+
+interface PlotRecord {
+  id: string;
+  user_id?: number | null;
+  name: string;
+  location_id: string;
+  place_name: string;
+  crop_id: string;
+  plant_date: string;
+  hst: number;
+  stage_name?: string;
+  risk?: string;
+  area_ha?: number;
+  trail?: any[];
+  updated_at?: string;
 }
 
 function ensureLocalDb(): { users: UserRecord[]; profiles: ProfileRecord[] } {
@@ -61,16 +107,58 @@ function saveLocalDb(data: { users: UserRecord[]; profiles: ProfileRecord[] }) {
   }
 }
 
-// Initialize PostgreSQL Schema
-async function initPgPool() {
-  if (pool) return;
+function ensureLocalPlots(): PlotRecord[] {
   try {
+    const dir = path.dirname(LOCAL_PLOTS_PATH);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    if (!fs.existsSync(LOCAL_PLOTS_PATH)) {
+      fs.writeFileSync(LOCAL_PLOTS_PATH, JSON.stringify([], null, 2));
+      return [];
+    }
+    return JSON.parse(fs.readFileSync(LOCAL_PLOTS_PATH, 'utf-8'));
+  } catch {
+    return [];
+  }
+}
+
+function saveLocalPlots(plots: PlotRecord[]) {
+  try {
+    const dir = path.dirname(LOCAL_PLOTS_PATH);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(LOCAL_PLOTS_PATH, JSON.stringify(plots, null, 2));
+  } catch (err) {
+    console.warn('Failed to save local plots:', err);
+  }
+}
+
+// Initialize PostgreSQL Pool & Schema with retry support
+async function initPgPool() {
+  const dbUrl = process.env.DATABASE_URL;
+  if (!dbUrl) {
+    isDbConnected = false;
+    return;
+  }
+
+  lastConnectionAttempt = Date.now();
+  try {
+    if (pool) {
+      try { await pool.end(); } catch {}
+      pool = null;
+    }
+
+    const isSsl = dbUrl.includes('sslmode=require') || 
+                  dbUrl.includes('.neon.tech') || 
+                  dbUrl.includes('supabase.co') || 
+                  !dbUrl.includes('localhost') && !dbUrl.includes('127.0.0.1');
+
     pool = new Pool({
       connectionString: dbUrl,
-      connectionTimeoutMillis: 2000,
+      connectionTimeoutMillis: 5000,
+      idleTimeoutMillis: 10000,
+      max: 10,
+      ...(isSsl ? { ssl: { rejectUnauthorized: false } } : {})
     });
 
-    // Test connection
     const client = await pool.connect();
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
@@ -83,30 +171,59 @@ async function initPgPool() {
       );
 
       CREATE TABLE IF NOT EXISTS user_profiles (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-        commodity VARCHAR(50) NOT NULL,
-        location_name VARCHAR(255) NOT NULL,
-        latitude DOUBLE PRECISION NOT NULL,
-        longitude DOUBLE PRECISION NOT NULL,
-        planting_date DATE,
-        hst INTEGER DEFAULT 55,
+        user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        commodity VARCHAR(100) DEFAULT 'cabai',
+        location_name VARCHAR(255) DEFAULT 'Lembang, Kab. Bandung Barat',
+        latitude DOUBLE PRECISION DEFAULT -6.8167,
+        longitude DOUBLE PRECISION DEFAULT 107.6167,
+        planting_date DATE DEFAULT CURRENT_DATE,
+        hst INTEGER DEFAULT 0,
         farm_area_ha DOUBLE PRECISION DEFAULT 1.0,
-        organization_name VARCHAR(255),
+        organization_name VARCHAR(255) DEFAULT '',
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
+
+      CREATE TABLE IF NOT EXISTS plots (
+        id VARCHAR(100) PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        name VARCHAR(255) NOT NULL,
+        location_id VARCHAR(100) NOT NULL,
+        place_name VARCHAR(255) NOT NULL,
+        crop_id VARCHAR(50) NOT NULL,
+        plant_date DATE NOT NULL,
+        hst INTEGER DEFAULT 0,
+        stage_name VARCHAR(255),
+        risk VARCHAR(50) DEFAULT 'RENDAH',
+        area_ha DOUBLE PRECISION DEFAULT 1.0,
+        trail JSONB DEFAULT '[]'::jsonb,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+      CREATE INDEX IF NOT EXISTS idx_plots_user_id ON plots(user_id);
     `);
     client.release();
     isDbConnected = true;
-    console.log('[TaniAdapt Auth] Connected to PostgreSQL successfully!');
+    console.log('[TaniAdapt Backend] Terhubung ke PostgreSQL lokal dan skema database siap!');
   } catch (err: any) {
     isDbConnected = false;
-    console.warn('[TaniAdapt Auth] PostgreSQL not reachable, using persistent local fallback DB:', err.message);
+    // Log friendly warning without crashing server
+    console.warn('[TaniAdapt Backend] PostgreSQL belum aktif/terjangkau. Menggunakan persistent local JSON fallback:', err.message);
   }
 }
 
-// Start pool initialization
+// Start pool initialization at boot
 initPgPool();
+
+// Auto-reconnect helper (throttled every 6 seconds)
+async function ensureDbConnection(): Promise<boolean> {
+  if (isDbConnected && pool) return true;
+  if (Date.now() - lastConnectionAttempt > 6000) {
+    await initPgPool();
+  }
+  return isDbConnected;
+}
 
 function hashPassword(password: string): string {
   return crypto.createHash('sha256').update(password + 'taniadapt_salt_2026').digest('hex');
@@ -115,13 +232,16 @@ function hashPassword(password: string): string {
 function sendJson(res: ServerResponse, statusCode: number, data: any) {
   res.statusCode = statusCode;
   res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.end(JSON.stringify(data));
 }
 
 function parseJsonBody(req: IncomingMessage): Promise<any> {
   return new Promise((resolve, reject) => {
     let body = '';
-    req.on('data', chunk => body += chunk);
+    req.on('data', chunk => (body += chunk));
     req.on('end', () => {
       try {
         resolve(body ? JSON.parse(body) : {});
@@ -134,23 +254,37 @@ function parseJsonBody(req: IncomingMessage): Promise<any> {
 }
 
 export function authMiddleware(req: IncomingMessage, res: ServerResponse, next: () => void) {
-  const url = req.url || '';
+  const urlObj = new URL(req.url || '/', 'http://localhost');
+  const pathname = urlObj.pathname;
 
-  if (!url.startsWith('/api/auth')) {
+  if (req.method === 'OPTIONS') {
+    return sendJson(res, 204, {});
+  }
+
+  // Handle /api/auth and /api/plots
+  if (!pathname.startsWith('/api/auth') && !pathname.startsWith('/api/plots')) {
     return next();
   }
 
-  // Handle API Auth endpoints
   (async () => {
     try {
-      if (req.method === 'GET' && url === '/api/auth/status') {
+      await ensureDbConnection();
+
+      // ========================================================================
+      // 1. STATUS DATABASE ENDPOINT (/api/auth/status)
+      // ========================================================================
+      if (req.method === 'GET' && pathname === '/api/auth/status') {
         return sendJson(res, 200, {
-          db_engine: isDbConnected ? 'PostgreSQL 17' : 'Persistent Local Storage (PostgreSQL Fallback)',
+          db_engine: isDbConnected ? 'PostgreSQL (Local / Network)' : 'Persistent Local Storage (PostgreSQL Fallback)',
           is_postgres: isDbConnected,
+          database_url_configured: Boolean(process.env.DATABASE_URL),
         });
       }
 
-      if (req.method === 'POST' && url === '/api/auth/register') {
+      // ========================================================================
+      // 2. REGISTER ENDPOINT (/api/auth/register)
+      // ========================================================================
+      if (req.method === 'POST' && pathname === '/api/auth/register') {
         const body = await parseJsonBody(req);
         const { email, password, full_name, user_type = 'petani', profile } = body;
 
@@ -171,16 +305,27 @@ export function authMiddleware(req: IncomingMessage, res: ServerResponse, next: 
             let profRow = null;
             if (profile) {
               const profRes = await pool.query(
-                `INSERT INTO user_profiles (user_id, commodity, location_name, latitude, longitude, planting_date, hst, farm_area_ha, organization_name)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+                `INSERT INTO user_profiles (user_id, commodity, location_name, latitude, longitude, planting_date, hst, farm_area_ha, organization_name, updated_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+                 ON CONFLICT (user_id) DO UPDATE SET
+                   commodity = EXCLUDED.commodity,
+                   location_name = EXCLUDED.location_name,
+                   latitude = EXCLUDED.latitude,
+                   longitude = EXCLUDED.longitude,
+                   planting_date = EXCLUDED.planting_date,
+                   hst = EXCLUDED.hst,
+                   farm_area_ha = EXCLUDED.farm_area_ha,
+                   organization_name = EXCLUDED.organization_name,
+                   updated_at = NOW()
+                 RETURNING *`,
                 [
                   user.id,
                   profile.commodity || 'cabai',
                   profile.location_name || 'Lembang, Kab. Bandung Barat',
                   profile.latitude || -6.8167,
                   profile.longitude || 107.6167,
-                  profile.planting_date || '2026-08-19',
-                  profile.hst || 55,
+                  profile.planting_date || new Date().toISOString().split('T')[0],
+                  profile.hst || 0,
                   profile.farm_area_ha || 1.0,
                   profile.organization_name || '',
                 ]
@@ -226,8 +371,8 @@ export function authMiddleware(req: IncomingMessage, res: ServerResponse, next: 
             location_name: profile.location_name || 'Lembang, Kab. Bandung Barat',
             latitude: profile.latitude || -6.8167,
             longitude: profile.longitude || 107.6167,
-            planting_date: profile.planting_date || '2026-08-19',
-            hst: profile.hst || 55,
+            planting_date: profile.planting_date || new Date().toISOString().split('T')[0],
+            hst: profile.hst || 0,
             farm_area_ha: profile.farm_area_ha || 1.0,
             organization_name: profile.organization_name || '',
             updated_at: new Date().toISOString(),
@@ -250,7 +395,10 @@ export function authMiddleware(req: IncomingMessage, res: ServerResponse, next: 
         });
       }
 
-      if (req.method === 'POST' && url === '/api/auth/login') {
+      // ========================================================================
+      // 3. LOGIN ENDPOINT (/api/auth/login)
+      // ========================================================================
+      if (req.method === 'POST' && pathname === '/api/auth/login') {
         const body = await parseJsonBody(req);
         const { email, password } = body;
 
@@ -310,7 +458,10 @@ export function authMiddleware(req: IncomingMessage, res: ServerResponse, next: 
         });
       }
 
-      if (req.method === 'POST' && url === '/api/auth/profile') {
+      // ========================================================================
+      // 4. PROFILE UPDATE ENDPOINT (/api/auth/profile)
+      // ========================================================================
+      if (req.method === 'POST' && pathname === '/api/auth/profile') {
         const body = await parseJsonBody(req);
         const { user_id, profile } = body;
 
@@ -322,7 +473,7 @@ export function authMiddleware(req: IncomingMessage, res: ServerResponse, next: 
           await pool.query(
             `INSERT INTO user_profiles (user_id, commodity, location_name, latitude, longitude, planting_date, hst, farm_area_ha, organization_name, updated_at)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
-             ON CONFLICT (id) DO UPDATE SET
+             ON CONFLICT (user_id) DO UPDATE SET
                commodity = EXCLUDED.commodity,
                location_name = EXCLUDED.location_name,
                latitude = EXCLUDED.latitude,
@@ -338,15 +489,15 @@ export function authMiddleware(req: IncomingMessage, res: ServerResponse, next: 
               profile.location_name || 'Lembang, Kab. Bandung Barat',
               profile.latitude || -6.8167,
               profile.longitude || 107.6167,
-              profile.planting_date || '2026-08-19',
-              profile.hst || 55,
+              profile.planting_date || new Date().toISOString().split('T')[0],
+              profile.hst || 0,
               profile.farm_area_ha || 1.0,
               profile.organization_name || '',
             ]
           );
 
           const updated = await pool.query('SELECT * FROM user_profiles WHERE user_id = $1 ORDER BY updated_at DESC LIMIT 1', [user_id]);
-          return sendJson(res, 200, { success: true, profile: updated.rows[0] });
+          return sendJson(res, 200, { success: true, profile: updated.rows[0], db: 'postgresql' });
         }
 
         // Local DB Fallback
@@ -361,8 +512,8 @@ export function authMiddleware(req: IncomingMessage, res: ServerResponse, next: 
             location_name: profile.location_name || 'Lembang, Kab. Bandung Barat',
             latitude: profile.latitude || -6.8167,
             longitude: profile.longitude || 107.6167,
-            planting_date: profile.planting_date || '2026-08-19',
-            hst: profile.hst || 55,
+            planting_date: profile.planting_date || new Date().toISOString().split('T')[0],
+            hst: profile.hst || 0,
             farm_area_ha: profile.farm_area_ha || 1.0,
             organization_name: profile.organization_name || '',
             updated_at: new Date().toISOString(),
@@ -370,13 +521,131 @@ export function authMiddleware(req: IncomingMessage, res: ServerResponse, next: 
           localData.profiles.push(existing);
         }
         saveLocalDb(localData);
-        return sendJson(res, 200, { success: true, profile: existing });
+        return sendJson(res, 200, { success: true, profile: existing, db: 'local_fallback' });
       }
 
-      sendJson(res, 404, { error: 'Auth endpoint not found' });
+      // ========================================================================
+      // 5. CRUD PETAK LAHAN ENDPOINT (/api/plots)
+      // ========================================================================
+      if (pathname === '/api/plots') {
+        // GET /api/plots?user_id=123
+        if (req.method === 'GET') {
+          const userIdParam = urlObj.searchParams.get('user_id');
+          const userId = userIdParam ? parseInt(userIdParam, 10) : null;
+
+          if (isDbConnected && pool) {
+            const query = userId
+              ? 'SELECT * FROM plots WHERE user_id = $1 ORDER BY created_at ASC'
+              : 'SELECT * FROM plots ORDER BY created_at ASC';
+            const params = userId ? [userId] : [];
+            const result = await pool.query(query, params);
+            return sendJson(res, 200, { success: true, plots: result.rows, db: 'postgresql' });
+          }
+
+          const localPlots = ensureLocalPlots();
+          const filtered = userId ? localPlots.filter(p => p.user_id === userId) : localPlots;
+          return sendJson(res, 200, { success: true, plots: filtered, db: 'local_fallback' });
+        }
+
+        // POST /api/plots (Create or Update Plot)
+        if (req.method === 'POST') {
+          const body = await parseJsonBody(req);
+          const { plot, user_id } = body;
+
+          if (!plot || !plot.name) {
+            return sendJson(res, 400, { error: 'Data petak lahan wajib diisi.' });
+          }
+
+          const plotId = plot.id || `plot-${Date.now()}`;
+          const plantDate = plot.plantDate || new Date().toISOString().split('T')[0];
+
+          if (isDbConnected && pool) {
+            const upsertRes = await pool.query(
+              `INSERT INTO plots (id, user_id, name, location_id, place_name, crop_id, plant_date, hst, stage_name, risk, area_ha, trail, updated_at)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
+               ON CONFLICT (id) DO UPDATE SET
+                 name = EXCLUDED.name,
+                 location_id = EXCLUDED.location_id,
+                 place_name = EXCLUDED.place_name,
+                 crop_id = EXCLUDED.crop_id,
+                 plant_date = EXCLUDED.plant_date,
+                 hst = EXCLUDED.hst,
+                 stage_name = EXCLUDED.stage_name,
+                 risk = EXCLUDED.risk,
+                 area_ha = EXCLUDED.area_ha,
+                 trail = EXCLUDED.trail,
+                 updated_at = NOW()
+               RETURNING *`,
+              [
+                plotId,
+                user_id || null,
+                plot.name,
+                plot.locationId || 'lembang',
+                plot.placeName || '',
+                plot.cropId || 'cabai',
+                plantDate,
+                plot.hst || 0,
+                plot.stageName || '',
+                plot.risk || 'RENDAH',
+                plot.areaHa || 1.0,
+                JSON.stringify(plot.trail || []),
+              ]
+            );
+            return sendJson(res, 200, { success: true, plot: upsertRes.rows[0], db: 'postgresql' });
+          }
+
+          // Local JSON fallback
+          const localPlots = ensureLocalPlots();
+          const existingIdx = localPlots.findIndex(p => p.id === plotId);
+          const plotRecord: PlotRecord = {
+            id: plotId,
+            user_id: user_id || null,
+            name: plot.name,
+            location_id: plot.locationId || 'lembang',
+            place_name: plot.placeName || '',
+            crop_id: plot.cropId || 'cabai',
+            plant_date: plantDate,
+            hst: plot.hst || 0,
+            stage_name: plot.stageName || '',
+            risk: plot.risk || 'RENDAH',
+            area_ha: plot.areaHa || 1.0,
+            trail: plot.trail || [],
+            updated_at: new Date().toISOString(),
+          };
+
+          if (existingIdx >= 0) {
+            localPlots[existingIdx] = plotRecord;
+          } else {
+            localPlots.push(plotRecord);
+          }
+
+          saveLocalPlots(localPlots);
+          return sendJson(res, 200, { success: true, plot: plotRecord, db: 'local_fallback' });
+        }
+
+        // DELETE /api/plots?id=plot-1
+        if (req.method === 'DELETE') {
+          const id = urlObj.searchParams.get('id');
+          if (!id) {
+            return sendJson(res, 400, { error: 'ID petak lahan wajib dicantumkan.' });
+          }
+
+          if (isDbConnected && pool) {
+            await pool.query('DELETE FROM plots WHERE id = $1', [id]);
+            return sendJson(res, 200, { success: true, id, db: 'postgresql' });
+          }
+
+          const localPlots = ensureLocalPlots();
+          const updated = localPlots.filter(p => p.id !== id);
+          saveLocalPlots(updated);
+          return sendJson(res, 200, { success: true, id, db: 'local_fallback' });
+        }
+      }
+
+      sendJson(res, 404, { error: 'API endpoint not found' });
     } catch (err: any) {
-      console.error('[TaniAdapt Auth Error]', err);
-      sendJson(res, 500, { error: 'Internal Auth Server Error', message: err.message });
+      console.error('[TaniAdapt Backend Error]', err);
+      sendJson(res, 500, { error: 'Internal Server Error', message: err.message });
     }
   })();
 }
