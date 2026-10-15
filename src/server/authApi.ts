@@ -131,12 +131,14 @@ function saveLocalPlots(plots: PlotRecord[]) {
   }
 }
 
+let initPoolPromise: Promise<boolean> | null = null;
+
 // Initialize PostgreSQL Pool & Schema with retry support
-async function initPgPool() {
+async function initPgPool(): Promise<boolean> {
   const dbUrl = process.env.DATABASE_URL;
   if (!dbUrl) {
     isDbConnected = false;
-    return;
+    return false;
   }
 
   lastConnectionAttempt = Date.now();
@@ -149,11 +151,11 @@ async function initPgPool() {
     const isSsl = dbUrl.includes('sslmode=require') || 
                   dbUrl.includes('.neon.tech') || 
                   dbUrl.includes('supabase.co') || 
-                  !dbUrl.includes('localhost') && !dbUrl.includes('127.0.0.1');
+                  (!dbUrl.includes('localhost') && !dbUrl.includes('127.0.0.1'));
 
     pool = new Pool({
       connectionString: dbUrl,
-      connectionTimeoutMillis: 5000,
+      connectionTimeoutMillis: 10000,
       idleTimeoutMillis: 10000,
       max: 10,
       ...(isSsl ? { ssl: { rejectUnauthorized: false } } : {})
@@ -206,21 +208,29 @@ async function initPgPool() {
     client.release();
     isDbConnected = true;
     console.log('[TaniAdapt Backend] Terhubung ke PostgreSQL lokal dan skema database siap!');
+    return true;
   } catch (err: any) {
     isDbConnected = false;
     // Log friendly warning without crashing server
     console.warn('[TaniAdapt Backend] PostgreSQL belum aktif/terjangkau. Menggunakan persistent local JSON fallback:', err.message);
+    return false;
   }
 }
 
 // Start pool initialization at boot
-initPgPool();
+initPoolPromise = initPgPool();
 
 // Auto-reconnect helper (throttled every 6 seconds)
 async function ensureDbConnection(): Promise<boolean> {
   if (isDbConnected && pool) return true;
-  if (Date.now() - lastConnectionAttempt > 6000) {
-    await initPgPool();
+  if (initPoolPromise) {
+    return await initPoolPromise;
+  }
+  if (Date.now() - lastConnectionAttempt > 6000 || (!pool && process.env.DATABASE_URL)) {
+    initPoolPromise = initPgPool();
+    const res = await initPoolPromise;
+    initPoolPromise = null;
+    return res;
   }
   return isDbConnected;
 }
@@ -331,6 +341,32 @@ export function authMiddleware(req: IncomingMessage, res: ServerResponse, next: 
                 ]
               );
               profRow = profRes.rows[0];
+            }
+
+            if (profile && (profile.organization_name || profile.commodity)) {
+              try {
+                const plotId = `plot-${user.id}-${Date.now().toString(36)}`;
+                await pool.query(
+                  `INSERT INTO plots (id, user_id, name, location_id, place_name, crop_id, plant_date, hst, stage_name, risk, area_ha)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                   ON CONFLICT (id) DO NOTHING`,
+                  [
+                    plotId,
+                    user.id,
+                    profile.organization_name || 'Petak Utama',
+                    'loc-lembang',
+                    profile.location_name || 'Lembang, Kab. Bandung Barat',
+                    profile.commodity || 'cabai',
+                    profile.planting_date || new Date().toISOString().split('T')[0],
+                    profile.hst || 0,
+                    'Vegetatif Awal',
+                    'RENDAH',
+                    profile.farm_area_ha || 1.0,
+                  ]
+                );
+              } catch (plotErr) {
+                console.warn('[TaniAdapt Backend] Inisialisasi plot baru:', plotErr);
+              }
             }
 
             return sendJson(res, 201, {

@@ -7,6 +7,22 @@
       "full_name": "Fathir Rizki Fadillah",
       "user_type": "petani",
       "created_at": "2026-10-14T11:25:00.423Z"
+    },
+    {
+      "id": 2,
+      "email": "fariez@gmail.com",
+      "password_hash": "efc747f653e171572f35628ddfc4d2cd5f106412469e2e50ff8c5fc6c2ae9980",
+      "full_name": "Muhammad Fariez",
+      "user_type": "farm_organisasi",
+      "created_at": "2026-10-15T18:02:49.695Z"
+    },
+    {
+      "id": 3,
+      "email": "testuser123@example.com",
+      "password_hash": "c97bed0ddc08b4d0e4e735f99bb55a1db4216d82a6f6d99b156a89ac8b73f964",
+      "full_name": "Test Farmer",
+      "user_type": "petani",
+      "created_at": "2026-10-15T18:06:07.306Z"
     }
   ],
   "profiles": [
@@ -21,6 +37,30 @@
       "farm_area_ha": 1,
       "organization_name": "Lahan Tania",
       "updated_at": "2026-10-14T11:25:00.424Z"
+    },
+    {
+      "user_id": 2,
+      "commodity": "cabai",
+      "location_name": "Lembang (Kab. Bandung Barat)",
+      "latitude": -6.8152,
+      "longitude": 107.6186,
+      "planting_date": "2026-08-19",
+      "hst": 55,
+      "farm_area_ha": 1,
+      "organization_name": "Blok Hebat",
+      "updated_at": "2026-10-15T18:02:49.695Z"
+    },
+    {
+      "user_id": 3,
+      "commodity": "cabai",
+      "location_name": "Lembang, Jawa Barat",
+      "latitude": -6.8167,
+      "longitude": 107.6167,
+      "planting_date": "2026-08-19",
+      "hst": 55,
+      "farm_area_ha": 1,
+      "organization_name": "Lahan Test",
+      "updated_at": "2026-10-15T18:06:07.306Z"
     }
   ]
 }

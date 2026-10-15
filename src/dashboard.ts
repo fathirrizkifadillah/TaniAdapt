@@ -183,6 +183,18 @@ function bindText(key: string, text: string) {
   });
 }
 
+function showToast(message: string, durationMs = 3500) {
+  const toast = document.getElementById('toast');
+  const toastMsg = document.getElementById('toast-msg');
+  if (toast && toastMsg) {
+    toastMsg.textContent = message;
+    toast.style.display = 'block';
+    setTimeout(() => {
+      toast.style.display = 'none';
+    }, durationMs);
+  }
+}
+
 function pill(on: boolean, onStyle: string, offStyle: string) {
   return 'min-height: 44px; padding: 0 16px; border-radius: 999px; font: inherit; font-size: 14px; cursor: pointer; ' + (on ? onStyle : offStyle);
 }
@@ -2434,10 +2446,38 @@ function renderAuth() {
   if (mobileContainer) mobileContainer.innerHTML = authHtml;
 }
 
+async function updateDbStatusDisplay() {
+  const statusEl = document.getElementById('auth-db-status');
+  if (!statusEl) return;
+  try {
+    const res = await fetch('/api/auth/status');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.is_postgres) {
+        statusEl.textContent = 'Terhubung ke Database Cloud PostgreSQL';
+        statusEl.style.color = 'var(--green)';
+      } else {
+        statusEl.textContent = 'Penyimpanan Offline (Sinkronisasi Lokal)';
+        statusEl.style.color = '#B45309';
+      }
+    }
+  } catch {
+    statusEl.textContent = 'Penyimpanan Offline (Lokal)';
+    statusEl.style.color = '#B45309';
+  }
+}
+
 function renderAuthModal() {
   const modal = $('#auth-modal');
   if (!modal) return;
   modal.hidden = !state.isAuthModalOpen;
+
+  const regPlantDate = document.getElementById('reg-plantdate') as HTMLInputElement;
+  if (regPlantDate && !regPlantDate.value) {
+    regPlantDate.value = new Date().toISOString().split('T')[0];
+  }
+
+  updateDbStatusDisplay();
 
   const loginTab = $('#auth-tab-login');
   const regTab = $('#auth-tab-register');
@@ -3061,6 +3101,9 @@ function setupEventListeners() {
       const placeName = locObj ? `${locObj.name} (${locObj.elevationMeters} mdpl)` : 'Jawa Barat';
       const adminH = (locObj as any)?.adminHierarchy;
 
+      const stage = resolveActiveGrowthStage(cropSelect.value as CropId, computedHst);
+      const stageName = stage ? stage.name : 'Vegetatif Awal';
+
       const newPlot: PlotItem = {
         id: `plot-${Date.now()}`,
         name: nameInput.value.trim(),
@@ -3069,7 +3112,7 @@ function setupEventListeners() {
         cropId: cropSelect.value as CropId,
         plantDate: plantDateVal,
         hst: computedHst,
-        stageName: 'Vegetatif Awal',
+        stageName,
         risk: 'RENDAH',
         adminHierarchy: adminH,
         trail: [
@@ -3083,6 +3126,12 @@ function setupEventListeners() {
       state.showForm = false;
       localStorage.setItem('taniadapt_user_plots_v1', JSON.stringify(state.plots));
       nameInput.value = '';
+
+      fetch('/api/plots', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newPlot)
+      }).catch(e => console.warn('Sync plot to backend skipped:', e));
       renderFields();
       recomputeEngineForPlot(state.plots.length - 1).then(() => render());
       return;
@@ -3217,6 +3266,14 @@ function setupEventListeners() {
     }
     if (target.id === 'btn-confirm-delete-plot' || target.closest('#btn-confirm-delete-plot')) {
       if (state.deletingPlotIndex >= 0 && state.deletingPlotIndex < state.plots.length) {
+        const deletingPlot = state.plots[state.deletingPlotIndex];
+        if (deletingPlot) {
+          fetch('/api/plots', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: deletingPlot.id })
+          }).catch(e => console.warn('Sync delete plot skipped:', e));
+        }
         state.plots.splice(state.deletingPlotIndex, 1);
         localStorage.setItem('taniadapt_user_plots_v1', JSON.stringify(state.plots));
         if (state.fieldIndex >= state.plots.length) {
@@ -4093,29 +4150,55 @@ function setupEventListeners() {
   if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      const submitBtn = $('#btn-submit-login') as HTMLButtonElement;
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Memeriksa Kredensial...';
+      }
       const email = ($('#login-email') as HTMLInputElement)?.value.trim();
       const password = ($('#login-password') as HTMLInputElement)?.value;
       const errBox = $('#login-error');
       if (errBox) errBox.style.display = 'none';
 
-      const res = await loginUser(email, password);
-      if (res.success && res.user) {
-        state.authUser = res.user;
-        state.authProfile = res.profile || null;
-        if (res.profile?.commodity && CROPS_LIST.some(c => c.id === res.profile?.commodity)) {
-          state.cropId = res.profile.commodity as CropId;
+      try {
+        const res = await loginUser(email, password);
+        if (res.success && res.user) {
+          state.authUser = res.user;
+          state.authProfile = res.profile || null;
+          if (res.profile?.commodity && CROPS_LIST.some(c => c.id === res.profile?.commodity)) {
+            state.cropId = res.profile.commodity as CropId;
+          }
+          if (res.user.user_type === 'farm_organisasi') {
+            state.uiMode = 'pro';
+            setStoredUIMode('pro');
+          }
+          state.isAuthModalOpen = false;
+          renderAuthModal();
+          renderAuth();
+          renderNav();
+          renderFields();
+          render();
+
+          await recomputeEngine();
+          await recomputeAllPlots();
+          render();
+
+          showToast(`Selamat datang kembali, ${res.user.full_name}!`);
+        } else {
+          if (errBox) {
+            errBox.textContent = res.error || 'Gagal masuk akun. Periksa email dan password Anda.';
+            errBox.style.display = 'block';
+          }
         }
-        if (res.user.user_type === 'farm_organisasi') {
-          state.uiMode = 'pro';
-          setStoredUIMode('pro');
-        }
-        state.isAuthModalOpen = false;
-        renderAuthModal();
-        await recomputeEngine();
-      } else {
+      } catch (err: any) {
         if (errBox) {
-          errBox.textContent = res.error || 'Gagal masuk akun';
+          errBox.textContent = err.message || 'Terjadi kesalahan sistem saat masuk.';
           errBox.style.display = 'block';
+        }
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Masuk ke Workstation';
         }
       }
     });
@@ -4126,42 +4209,103 @@ function setupEventListeners() {
   if (regForm) {
     regForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      const submitBtn = $('#btn-submit-reg') as HTMLButtonElement;
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Mendaftarkan Akun...';
+      }
       const fullName = ($('#reg-fullname') as HTMLInputElement)?.value.trim();
       const email = ($('#reg-email') as HTMLInputElement)?.value.trim();
       const password = ($('#reg-password') as HTMLInputElement)?.value;
       const userType = (document.querySelector('input[name="reg-user-type"]:checked') as HTMLInputElement)?.value as 'petani' | 'farm_organisasi' || 'petani';
-      const plotName = ($('#reg-plot-name') as HTMLInputElement)?.value.trim() || 'Lahan Pasirhuni';
+      const plotName = ($('#reg-plot-name') as HTMLInputElement)?.value.trim() || 'Lahan Sentra Petani';
       const commodity = ($('#reg-commodity') as HTMLSelectElement)?.value as CropId || 'cabai';
-      const plantDate = ($('#reg-plantdate') as HTMLInputElement)?.value || '2026-08-19';
+      const plantDate = ($('#reg-plantdate') as HTMLInputElement)?.value || new Date().toISOString().split('T')[0];
       const farmArea = parseFloat(($('#reg-area') as HTMLInputElement)?.value || '1.0');
 
       const errBox = $('#reg-error');
       if (errBox) errBox.style.display = 'none';
 
-      const res = await registerUser(email, password, fullName, userType, {
-        commodity,
-        location_name: state.location.name,
-        latitude: state.location.latitude,
-        longitude: state.location.longitude,
-        planting_date: plantDate,
-        hst: 55,
-        farm_area_ha: farmArea,
-        organization_name: plotName,
-      });
+      try {
+        const computedHst = Math.max(1, Math.floor((Date.now() - new Date(plantDate).getTime()) / 86400000));
+        const stage = resolveActiveGrowthStage(commodity, computedHst);
+        const stageName = stage ? stage.name : 'Vegetatif Awal';
 
-      if (res.success && res.user) {
-        state.authUser = res.user;
-        state.authProfile = res.profile || null;
-        state.cropId = commodity;
-        state.uiMode = userType === 'farm_organisasi' ? 'pro' : 'default';
-        setStoredUIMode(state.uiMode);
-        state.isAuthModalOpen = false;
-        renderAuthModal();
-        await recomputeEngine();
-      } else {
+        const res = await registerUser(email, password, fullName, userType, {
+          commodity,
+          location_name: state.location.name,
+          latitude: state.location.latitude,
+          longitude: state.location.longitude,
+          planting_date: plantDate,
+          hst: computedHst,
+          farm_area_ha: farmArea,
+          organization_name: plotName,
+        });
+
+        if (res.success && res.user) {
+          // Automatic login upon sign up
+          state.authUser = res.user;
+          state.authProfile = res.profile || null;
+          state.cropId = commodity;
+          state.uiMode = userType === 'farm_organisasi' ? 'pro' : 'default';
+          setStoredUIMode(state.uiMode);
+
+          // Add newly registered plot to state.plots
+          const newPlotId = `plot-${Date.now().toString(36)}`;
+          const cropObj = CROPS_LIST.find(c => c.id === commodity);
+          const newPlot: PlotItem = {
+            id: newPlotId,
+            name: plotName,
+            locationId: state.location.id,
+            placeName: state.location.name,
+            cropId: commodity,
+            plantDate: plantDate,
+            hst: computedHst,
+            stageName,
+            risk: 'RENDAH',
+            areaHa: farmArea,
+            trail: [
+              { dayLabel: 'HST 1', status: 'Catatan Petani', note: `Registrasi lahan ${plotName} (${cropObj?.label || commodity})`, weather: 'Cerah' }
+            ]
+          };
+          state.plots.unshift(newPlot);
+          localStorage.setItem('taniadapt_user_plots_v1', JSON.stringify(state.plots));
+          state.fieldIndex = 0;
+
+          fetch('/api/plots', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newPlot)
+          }).catch(e => console.warn('Sync registered plot to backend skipped:', e));
+
+          // Close modal and synchronize entire UI state
+          state.isAuthModalOpen = false;
+          renderAuthModal();
+          renderAuth();
+          renderNav();
+          renderFields();
+          render();
+
+          await recomputeEngine();
+          await recomputeAllPlots();
+          render();
+
+          showToast(`Selamat datang, ${res.user.full_name}! Pendaftaran berhasil dan Anda telah otomatis masuk.`);
+        } else {
+          if (errBox) {
+            errBox.textContent = res.error || 'Gagal mendaftar akun';
+            errBox.style.display = 'block';
+          }
+        }
+      } catch (err: any) {
         if (errBox) {
-          errBox.textContent = res.error || 'Gagal mendaftar akun';
+          errBox.textContent = err.message || 'Terjadi kesalahan sistem saat mendaftar.';
           errBox.style.display = 'block';
+        }
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Daftar & Simpan Profil Kebun';
         }
       }
     });

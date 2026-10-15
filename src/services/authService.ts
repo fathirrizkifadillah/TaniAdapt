@@ -30,14 +30,13 @@ const UI_MODE_KEY = 'taniadapt_ui_mode';
 
 export function getStoredUser(): AuthUser | null {
   if (typeof window === 'undefined') return null;
-  // Sesi aktif tersimpan di sessionStorage agar anti-bypass saat membuka link di tab/jendela baru
-  const raw = sessionStorage.getItem(AUTH_USER_KEY);
+  const raw = localStorage.getItem(AUTH_USER_KEY) || sessionStorage.getItem(AUTH_USER_KEY);
   return raw ? JSON.parse(raw) : null;
 }
 
 export function getStoredProfile(): UserProfileData | null {
   if (typeof window === 'undefined') return null;
-  const raw = sessionStorage.getItem(AUTH_PROFILE_KEY);
+  const raw = localStorage.getItem(AUTH_PROFILE_KEY) || sessionStorage.getItem(AUTH_PROFILE_KEY);
   return raw ? JSON.parse(raw) : null;
 }
 
@@ -56,14 +55,12 @@ export function setStoredUIMode(mode: 'default' | 'pro'): void {
 
 export function saveAuthSession(user: AuthUser, profile: UserProfileData | null): void {
   if (typeof window !== 'undefined') {
-    // Simpan ke sessionStorage untuk proteksi sesi aktif tab
+    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
     sessionStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
     if (profile) {
+      localStorage.setItem(AUTH_PROFILE_KEY, JSON.stringify(profile));
       sessionStorage.setItem(AUTH_PROFILE_KEY, JSON.stringify(profile));
     }
-    // Hapus sesi legacy dari localStorage agar tidak bisa di-bypass
-    localStorage.removeItem(AUTH_USER_KEY);
-    localStorage.removeItem(AUTH_PROFILE_KEY);
   }
 }
 
@@ -107,53 +104,27 @@ export async function loginUser(email: string, password: string): Promise<{ succ
       body: JSON.stringify({ email, password }),
     });
 
-    if (res.ok) {
-      const data = await res.json();
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.user) {
       saveAuthSession(data.user, data.profile);
+      saveStoredAccount({ user: data.user, passwordHash: password, profile: data.profile });
       return { success: true, user: data.user, profile: data.profile };
     }
-  } catch {
-    // Network offline or static server (e.g. Vercel)
+    if (data.error) {
+      return { success: false, error: data.error };
+    }
+  } catch (err: any) {
+    console.warn('Network error on login:', err);
   }
 
-  // Graceful fallback to client local database
+  // Offline fallback to stored accounts
   const normalizedEmail = email.trim().toLowerCase();
   const accounts = getStoredAccounts();
   const matched = accounts.find(a => a.user.email.toLowerCase() === normalizedEmail);
 
-  if (matched) {
+  if (matched && matched.passwordHash === password) {
     saveAuthSession(matched.user, matched.profile);
     return { success: true, user: matched.user, profile: matched.profile };
-  }
-
-  const localUser = getStoredUser();
-  if (localUser && localUser.email.toLowerCase() === normalizedEmail) {
-    return { success: true, user: localUser, profile: getStoredProfile() || undefined };
-  }
-
-  // Demo auto-account fallback for testing/demo environments
-  if (password && password.length >= 4) {
-    const fallbackUser: AuthUser = {
-      id: Date.now(),
-      email: normalizedEmail,
-      full_name: normalizedEmail.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-      user_type: 'petani',
-      created_at: new Date().toISOString()
-    };
-    const fallbackProfile: UserProfileData = {
-      user_id: fallbackUser.id,
-      commodity: 'cabai',
-      location_name: 'Lembang, Jawa Barat',
-      latitude: -6.8167,
-      longitude: 107.6167,
-      planting_date: new Date().toISOString().split('T')[0],
-      hst: 35,
-      farm_area_ha: 1,
-      updated_at: new Date().toISOString()
-    };
-    saveStoredAccount({ user: fallbackUser, passwordHash: password, profile: fallbackProfile });
-    saveAuthSession(fallbackUser, fallbackProfile);
-    return { success: true, user: fallbackUser, profile: fallbackProfile };
   }
 
   return { success: false, error: 'Email atau kata sandi tidak cocok.' };
@@ -179,41 +150,20 @@ export async function registerUser(
       }),
     });
 
-    if (res.ok) {
-      const data = await res.json();
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.user) {
       saveAuthSession(data.user, data.profile);
+      saveStoredAccount({ user: data.user, passwordHash: password, profile: data.profile });
       return { success: true, user: data.user, profile: data.profile };
     }
-  } catch {
-    // Static hosting without persistent backend
+    if (data.error) {
+      return { success: false, error: data.error };
+    }
+  } catch (err: any) {
+    console.warn('Network error on register:', err);
   }
 
-  // Graceful client-side registration for static Vercel / serverless deployments
-  const normalizedEmail = email.trim().toLowerCase();
-  const newUser: AuthUser = {
-    id: Date.now(),
-    email: normalizedEmail,
-    full_name: fullName.trim(),
-    user_type: userType,
-    created_at: new Date().toISOString()
-  };
-
-  const newProfile: UserProfileData = {
-    user_id: newUser.id,
-    commodity: profile.commodity || 'cabai',
-    location_name: profile.location_name || 'Lembang, Jawa Barat',
-    latitude: profile.latitude || -6.8167,
-    longitude: profile.longitude || 107.6167,
-    planting_date: profile.planting_date || new Date().toISOString().split('T')[0],
-    hst: profile.hst || 35,
-    farm_area_ha: profile.farm_area_ha || 1,
-    organization_name: profile.organization_name || '',
-    updated_at: new Date().toISOString()
-  };
-
-  saveStoredAccount({ user: newUser, passwordHash: password, profile: newProfile });
-  saveAuthSession(newUser, newProfile);
-  return { success: true, user: newUser, profile: newProfile };
+  return { success: false, error: 'Tidak dapat terhubung ke server database TaniAdapt. Pastikan koneksi aktif.' };
 }
 
 export async function updateUserProfile(userId: number, profile: Partial<UserProfileData>): Promise<{ success: boolean; profile?: UserProfileData; error?: string }> {
