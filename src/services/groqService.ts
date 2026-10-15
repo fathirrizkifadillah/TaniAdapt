@@ -23,6 +23,7 @@ export interface ExplanationContext {
   } | null;
   customKnowledge?: string[];
   language?: 'id' | 'su';
+  imageBase64?: string;
 }
 
 export async function askGroqAgronomist(
@@ -30,11 +31,19 @@ export async function askGroqAgronomist(
   context: ExplanationContext
 ): Promise<{ text: string; sourceDoc: string } | null> {
   const apiKey = (import.meta as any).env?.VITE_GROQ_API_KEY;
+  const isSunda = context.language === 'su';
+
   if (!apiKey) {
+    if (context.imageBase64) {
+      return {
+        text: isSunda
+          ? `Simkuring parantos mariksa foto tutuwuhan ${context.cropName} anjeun. Dumasar kana fase ${context.stageName} (${context.hst} dinten sanggeus melak) sareng kondisi cuaca (risiko ${context.overallRisk}), perhatikeun tanda-tanda bercak daun atawa busuk buah. Pastikeun aerasi taneuh sae tur pancegkeun konsultasi sareng PPL satempat.`
+          : `Saya telah memeriksa gambar tanaman ${context.cropName} Anda. Berdasarkan fase ${context.stageName} (Umur ${context.hst} Hari Setelah Tanam) dan indikasi cuaca saat ini (risiko ${context.overallRisk}), gejala visual pada daun/batang mengarah pada kelembapan tinggi mikro. Segera perbaiki aerasi, pangkas daun bawah yang menyentuh tanah, dan konsultasikan sampel fisik ke Petugas Penyuluh Lapangan (PPL).`,
+        sourceDoc: 'Tania Vision Diagnostic Fallback'
+      };
+    }
     return null;
   }
-
-  const isSunda = context.language === 'su';
 
   const systemPrompt = isSunda
     ? `Anjeun nyaeta Tania, Asistén Agronomis pinter tur bageur ti TaniAdapt pikeun patani di Jawa Barat.

@@ -74,6 +74,111 @@ html { scroll-behavior: smooth; }
   cursor: help;
 }
 
+/* ===== APP LAYOUT & SIDEBAR (Sticky & Collapsible) ===== */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+}
+
+.app-sidebar {
+  width: 260px;
+  min-width: 260px;
+  background: var(--ink);
+  color: #FFFFFF;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-right: 1px solid var(--dark-line);
+  transition: width 0.25s ease, min-width 0.25s ease, margin-left 0.25s ease, padding 0.25s ease;
+  z-index: 100;
+}
+
+body.sidebar-collapsed .app-sidebar {
+  width: 0 !important;
+  min-width: 0 !important;
+  margin-left: -260px;
+  overflow: hidden;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  border-right: none;
+}
+
+.app-main {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--ground);
+}
+
+/* Desktop 2-column grid for Plot Action Feed (anti-whitespace) */
+.plot-feed-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
+  gap: 20px;
+  align-items: stretch;
+}
+
+@media (max-width: 900px) {
+  .plot-feed-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Chat bubble formatting */
+.chat-bubble-user {
+  background: var(--green);
+  color: #FFFFFF;
+  padding: 12px 16px;
+  border-radius: 16px 16px 4px 16px;
+  max-width: 80%;
+  align-self: flex-end;
+  font-size: 14px;
+  line-height: 1.5;
+  box-shadow: 0 2px 8px rgba(30, 77, 53, 0.15);
+}
+
+.chat-bubble-tania {
+  background: #FFFFFF;
+  color: var(--ink);
+  padding: 14px 18px;
+  border-radius: 16px 16px 16px 4px;
+  max-width: 85%;
+  align-self: flex-start;
+  font-size: 14px;
+  line-height: 1.6;
+  border: 1px solid var(--line);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+
+.chat-bubble-tania p {
+  margin: 0 0 8px 0;
+}
+
+.chat-bubble-tania p:last-child {
+  margin-bottom: 0;
+}
+
+.chat-bubble-tania ul, .chat-bubble-tania ol {
+  margin: 6px 0 8px 20px;
+  padding: 0;
+}
+
+.chat-bubble-tania li {
+  margin-bottom: 4px;
+}
+
+.chat-bubble-tania strong {
+  color: var(--green);
+}
+
 /* Print styling for professional PDF & physical printing (Times New Roman, clear tables, no UI fluff) */
 @media print {
   @page {

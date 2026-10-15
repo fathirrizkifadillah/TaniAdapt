@@ -11,4 +11,6 @@ export interface AgriculturalLocation {
   agroclimateZone: string; // e.g., Oldeman zone C2, B1
   primaryCrops: CropId[];
   soilTexture: string;
+  district?: string; // Kecamatan
+  village?: string;  // Desa / Kelurahan
 }
