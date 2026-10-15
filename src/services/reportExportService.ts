@@ -118,7 +118,7 @@ function buildSinglePlotDocx(input: ReportExportInput, isAdvance: boolean = fals
     minute: '2-digit',
   }) + ' WIB';
 
-  const f56 = engineResult.fao56WaterBalance;
+  const f56 = engineResult.fao56;
 
   // Build hierarchical admin string
   let adminStr = '';
@@ -211,7 +211,7 @@ function buildSinglePlotDocx(input: ReportExportInput, isAdvance: boolean = fals
     ? 'TINGKAT RISIKO SEDANG (WASPADA & MONITORING AKTIF)'
     : 'TINGKAT RISIKO RENDAH (KONDISI BIOFISIK OPTIMAL)';
 
-  const diagnosisSummary = engineResult.fao56WaterBalance && engineResult.fao56WaterBalance.depletion_dr_mm > engineResult.fao56WaterBalance.raw_mm
+  const diagnosisSummary = engineResult.fao56 && engineResult.fao56.depletion_dr_mm > engineResult.fao56.raw_mm
     ? `Deplesi lengas tanah telah melampaui batas air siap diserap (Dr > RAW), mengindikasikan cekaman kekeringan zona perakaran.`
     : features && features.currentVPD < 0.40
     ? `Defisit tekanan uap udara sangat rendah (VPD < 0.40 kPa) dengan kelembaban tinggi memicu risiko sporulasi jamur patogen.`
@@ -220,7 +220,7 @@ function buildSinglePlotDocx(input: ReportExportInput, isAdvance: boolean = fals
   const scientificAnalysisText = `Berdasarkan pemrosesan deterministik data agrometeorologi real-time dan histori 7 hari terakhir pada lokasi ${location.name}, petak lahan ${plotName || 'Utama'} menunjukkan akumulasi evapotranspirasi acuan ETo sebesar ${f56?.et0_daily_mm?.toFixed(2) || '4.20'} mm/hari dengan koefisien tanaman Kc = ${f56?.kc_current?.toFixed(2) || '1.05'} pada fase fenologi ${engineResult.stageName}. Neraca air zona perakaran mencatat deplesi Dr sebesar ${f56?.depletion_dr_mm?.toFixed(1) || '18.0'} mm dari batas RAW ${f56?.raw_mm?.toFixed(1) || '26.0'} mm. Nilai defisit tekanan uap (VPD) saat ini sebesar ${features?.currentVPD?.toFixed(2) || '0.95'} kPa dengan kelembaban udara ${currentWeather?.relativeHumidity ? Math.round(currentWeather.relativeHumidity) : 80}%, yang mengindikasikan tingkat kebasahan kanopi dalam kondisi ${features && features.currentVPD < 0.40 ? 'sangat basah dan rentan infeksi spora jamur' : 'terkendali tanpa ancaman genangan kritis'}.`;
 
   const primaryRecommendationText = engineResult.recommendations.length > 0
-    ? `${engineResult.recommendations[0].title}: ${engineResult.recommendations[0].action} (Waktu: ${engineResult.recommendations[0].timeframe}). ${engineResult.recommendations[0].rationale}`
+    ? `${engineResult.recommendations[0].title}: ${engineResult.recommendations[0].action} (Urgensi: ${engineResult.recommendations[0].urgency}). ${engineResult.recommendations[0].rationale}`
     : 'Lanjutkan pemantauan rutin dan pertahankan kebersihan saluran air petak lahan.';
 
   // --- SECTION III: PROFIL STATISTIK BIOFISIK & NERACA AIR FAO-56 TABLE ---
@@ -418,14 +418,15 @@ function buildSinglePlotDocx(input: ReportExportInput, isAdvance: boolean = fals
   let actIdx = 1;
 
   for (const r of engineResult.recommendations) {
-    const urgencyColor = r.urgency === 'KRITIS' ? 'B91C1C' : r.urgency === 'WASPADA' ? 'D97706' : greenDark;
+    const urgencyColor = r.urgency === 'HARI_INI' ? 'B91C1C' : r.urgency === '24_48_JAM' ? 'D97706' : greenDark;
+    const timeLabel = r.urgency === 'HARI_INI' ? 'Hari Ini (< 24 Jam)' : r.urgency === '24_48_JAM' ? '1 - 2 Hari Ke Depan' : 'Rutin & Preventif';
     actionRows.push(
       new TableRow({
         children: [
           createDataCell(`${actIdx++}`, 6, true),
           createDataCell(r.title, 24, true),
           createDataCell(r.urgency, 18, true, urgencyColor),
-          createDataCell(r.timeframe, 20),
+          createDataCell(timeLabel, 20),
           createDataCell(`${r.action}. ${r.rationale}`, 32),
         ],
       })
@@ -433,12 +434,13 @@ function buildSinglePlotDocx(input: ReportExportInput, isAdvance: boolean = fals
   }
 
   // Also include Irrigation & Fertilization as systematic action rows
+  const irriCritical = engineResult.irrigation.status === 'DRAINASE_MENDESAK' || engineResult.irrigation.status === 'BUTUH_PENGAIRAN';
   actionRows.push(
     new TableRow({
       children: [
         createDataCell(`${actIdx++}`, 6, true),
         createDataCell('Operasional Irigasi & Drainase', 24, true),
-        createDataCell(engineResult.irrigation.status === 'IRIGASI_SEGERA' ? 'KRITIS' : 'INFO', 18, true),
+        createDataCell(irriCritical ? 'WASPADA' : 'INFO', 18, true, irriCritical ? 'D97706' : greenDark),
         createDataCell('Hari Ini', 20),
         createDataCell(`${engineResult.irrigation.recommendation}. ${engineResult.irrigation.rationale}`, 32),
       ],

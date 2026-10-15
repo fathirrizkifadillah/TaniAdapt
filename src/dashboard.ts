@@ -2476,8 +2476,8 @@ async function askQuestion(q: string) {
   state.thread.push({
     me: true,
     text: q,
-    image: currentImage,
-    fileName: currentFileName
+    image: currentImage || undefined,
+    fileName: currentFileName || undefined
   });
   renderChat();
 
@@ -2504,7 +2504,7 @@ async function askQuestion(q: string) {
         currentVPD: f.currentVPD,
       } : null,
       customKnowledge: state.customKnowledgeBase,
-      imageBase64: currentImage,
+      imageBase64: currentImage || undefined,
       language: state.selectedLanguage,
     });
   }
