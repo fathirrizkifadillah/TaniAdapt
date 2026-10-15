@@ -348,7 +348,6 @@ Daftarkan petak lahan sejak hari tanam agar engine dapat memantau akumulasi keba
 <option value="cabai">Cabai Merah</option>
 <option value="cabai_rawit">Cabai Rawit</option>
 <option value="padi">Padi Sawah</option>
-<option value="bawang_merah">Bawang Merah</option>
 <option value="jagung">Jagung</option>
 <option value="kedelai">Kedelai</option>
 <option value="tomat">Tomat</option>
@@ -478,7 +477,7 @@ Daftarkan petak lahan sejak hari tanam agar engine dapat memantau akumulasi keba
     <div style="display: flex; flex-direction: column; gap: 6px">
       <label for="settings-soil-select" style="font-size: 13px; font-weight: 700">Tekstur Tanah Lahan</label>
       <select id="settings-soil-select" style="height: 44px; padding: 0 12px; border: 1.5px solid var(--field-line); border-radius: 10px; font: inherit; background: var(--field); font-weight: 600">
-        <option value="loam">Loam (Standar Jabar: TAW 150 mm/m, rentang 130–180)</option>
+        <option value="loam">Loam (asumsi, FAO-56 Bab 7 Tabel 19: TAW 150 mm/m)</option>
         <option value="sandy_loam">Sandy Loam / Lempung Berpasir (TAW 130 mm/m, rentang 110–150)</option>
         <option value="silty_clay_loam">Silty Clay Loam / Lempung Liat Berdebu (TAW 150 mm/m, rentang 130–180)</option>
       </select>
@@ -562,10 +561,9 @@ Daftarkan petak lahan sejak hari tanam agar engine dapat memantau akumulasi keba
 
 <div style="padding: 12px 24px; background: var(--ground); border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
 <span style="font-size: 13px; font-weight: 600">Filter Komoditas:</span>
-<button type="button" data-filter-evidence="all" style="padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; cursor: pointer; background: var(--green); color: #FFF; border: none">Semua (6)</button>
+<button type="button" data-filter-evidence="all" style="padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; cursor: pointer; background: var(--green); color: #FFF; border: none">Semua</button>
 <button type="button" data-filter-evidence="cabai" style="padding: 4px 12px; border-radius: 999px; font-size: 12px; cursor: pointer; background: #FFF; border: 1px solid var(--line); color: var(--ink)">Cabai Merah</button>
 <button type="button" data-filter-evidence="padi" style="padding: 4px 12px; border-radius: 999px; font-size: 12px; cursor: pointer; background: #FFF; border: 1px solid var(--line); color: var(--ink)">Padi Sawah</button>
-<button type="button" data-filter-evidence="bawang_merah" style="padding: 4px 12px; border-radius: 999px; font-size: 12px; cursor: pointer; background: #FFF; border: 1px solid var(--line); color: var(--ink)">Bawang Merah</button>
 <button type="button" data-filter-evidence="jagung" style="padding: 4px 12px; border-radius: 999px; font-size: 12px; cursor: pointer; background: #FFF; border: 1px solid var(--line); color: var(--ink)">Jagung</button>
 <button type="button" data-filter-evidence="tomat" style="padding: 4px 12px; border-radius: 999px; font-size: 12px; cursor: pointer; background: #FFF; border: 1px solid var(--line); color: var(--ink)">Tomat</button>
 <button type="button" data-filter-evidence="fao" style="padding: 4px 12px; border-radius: 999px; font-size: 12px; cursor: pointer; background: #FFF; border: 1px solid var(--line); color: var(--ink)">FAO-56</button>
@@ -692,7 +690,6 @@ Daftarkan petak lahan sejak hari tanam agar engine dapat memantau akumulasi keba
       <option value="jagung">Jagung Pipil / Hibrida (Zea mays)</option>
       <option value="kedelai">Kedelai 17 Sentra (Glycine max)</option>
       <option value="tomat">Tomat Sayur (Solanum lycopersicum)</option>
-      <option value="bawang_merah">Bawang Merah (Allium ascalonicum)</option>
     </select>
   </div>
   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">

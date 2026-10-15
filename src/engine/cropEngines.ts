@@ -157,14 +157,14 @@ export function evaluateCabaiEngine(
     });
   }
 
-  // Logika Pemupukan (Pencegahan Pencucian / Leaching)
-  const safeForFertilizer = tf.forecastRain24h < 20 && tf.maxPrecipProbabilityNext48h < 75;
+  // Logika Pemupukan (Pencegahan Pencucian / Washoff - rules.json RULE_FERT_RAIN_12H)
+  const safeForFertilizer = tf.forecastRain24h < 8 && tf.maxPrecipProbabilityNext48h < 75;
   const fertAdvisory: FertilizationAdvisory = {
     safeToApply: safeForFertilizer,
     status: safeForFertilizer ? 'AMAN' : 'TUNDA_KARENA_HUJAN',
     reason: safeForFertilizer
-      ? 'Prakiraan hujan 24-48 jam ke depan rendah, risiko pencucian pupuk minimal.'
-      : `Prakiraan hujan lebat (${tf.forecastRain24h} mm) dalam 24 jam ke depan berisiko mencuci pupuk NPK (FAO-56).`,
+      ? 'Prakiraan hujan di bawah ambang waspada (<8 mm), pupuk aman diaplikasikan.'
+      : `Prakiraan hujan (${tf.forecastRain24h} mm) melampaui ambang waspada 8 mm (RULE_FERT_RAIN_12H: CONVENTION_PENDING).`,
     recommendedNutrient: stage.keyNutrientNeed
   };
 
@@ -176,10 +176,10 @@ export function evaluateCabaiEngine(
       urgency: '24_48_JAM',
       riskLevel: 'SEDANG',
       action: 'Tunda aplikasi pupuk NPK butiran atau kocor hingga cuaca stabil.',
-      rationale: `Prakiraan hujan ${tf.forecastRain24h} mm dalam 24 jam akan mencuci ion nitrat dan kalium ke luar perakaran (FAO, 2019).`,
+      rationale: `Prakiraan hujan ${tf.forecastRain24h} mm berisiko menghanyutkan pupuk (rules.json RULE_FERT_RAIN_12H).`,
       growthStageContext: stage.name,
       evidenceCitationId: 'fao_irrigation_leaching_2019',
-      literatureSource: 'FAO Irrigation Paper 56'
+      literatureSource: 'rules.json (RULE_FERT_RAIN_12H: CONVENTION_PENDING)'
     });
   }
 

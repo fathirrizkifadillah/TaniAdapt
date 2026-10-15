@@ -35,7 +35,7 @@ export type UIMode = 'default' | 'pro';
 interface PlotTrailItem {
   dayLabel: string;
   weather: string;
-  status: 'Sehat' | 'Waspada' | 'Risiko tinggi';
+  status: string;
   note: string;
 }
 
@@ -101,8 +101,7 @@ const CROPS_LIST: { id: CropId; label: string; scientific: string }[] = [
   { id: 'padi', label: 'Padi Sawah', scientific: 'Oryza sativa L.' },
   { id: 'jagung', label: 'Jagung Pipil / Hibrida', scientific: 'Zea mays L.' },
   { id: 'kedelai', label: 'Kedelai 17 Sentra Jabar', scientific: 'Glycine max (L.) Merr.' },
-  { id: 'tomat', label: 'Tomat Sayur / Buah', scientific: 'Solanum lycopersicum' },
-  { id: 'bawang_merah', label: 'Bawang Merah', scientific: 'Allium ascalonicum' }
+  { id: 'tomat', label: 'Tomat Sayur / Buah', scientific: 'Solanum lycopersicum' }
 ];
 
 // SVG nav icons (monochrome line icons, no emoji)
@@ -205,24 +204,24 @@ function initDefaultPlots(): PlotItem[] {
       stageName: 'Mulai Keluar Bunga Banyak (46–65 HST)',
       risk: 'TINGGI',
       trail: [
-        { dayLabel: 'HST 1', weather: 'Cerah', status: 'Sehat', note: 'Penanaman bibit cabai merah' },
-        { dayLabel: 'HST 49', weather: 'Cerah Berawan', status: 'Sehat', note: 'Aplikasi pupuk susulan' },
-        { dayLabel: 'HST 55 (Hari Ini)', weather: 'Hujan Ringan', status: 'Waspada', note: 'Monitoring kebasahan daun' }
+        { dayLabel: 'HST 1', weather: 'Cerah', status: 'Catatan Petani', note: 'Penanaman bibit cabai merah' },
+        { dayLabel: 'HST 49', weather: 'Cerah Berawan', status: 'Aplikasi Pupuk', note: 'Aplikasi pupuk susulan' },
+        { dayLabel: 'HST 55 (Hari Ini)', weather: 'Hujan Ringan', status: 'Penyiraman & Pengamatan', note: 'Monitoring kebasahan daun' }
       ]
     },
     {
       id: 'plot-2',
       name: 'Kebun Sentra Bayongbong',
       locationId: 'garut',
-      placeName: 'Bayongbong, Garut (720 mdpl)',
+      placeName: 'Bayongbong, Garut (1252 mdpl)',
       cropId: 'tomat',
       plantDate: d20,
       hst: 20,
       stageName: 'Vegetatif Lanjut (16–30 HST)',
       risk: 'SEDANG',
       trail: [
-        { dayLabel: 'HST 1', weather: 'Cerah', status: 'Sehat', note: 'Pindah tanam bibit tomat' },
-        { dayLabel: 'HST 20 (Hari Ini)', weather: 'Berawan', status: 'Sehat', note: 'Pemasangan ajir bambu' }
+        { dayLabel: 'HST 1', weather: 'Cerah', status: 'Catatan Petani', note: 'Pindah tanam bibit tomat' },
+        { dayLabel: 'HST 20 (Hari Ini)', weather: 'Berawan', status: 'Kegiatan Lahan', note: 'Pemasangan ajir bambu' }
       ]
     }
   ];
@@ -376,10 +375,17 @@ function renderPlotFeed() {
     const riskStyle = RISK_BADGE[res.overallRisk] || RISK_BADGE['RENDAH'];
 
     // Build 3 traffic-light action cards
+    const isWaterInsufficient = plot.cropId === 'padi' || plot.cropId === 'cabai' || plot.cropId === 'cabai_rawit';
     const irrigStatus = res.irrigation.status;
-    const irrigColor = irrigStatus === 'DRAINASE_MENDESAK' ? '#8A470B' : irrigStatus === 'BUTUH_PENGAIRAN' ? '#1E4D35' : '#166534';
-    const irrigBg = irrigStatus === 'DRAINASE_MENDESAK' ? '#FBEFE2' : irrigStatus === 'BUTUH_PENGAIRAN' ? '#F0FDF4' : '#F0FDF4';
-    const irrigLabel = irrigStatus === 'DRAINASE_MENDESAK' ? 'Drainase Mendesak' : irrigStatus === 'BUTUH_PENGAIRAN' ? 'Perlu Pengairan' : 'Lengas Optimal';
+    let irrigColor = irrigStatus === 'DRAINASE_MENDESAK' ? '#8A470B' : irrigStatus === 'BUTUH_PENGAIRAN' ? '#1E4D35' : '#166534';
+    let irrigBg = irrigStatus === 'DRAINASE_MENDESAK' ? '#FBEFE2' : irrigStatus === 'BUTUH_PENGAIRAN' ? '#F0FDF4' : '#F0FDF4';
+    let irrigLabel = irrigStatus === 'DRAINASE_MENDESAK' ? 'Drainase Mendesak' : irrigStatus === 'BUTUH_PENGAIRAN' ? 'Perlu Pengairan' : 'Lengas Optimal';
+
+    if (isWaterInsufficient) {
+      irrigColor = 'var(--muted)';
+      irrigBg = '#F3F4F6';
+      irrigLabel = 'Belum bisa dihitung (bukti belum cukup)';
+    }
 
     const sprayOk = res.overallRisk !== 'TINGGI';
     const sprayColor = sprayOk ? '#166534' : '#8A470B';
@@ -391,14 +397,18 @@ function renderPlotFeed() {
     const fertBg = fertOk ? '#F0FDF4' : '#FBEFE2';
     const fertLabel = fertOk ? 'Jendela Pupuk Aman' : 'Tunda Pemupukan';
 
-    const metricRow = isRingkas ? '' : `
+    const metricRow = isRingkas ? '' : (isWaterInsufficient ? `
+      <div style="font-size: 12px; background: #F3F4F6; color: var(--muted); padding: 10px; border-radius: 10px; margin-top: 4px; text-align: center">
+        Modul neraca air dinamis belum diaktifkan untuk komoditas ini (status ilmiah: <em>evidence_insufficient</em>).
+      </div>
+    ` : `
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; font-size: 12px; background: var(--ground); padding: 10px; border-radius: 10px; margin-top: 4px">
         <div><div style="color: var(--muted)">ET0</div><div style="font-weight: 700">${res.fao56?.et0_daily_mm ?? '–'} mm/d</div></div>
         <div><div style="color: var(--muted)">Kc</div><div style="font-weight: 700">${res.fao56?.kc_current ?? '–'}</div></div>
         <div><div style="color: var(--muted)">Dr</div><div style="font-weight: 700">${res.fao56?.depletion_dr_mm ?? '–'} mm</div></div>
         <div><div style="color: var(--muted)">VPD</div><div style="font-weight: 700">${f.currentVPD.toFixed(2)} kPa</div></div>
       </div>
-    `;
+    `);
 
     return `<article style="background: #FFFFFF; border: 1.5px solid var(--line); border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.04)">
       <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; flex-wrap: wrap">
@@ -589,13 +599,8 @@ function renderRiskCard() {
     riskText.textContent = res.overallRisk === 'TINGGI' ? 'Tinggi' : res.overallRisk === 'SEDANG' ? 'Sedang' : 'Rendah';
   }
 
-  // Compute average disease risk index
-  const avgRisk = Math.round(
-    res.diseaseRisks.reduce((acc, d) => acc + d.score, 0) / (res.diseaseRisks.length || 1)
-  );
-
   if (riskBadge) {
-    riskBadge.textContent = `${avgRisk}/100`;
+    riskBadge.textContent = `Status: ${res.overallRisk}`;
   }
 
   // Adjust styling based on risk
@@ -711,30 +716,28 @@ function renderInfluentialFactors() {
 
   const isPro = state.uiMode === 'pro';
 
-  // Define weights based on weather & crop sensitivity
+  // Tampilkan nilai metrik biofisik mentah langsung tanpa bar bobot sintetis 0-100 (F4 PROMPT G1)
   const factors = isPro ? [
-    { name: 'Hari Hujan Berturut-turut', value: `${f.consecutiveRainyDays} hari`, weight: Math.min(100, f.consecutiveRainyDays * 20), level: f.consecutiveRainyDays >= 3 ? 'Kuat' : 'Sedang' },
-    { name: 'Kelembapan Relatif Rolling (7d)', value: `${Math.round(f.rolling7dRH)}%`, weight: Math.min(100, Math.round(f.rolling7dRH)), level: f.rolling7dRH >= 85 ? 'Kuat' : 'Sedang' },
-    { name: 'Defisit Tekanan Uap (VPD Tetens)', value: `${f.currentVPD.toFixed(2)} kPa`, weight: Math.min(100, Math.round((1 - Math.min(1, f.currentVPD / 1.5)) * 100)), level: f.currentVPD < 0.4 ? 'Kuat (Lembap)' : 'Normal' },
-    { name: 'Kerentanan Fase Fenologi', value: state.engineResult?.stageName || 'Vegetatif', weight: state.engineResult?.stageVulnerability === 'KRITIS' ? 95 : state.engineResult?.stageVulnerability === 'TINGGI' ? 80 : 50, level: 'Tinggi' },
-    { name: 'Akumulasi Presipitasi 7 Hari', value: `${Math.round(f.rolling7dRain)} mm`, weight: Math.min(100, Math.round(f.rolling7dRain * 1.2)), level: f.rolling7dRain > 60 ? 'Kuat' : 'Sedang' }
+    { name: 'Hari Hujan Berturut-turut', value: `${f.consecutiveRainyDays} hari`, badge: f.consecutiveRainyDays >= 3 ? 'Waspada Sporulasi' : 'Normal', color: f.consecutiveRainyDays >= 3 ? '#9A3412' : '#166534', bg: f.consecutiveRainyDays >= 3 ? '#FFEDD5' : '#DCFCE7' },
+    { name: 'Kelembapan Relatif Rolling (7d)', value: `${Math.round(f.rolling7dRH)}%`, badge: f.rolling7dRH >= 85 ? 'Sangat Lembap' : 'Optimal', color: f.rolling7dRH >= 85 ? '#9A3412' : '#166534', bg: f.rolling7dRH >= 85 ? '#FFEDD5' : '#DCFCE7' },
+    { name: 'Defisit Tekanan Uap (VPD Tetens)', value: `${f.currentVPD.toFixed(2)} kPa`, badge: f.currentVPD < 0.4 ? 'Lembap Basah' : f.currentVPD > 1.2 ? 'Kering Terik' : 'Optimal', color: f.currentVPD < 0.4 ? '#9A3412' : '#166534', bg: f.currentVPD < 0.4 ? '#FFEDD5' : '#DCFCE7' },
+    { name: 'Fase Fenologi & Kerentanan', value: state.engineResult?.stageName || 'Vegetatif', badge: state.engineResult?.stageVulnerability || 'SEDANG', color: '#1E40AF', bg: '#DBEAFE' },
+    { name: 'Akumulasi Presipitasi 7 Hari', value: `${Math.round(f.rolling7dRain)} mm`, badge: f.rolling7dRain > 60 ? 'Tinggi' : 'Normal', color: f.rolling7dRain > 60 ? '#9A3412' : '#166534', bg: f.rolling7dRain > 60 ? '#FFEDD5' : '#DCFCE7' }
   ] : [
-    { name: 'Hari Hujan Berturut-turut', value: `${f.consecutiveRainyDays} hari`, weight: Math.min(100, f.consecutiveRainyDays * 20), level: f.consecutiveRainyDays >= 3 ? 'Waspada' : 'Aman' },
-    { name: 'Rata-rata Kelembapan Kebun (7 Hari)', value: `${Math.round(f.rolling7dRH)}%`, weight: Math.min(100, Math.round(f.rolling7dRH)), level: f.rolling7dRH >= 85 ? 'Sangat Lembap' : 'Cukup' },
-    { name: 'Laju Penguapan Udara (VPD)', value: f.currentVPD < 0.4 ? 'Lembap Basah' : f.currentVPD > 1.2 ? 'Kering Terik' : 'Nyaman Optimal', weight: Math.min(100, Math.round((1 - Math.min(1, f.currentVPD / 1.5)) * 100)), level: 'Normal' },
-    { name: 'Kebutuhan Air Tahap Ini', value: state.engineResult?.stageName || 'Pertumbuhan', weight: state.engineResult?.stageVulnerability === 'KRITIS' ? 95 : 65, level: 'Penting' },
-    { name: 'Total Curah Hujan Seminggu', value: `${Math.round(f.rolling7dRain)} mm`, weight: Math.min(100, Math.round(f.rolling7dRain * 1.2)), level: f.rolling7dRain > 60 ? 'Basah' : 'Normal' }
+    { name: 'Hari Hujan Berturut-turut', value: `${f.consecutiveRainyDays} hari`, badge: f.consecutiveRainyDays >= 3 ? 'Waspada' : 'Aman', color: f.consecutiveRainyDays >= 3 ? '#9A3412' : '#166534', bg: f.consecutiveRainyDays >= 3 ? '#FFEDD5' : '#DCFCE7' },
+    { name: 'Rata-rata Kelembapan (7 Hari)', value: `${Math.round(f.rolling7dRH)}%`, badge: f.rolling7dRH >= 85 ? 'Lembap' : 'Cukup', color: f.rolling7dRH >= 85 ? '#9A3412' : '#166534', bg: f.rolling7dRH >= 85 ? '#FFEDD5' : '#DCFCE7' },
+    { name: 'Kondisi Penguapan Udara (VPD)', value: `${f.currentVPD.toFixed(2)} kPa`, badge: f.currentVPD < 0.4 ? 'Lembap Basah' : 'Optimal', color: f.currentVPD < 0.4 ? '#9A3412' : '#166534', bg: f.currentVPD < 0.4 ? '#FFEDD5' : '#DCFCE7' },
+    { name: 'Tahap Tumbuh Tanaman', value: state.engineResult?.stageName || 'Pertumbuhan', badge: 'Aktif', color: '#1E40AF', bg: '#DBEAFE' },
+    { name: 'Total Curah Hujan 7 Hari', value: `${Math.round(f.rolling7dRain)} mm`, badge: f.rolling7dRain > 60 ? 'Basah' : 'Normal', color: f.rolling7dRain > 60 ? '#9A3412' : '#166534', bg: f.rolling7dRain > 60 ? '#FFEDD5' : '#DCFCE7' }
   ];
 
   container.innerHTML = factors.map((item) => {
-    return `<div style="display: flex; flex-direction: column; gap: 4px">
-      <div style="display: flex; justify-content: space-between; font-size: 13px">
-        <span style="font-weight: 500">${item.name} <span style="font-family: 'IBM Plex Mono', monospace; color: var(--muted)">(${item.value})</span></span>
-        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--green); font-weight: 600">${item.level}</span>
+    return `<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--ground); border-radius: 8px; border: 1px solid var(--line); font-size: 13px">
+      <div>
+        <span style="font-weight: 600; color: var(--ink)">${item.name}</span>
+        <span style="margin-left: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: var(--muted); font-weight: 500">${item.value}</span>
       </div>
-      <div style="height: 8px; background: var(--sage); border-radius: 4px; overflow: hidden">
-        <div style="width: ${item.weight}%; height: 8px; background: var(--green); border-radius: 4px"></div>
-      </div>
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; font-weight: 700; color: ${item.color}; background: ${item.bg}; padding: 3px 8px; border-radius: 6px">${item.badge}</span>
     </div>`;
   }).join('');
 }
@@ -1162,7 +1165,7 @@ function renderPrintModal() {
       <h3 style="margin: 0 0 8px; font-size: 16px">3. Status Manajemen Air &amp; Nutrisi</h3>
       <div style="font-size: 13.5px">
         <div><strong>Irigasi:</strong> ${res.irrigation.status === 'DRAINASE_MENDESAK' ? 'DRAINASE MENDESAK &mdash; Segera perdalam parit buangan' : 'LENGAS OPTIMAL'}</div>
-        <div><strong>Pemupukan:</strong> ${res.fertilization.safeToApply ? 'Aman diaplikasikan' : 'TUNDA PEMUPUKAN NITROGEN &mdash; Risiko pencucian tinggi menurut standar FAO-56'}</div>
+        <div><strong>Pemupukan:</strong> ${res.fertilization.safeToApply ? 'Aman diaplikasikan' : 'TUNDA PEMUPUKAN &mdash; Risiko pencucian/hanyut (rules.json RULE_FERT_RAIN_12H: CONVENTION_PENDING)'}</div>
       </div>
     </div>
 
@@ -1297,8 +1300,9 @@ function renderFao56ProPanel() {
   if (f.proyeksi_7hari && f.proyeksi_7hari.length > 0) {
     forwardSimRows = f.proyeksi_7hari.map(p => {
       const isCrossing = p.dr_prakiraan_mm > p.raw_mm;
+      const dayLabel = p.hari === 0 ? 'Hari ini' : p.hari === 1 ? 'Besok' : `H+${p.hari}`;
       return `<tr style="border-bottom: 1px solid var(--line); font-size: 12.5px">
-        <td style="padding: 8px 10px; font-weight: 600">H+${p.hari} (${p.tanggal})</td>
+        <td style="padding: 8px 10px; font-weight: 600">${dayLabel} (${p.tanggal})</td>
         <td style="padding: 8px 10px; font-family: 'IBM Plex Mono', monospace; font-weight: 700; color: ${isCrossing ? 'var(--risk-strong)' : 'var(--ink)'}">
           ${p.dr_prakiraan_mm} mm
         </td>
@@ -1425,7 +1429,7 @@ function renderFao56ProPanel() {
     ` : ''}
 
     <div style="background: var(--ground); padding: 10px 14px; border-radius: 10px; font-size: 11.5px; color: var(--muted); line-height: 1.4">
-      <strong>Catatan Ilmiah Keputusan Engine:</strong> Berdasarkan temuan ekonometrika Phase 7 &amp; evaluasi ML Phase 9, model regresi berbasis cuaca saja terbukti tidak memiliki daya generalisasi out-of-sample pada tahun baru (LOYO CV R² ≈ 0). Maka sistem mengunci status <em>claim_forbidden</em> pada tebak tonase panen, dan mengalihkan 100% keputusan pada rekomendasi tindakan diurnal harian berbasis biofisik deterministik.
+      <strong>Catatan Ilmiah Keputusan Engine:</strong> Berdasarkan temuan ekonometrika Phase 7 &amp; evaluasi ML Phase 9, model regresi berbasis cuaca saja tidak memiliki bukti daya generalisasi out-of-sample pada tahun baru (LOYO CV R² ≈ 0). Maka sistem mengunci status <em>claim_forbidden</em> pada tebak tonase panen, dan mengalihkan 100% keputusan pada rekomendasi tindakan diurnal harian berbasis biofisik deterministik.
     </div>
   `;
 }
@@ -1608,9 +1612,9 @@ async function askQuestion(q: string) {
         sourceDoc = 'Sentelhas et al. (2008)';
       } else if (qLower.includes('gemuk') || qLower.includes('pupuk') || qLower.includes('urea')) {
         answer = res?.fertilization.safeToApply
-          ? 'Kaayaan aman pikeun masihan pupuk susulan. Prakiraan hujan 48 jam ka payun alit pisan sehingga pupuk teu kahanyutkeun.'
-          : 'Sistem nyarankeun nunda masihan pupuk heula dinten ieu supados pupuk teu kahanyutkeun ku hujan ageung (Standar FAO-56).';
-        sourceDoc = 'FAO-56 (Allen et al.)';
+          ? 'Kaayaan aman pikeun masihan pupuk susulan. Prakiraan hujan alit pisan sehingga pupuk teu kahanyutkeun.'
+          : 'Sistem nyarankeun nunda masihan pupuk dinten ieu supados teu kahanyutkeun ku limpasan cai hujan (rules.json RULE_FERT_RAIN_12H: CONVENTION_PENDING).';
+        sourceDoc = 'rules.json (RULE_FERT_RAIN_12H: CONVENTION_PENDING)';
       } else if (qLower.includes('cai') || qLower.includes('siram') || qLower.includes('haseum') || qLower.includes('taneuh')) {
         answer = res?.irrigation.status === 'DRAINASE_MENDESAK'
           ? `Status ayeuna: DRAINASE MENDESAK! Hujan 7 dinten parantos ${Math.round(f?.rolling7dRain || 0)} mm. Taneuh parantos baseuh pisan ngaleuwihan kapasitas lapang. Enggal buka solokan supados akar teu asfiksia.`
@@ -1626,11 +1630,11 @@ async function askQuestion(q: string) {
         sourceDoc = 'Balitsa (2020) & Sentelhas (2008)';
       } else if (qLower.includes('pupuk') || qLower.includes('memupuk') || qLower.includes('fertil')) {
         if (!res?.fertilization.safeToApply) {
-          answer = `Sistem MEREKOMENDASIKAN MENUNDA pemupukan nitrogen saat ini. Sesuai panduan FAO-56 (Allen et al., 1998), curah hujan atau prakiraan lebat dalam 48 jam ke depan memicu risiko pencucian (leaching) nitrat ke bawah zona perakaran hingga 65%, yang merugikan biaya petani dan mencemari air tanah. Tunggu jendela cerah stabil minimal 48 jam.`;
+          answer = `Sistem MEREKOMENDASIKAN MENUNDA aplikasi pupuk saat ini. Berdasarkan aturan praktis tim (rules.json RULE_FERT_RAIN_12H, status CONVENTION_PENDING), prakiraan hujan >= 8.0 mm dalam rentang 12-24 jam berisiko melarutkan dan menghanyutkan pupuk butiran lewat limpasan permukaan. Tunggu jendela cuaca stabil sebelum pemupukan susulan.`;
         } else {
-          answer = `Kondisi aman untuk aplikasi pupuk susulan. Prakiraan 48 jam ke depan menunjukkan curah hujan rendah (<15 mm) sehingga pupuk dapat terserap optimal oleh perakaran aktif.`;
+          answer = `Kondisi aman untuk aplikasi pupuk susulan. Prakiraan hujan dalam rentang 12-24 jam di bawah ambang waspada (<8 mm) sehingga pupuk dapat terserap optimal oleh perakaran aktif.`;
         }
-        sourceDoc = 'FAO-56 (Allen et al.)';
+        sourceDoc = 'rules.json (RULE_FERT_RAIN_12H: CONVENTION_PENDING)';
       } else if (qLower.includes('besok') || qLower.includes('tidak hujan') || qLower.includes('skenario') || qLower.includes('kering')) {
         answer = `Jika prakiraan cuaca berubah menjadi kering selama 2–3 hari berturut-turut, defisit tekanan uap (VPD) akan naik ke kisaran 0.8–1.2 kPa dan akumulasi kelembapan tajuk menurun drastis. Indeks risiko akan turun otomatis dari ${res?.overallRisk} menjadi Sedang atau Rendah, membuka jendela aman untuk penyemprotan protektan dan pemupukan.`;
         sourceDoc = 'Dynamic Scenario Engine';
@@ -1861,8 +1865,8 @@ function setupEventListeners() {
         stageName: 'Vegetatif Awal',
         risk: 'RENDAH',
         trail: [
-          { dayLabel: `HST 1`, weather: 'Cerah', status: 'Sehat', note: 'Hari tanam bibit' },
-          { dayLabel: `HST ${computedHst} (Hari Ini)`, weather: 'Berawan', status: 'Sehat', note: 'Lahan terdaftar di TaniAdapt' }
+          { dayLabel: `HST 1`, weather: 'Cerah', status: 'Catatan Petani', note: 'Hari tanam bibit' },
+          { dayLabel: `HST ${computedHst} (Hari Ini)`, weather: 'Berawan', status: 'Pendaftaran Lahan', note: 'Lahan terdaftar di TaniAdapt' }
         ]
       };
 

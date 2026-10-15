@@ -1,0 +1,487 @@
+{
+  "generator": "scripts/mechanistic/fao56.py",
+  "reference": "FAO Irrigation and Drainage Paper 56",
+  "et0_example18": {
+    "expected_mm_day": 3.88,
+    "calculated_mm_day": 3.8771,
+    "tolerance": 0.03
+  },
+  "et0_tropical_samples": [
+    {
+      "label": "subang_rainy",
+      "inputs": {
+        "tmax_c": 31.5,
+        "tmin_c": 23.2,
+        "dewpoint_c": 22.8,
+        "wind_10m_ms": 2.1,
+        "solar_radiation_mj_m2_day": 18.5,
+        "elevation_m": 25.0,
+        "latitude_deg": -6.5,
+        "day_of_year": 45
+      },
+      "expected_et0": 4.2773
+    },
+    {
+      "label": "subang_dry",
+      "inputs": {
+        "tmax_c": 34.8,
+        "tmin_c": 22.0,
+        "dewpoint_c": 19.5,
+        "wind_10m_ms": 3.8,
+        "solar_radiation_mj_m2_day": 23.4,
+        "elevation_m": 25.0,
+        "latitude_deg": -6.5,
+        "day_of_year": 240
+      },
+      "expected_et0": 6.4198
+    },
+    {
+      "label": "lembang_highland",
+      "inputs": {
+        "tmax_c": 24.5,
+        "tmin_c": 15.2,
+        "dewpoint_c": 14.8,
+        "wind_10m_ms": 1.8,
+        "solar_radiation_mj_m2_day": 17.0,
+        "elevation_m": 1250.0,
+        "latitude_deg": -6.8,
+        "day_of_year": 180
+      },
+      "expected_et0": 3.2038
+    }
+  ],
+  "kc_vectors": [
+    {
+      "crop": "jagung",
+      "dap": 5,
+      "kc": 0.3
+    },
+    {
+      "crop": "jagung",
+      "dap": 15,
+      "kc": 0.3
+    },
+    {
+      "crop": "jagung",
+      "dap": 25,
+      "kc": 0.4286
+    },
+    {
+      "crop": "jagung",
+      "dap": 45,
+      "kc": 0.9429
+    },
+    {
+      "crop": "jagung",
+      "dap": 65,
+      "kc": 1.2
+    },
+    {
+      "crop": "jagung",
+      "dap": 80,
+      "kc": 1.2
+    },
+    {
+      "crop": "jagung",
+      "dap": 100,
+      "kc": 1.0583
+    },
+    {
+      "crop": "jagung",
+      "dap": 120,
+      "kc": 0.4917
+    },
+    {
+      "crop": "kedelai",
+      "dap": 5,
+      "kc": 0.4
+    },
+    {
+      "crop": "kedelai",
+      "dap": 15,
+      "kc": 0.4
+    },
+    {
+      "crop": "kedelai",
+      "dap": 25,
+      "kc": 0.9
+    },
+    {
+      "crop": "kedelai",
+      "dap": 45,
+      "kc": 1.15
+    },
+    {
+      "crop": "kedelai",
+      "dap": 65,
+      "kc": 1.15
+    },
+    {
+      "crop": "kedelai",
+      "dap": 80,
+      "kc": 0.7167
+    },
+    {
+      "crop": "kedelai",
+      "dap": 100,
+      "kc": 0.5
+    },
+    {
+      "crop": "kedelai",
+      "dap": 120,
+      "kc": 0.5
+    },
+    {
+      "crop": "tomat",
+      "dap": 5,
+      "kc": 0.6
+    },
+    {
+      "crop": "tomat",
+      "dap": 15,
+      "kc": 0.6
+    },
+    {
+      "crop": "tomat",
+      "dap": 25,
+      "kc": 0.6
+    },
+    {
+      "crop": "tomat",
+      "dap": 45,
+      "kc": 0.8062
+    },
+    {
+      "crop": "tomat",
+      "dap": 65,
+      "kc": 1.0812
+    },
+    {
+      "crop": "tomat",
+      "dap": 80,
+      "kc": 1.15
+    },
+    {
+      "crop": "tomat",
+      "dap": 100,
+      "kc": 1.15
+    },
+    {
+      "crop": "tomat",
+      "dap": 120,
+      "kc": 1.0917
+    },
+    {
+      "crop": "padi",
+      "dap": 5,
+      "kc": 1.05
+    },
+    {
+      "crop": "padi",
+      "dap": 15,
+      "kc": 1.05
+    },
+    {
+      "crop": "padi",
+      "dap": 25,
+      "kc": 1.05
+    },
+    {
+      "crop": "padi",
+      "dap": 45,
+      "kc": 1.125
+    },
+    {
+      "crop": "padi",
+      "dap": 65,
+      "kc": 1.2
+    },
+    {
+      "crop": "padi",
+      "dap": 80,
+      "kc": 1.2
+    },
+    {
+      "crop": "padi",
+      "dap": 100,
+      "kc": 1.08
+    },
+    {
+      "crop": "padi",
+      "dap": 120,
+      "kc": 0.6
+    }
+  ],
+  "water_balance_vectors": [
+    {
+      "crop": "jagung",
+      "dap": 20,
+      "soil": "loam",
+      "taw_mm": 83.18,
+      "raw_mm": 45.75,
+      "root_depth_m": 0.55,
+      "eval_safe_status": "normal",
+      "eval_stress_status": "kondisi_stres_abiotik"
+    },
+    {
+      "crop": "jagung",
+      "dap": 20,
+      "soil": "sandy_loam",
+      "taw_mm": 72.09,
+      "raw_mm": 39.65,
+      "root_depth_m": 0.55,
+      "eval_safe_status": "normal",
+      "eval_stress_status": "kondisi_stres_abiotik"
+    },
+    {
+      "crop": "jagung",
+      "dap": 20,
+      "soil": "clay",
+      "taw_mm": 77.64,
+      "raw_mm": 42.7,
+      "root_depth_m": 0.55,
+      "eval_safe_status": "normal",
+      "eval_stress_status": "kondisi_stres_abiotik"
+    },
+    {
+      "crop": "jagung",
+      "dap": 60,
+      "soil": "loam",
+      "taw_mm": 150.0,
+      "raw_mm": 82.5,
+      "root_depth_m": 1.0,
+      "eval_safe_status": "normal",
+      "eval_stress_status": "kondisi_stres_abiotik"
+    },
+    {
+      "crop": "jagung",
+      "dap": 60,
+      "soil": "sandy_loam",
+      "taw_mm": 130.0,
+      "raw_mm": 71.5,
+      "root_depth_m": 1.0,
+      "eval_safe_status": "normal",
+      "eval_stress_status": "kondisi_stres_abiotik"
+    },
+    {
+      "crop": "jagung",
+      "dap": 60,
+      "soil": "clay",
+      "taw_mm": 140.0,
+      "raw_mm": 77.0,
+      "root_depth_m": 1.0,
+      "eval_safe_status": "normal",
+      "eval_stress_status": "kondisi_stres_abiotik"
+    },
+    {
+      "crop": "jagung",
+      "dap": 90,
+      "soil": "loam",
+      "taw_mm": 150.0,
+      "raw_mm": 82.5,
+      "root_depth_m": 1.0,
+      "eval_safe_status": "normal",
+      "eval_stress_status": "kondisi_stres_abiotik"
+    },
+    {
+      "crop": "jagung",
+      "dap": 90,
+      "soil": "sandy_loam",
+      "taw_mm": 130.0,
+      "raw_mm": 71.5,
+      "root_depth_m": 1.0,
+      "eval_safe_status": "normal",
+      "eval_stress_status": "kondisi_stres_abiotik"
+    },
+    {
+      "crop": "jagung",
+      "dap": 90,
+      "soil": "clay",
+      "taw_mm": 140.0,
+      "raw_mm": 77.0,
+      "root_depth_m": 1.0,
+      "eval_safe_status": "normal",
+      "eval_stress_status": "kondisi_stres_abiotik"
+    },
+    {
+      "crop": "kedelai",
+      "dap": 20,
+      "soil": "loam",
+      "taw_mm": 95.0,
+      "raw_mm": 47.5,
+      "root_depth_m": 0.63,
+      "eval_safe_status": "normal",
+      "eval_stress_status": "kondisi_stres_abiotik"
+    },
+    {
+      "crop": "kedelai",
+      "dap": 20,
+      "soil": "sandy_loam",
+      "taw_mm": 82.33,
+      "raw_mm": 41.17,
+      "root_depth_m": 0.63,
+      "eval_safe_status": "normal",
+      "eval_stress_status": "kondisi_stres_abiotik"
+    },
+    {
+      "crop": "kedelai",
+      "dap": 20,
+      "soil": "clay",
+      "taw_mm": 88.67,
+      "raw_mm": 44.33,
+      "root_depth_m": 0.63,
+      "eval_safe_status": "normal",
+      "eval_stress_status": "kondisi_stres_abiotik"
+    },
+    {
+      "crop": "kedelai",
+      "dap": 60,
+      "soil": "loam",
+      "taw_mm": 120.0,
+      "raw_mm": 60.0,
+      "root_depth_m": 0.8,
+      "eval_safe_status": "normal",
+      "eval_stress_status": "kondisi_stres_abiotik"
+    },
+    {
+      "crop": "kedelai",
+      "dap": 60,
+      "soil": "sandy_loam",
+      "taw_mm": 104.0,
+      "raw_mm": 52.0,
+      "root_depth_m": 0.8,
+      "eval_safe_status": "normal",
+      "eval_stress_status": "kondisi_stres_abiotik"
+    },
+    {
+      "crop": "kedelai",
+      "dap": 60,
+      "soil": "clay",
+      "taw_mm": 112.0,
+      "raw_mm": 56.0,
+      "root_depth_m": 0.8,
+      "eval_safe_status": "normal",
+      "eval_stress_status": "kondisi_stres_abiotik"
+    },
+    {
+      "crop": "kedelai",
+      "dap": 90,
+      "soil": "loam",
+      "taw_mm": 120.0,
+      "raw_mm": 60.0,
+      "root_depth_m": 0.8,
+      "eval_safe_status": "normal",
+      "eval_stress_status": "kondisi_stres_abiotik"
+    },
+    {
+      "crop": "kedelai",
+      "dap": 90,
+      "soil": "sandy_loam",
+      "taw_mm": 104.0,
+      "raw_mm": 52.0,
+      "root_depth_m": 0.8,
+      "eval_safe_status": "normal",
+      "eval_stress_status": "kondisi_stres_abiotik"
+    },
+    {
+      "crop": "kedelai",
+      "dap": 90,
+      "soil": "clay",
+      "taw_mm": 112.0,
+      "raw_mm": 56.0,
+      "root_depth_m": 0.8,
+      "eval_safe_status": "normal",
+      "eval_stress_status": "kondisi_stres_abiotik"
+    },
+    {
+      "crop": "tomat",
+      "dap": 20,
+      "soil": "loam",
+      "taw_mm": 56.79,
+      "raw_mm": 22.71,
+      "root_depth_m": 0.38,
+      "eval_safe_status": "normal",
+      "eval_stress_status": "kondisi_stres_abiotik"
+    },
+    {
+      "crop": "tomat",
+      "dap": 20,
+      "soil": "sandy_loam",
+      "taw_mm": 49.21,
+      "raw_mm": 19.69,
+      "root_depth_m": 0.38,
+      "eval_safe_status": "normal",
+      "eval_stress_status": "kondisi_stres_abiotik"
+    },
+    {
+      "crop": "tomat",
+      "dap": 20,
+      "soil": "clay",
+      "taw_mm": 53.0,
+      "raw_mm": 21.2,
+      "root_depth_m": 0.38,
+      "eval_safe_status": "normal",
+      "eval_stress_status": "kondisi_stres_abiotik"
+    },
+    {
+      "crop": "tomat",
+      "dap": 60,
+      "soil": "loam",
+      "taw_mm": 95.36,
+      "raw_mm": 38.14,
+      "root_depth_m": 0.64,
+      "eval_safe_status": "normal",
+      "eval_stress_status": "kondisi_stres_abiotik"
+    },
+    {
+      "crop": "tomat",
+      "dap": 60,
+      "soil": "sandy_loam",
+      "taw_mm": 82.64,
+      "raw_mm": 33.06,
+      "root_depth_m": 0.64,
+      "eval_safe_status": "normal",
+      "eval_stress_status": "kondisi_stres_abiotik"
+    },
+    {
+      "crop": "tomat",
+      "dap": 60,
+      "soil": "clay",
+      "taw_mm": 89.0,
+      "raw_mm": 35.6,
+      "root_depth_m": 0.64,
+      "eval_safe_status": "normal",
+      "eval_stress_status": "kondisi_stres_abiotik"
+    },
+    {
+      "crop": "tomat",
+      "dap": 90,
+      "soil": "loam",
+      "taw_mm": 105.0,
+      "raw_mm": 42.0,
+      "root_depth_m": 0.7,
+      "eval_safe_status": "normal",
+      "eval_stress_status": "kondisi_stres_abiotik"
+    },
+    {
+      "crop": "tomat",
+      "dap": 90,
+      "soil": "sandy_loam",
+      "taw_mm": 91.0,
+      "raw_mm": 36.4,
+      "root_depth_m": 0.7,
+      "eval_safe_status": "normal",
+      "eval_stress_status": "kondisi_stres_abiotik"
+    },
+    {
+      "crop": "tomat",
+      "dap": 90,
+      "soil": "clay",
+      "taw_mm": 98.0,
+      "raw_mm": 39.2,
+      "root_depth_m": 0.7,
+      "eval_safe_status": "normal",
+      "eval_stress_status": "kondisi_stres_abiotik"
+    }
+  ]
+}

@@ -288,7 +288,7 @@ export async function generateAndDownloadWordReport(input: ReportExportInput): P
         children: [
           createDataCell(d.diseaseName, 25, true),
           createDataCell(d.pathogen, 25),
-          createDataCell(`${d.level} (${d.score}/100)`, 20),
+          createDataCell(`${d.level}`, 20),
           createDataCell(d.preventiveAdvice, 30),
         ],
       })

@@ -64,3 +64,5 @@ taniadapt.md
 *.bak
 .cache/
 .oxlint-cache/
+
+/command
