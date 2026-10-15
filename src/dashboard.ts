@@ -16,8 +16,11 @@ import {
   registerUser,
   clearAuthSession,
   generateAndDownloadWordReport,
+  generateSinglePlotAdvanceWordReport,
   generatePortfolioWordReport,
+  generatePortfolioAdvanceWordReport,
   PortfolioReportPlot,
+  PortfolioAdvancePlot,
   searchLocationsByApi,
   getCurrentGpsPosition,
   GeocodingResult,
@@ -50,6 +53,7 @@ interface PlotItem {
   stageName: string;
   risk: RiskLevel;
   trail: PlotTrailItem[];
+  areaHa?: number;
 }
 
 interface ChatMessage {
@@ -75,6 +79,8 @@ const state = {
   showForm: false,
   isEvidenceModalOpen: false,
   isPrintModalOpen: false,
+  reportExportScope: 'single' as 'single' | 'portfolio',
+  reportExportMode: 'default' as 'default' | 'advance',
   evidenceFilter: 'all' as string,
   weatherData: null as WeatherFetchResult | null,
   engineResult: null as CropEngineResult | null,
@@ -980,6 +986,21 @@ function renderChat() {
       </div>`;
     }).join('');
   }
+
+  // Custom KB in Chat View
+  const chatKbList = $('#chat-custom-kb-list');
+  if (chatKbList) {
+    if (state.customKnowledgeBase.length === 0) {
+      chatKbList.innerHTML = `<span style="font-size: 11px; color: var(--muted); font-style: italic">Belum ada SOP kebun tersimpan. Tambahkan di atas.</span>`;
+    } else {
+      chatKbList.innerHTML = state.customKnowledgeBase.map((item, idx) => {
+        return `<div style="display: flex; justify-content: space-between; align-items: center; background: var(--ground); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; font-size: 11.5px; gap: 6px">
+          <span style="color: var(--ink)">${idx + 1}. ${esc(item)}</span>
+          <button type="button" data-del-kb="${idx}" style="background: none; border: none; color: #DC2626; cursor: pointer; font-size: 13px; font-weight: 700; line-height: 1" title="Hapus catatan">&times;</button>
+        </div>`;
+      }).join('');
+    }
+  }
 }
 
 function renderFields() {
@@ -1032,7 +1053,9 @@ function renderFields() {
       </div>
       <div style="display: flex; flex-wrap: wrap; gap: 8px">
         <button type="button" data-field-select="${i}" aria-pressed="${on}" style="min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--field-line); background: var(--field); font: inherit; font-size: 13px; cursor: pointer; font-weight: 600">Lihat jejak</button>
-        <button type="button" data-field-open="${i}" style="min-height: 40px; padding: 0 14px; border-radius: 999px; border: none; background: var(--green); color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer">Buka Analisis &rarr;</button>
+    <button type="button" data-field-open="${i}" style="min-height: 40px; padding: 0 16px; border-radius: 999px; border: none; background: var(--green); color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px">
+      Lihat Detail Lahan Ini &rarr;
+    </button>
       </div>
     </article>`;
   }).join('');
@@ -1121,57 +1144,258 @@ function renderPrintModal() {
   modal.hidden = !state.isPrintModalOpen;
   if (!state.isPrintModalOpen || !state.engineResult || !state.features) return;
 
+  // Sinkronkan styling tombol selector Scope
+  const btnScopeSingle = document.getElementById('report-scope-single');
+  const btnScopePortfolio = document.getElementById('report-scope-portfolio');
+  if (btnScopeSingle && btnScopePortfolio) {
+    if (state.reportExportScope === 'portfolio') {
+      btnScopePortfolio.style.background = 'var(--green)';
+      btnScopePortfolio.style.color = '#FFF';
+      btnScopePortfolio.style.fontWeight = '700';
+      btnScopeSingle.style.background = 'transparent';
+      btnScopeSingle.style.color = 'var(--ink)';
+      btnScopeSingle.style.fontWeight = '600';
+    } else {
+      btnScopeSingle.style.background = 'var(--green)';
+      btnScopeSingle.style.color = '#FFF';
+      btnScopeSingle.style.fontWeight = '700';
+      btnScopePortfolio.style.background = 'transparent';
+      btnScopePortfolio.style.color = 'var(--ink)';
+      btnScopePortfolio.style.fontWeight = '600';
+    }
+  }
+
+  // Sinkronkan styling tombol selector Mode
+  const btnModeDefault = document.getElementById('report-mode-default');
+  const btnModeAdvance = document.getElementById('report-mode-advance');
+  if (btnModeDefault && btnModeAdvance) {
+    if (state.reportExportMode === 'advance') {
+      btnModeAdvance.style.background = 'var(--green)';
+      btnModeAdvance.style.color = '#FFF';
+      btnModeAdvance.style.fontWeight = '700';
+      btnModeDefault.style.background = 'transparent';
+      btnModeDefault.style.color = 'var(--ink)';
+      btnModeDefault.style.fontWeight = '600';
+    } else {
+      btnModeDefault.style.background = 'var(--green)';
+      btnModeDefault.style.color = '#FFF';
+      btnModeDefault.style.fontWeight = '700';
+      btnModeAdvance.style.background = 'transparent';
+      btnModeAdvance.style.color = 'var(--ink)';
+      btnModeAdvance.style.fontWeight = '600';
+    }
+  }
+
   const body = $('#print-report-body');
   if (!body) return;
 
-  const res = state.engineResult;
-  const f = state.features;
-  const cw = state.weatherData?.current;
+  const isSingle = state.reportExportScope === 'single';
+  const isAdv = state.reportExportMode === 'advance';
 
-  body.innerHTML = `
-    <div style="border-bottom: 2px solid var(--ink); padding-bottom: 12px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-end">
+  if (isSingle) {
+    body.innerHTML = isAdv ? renderAdvanceSinglePlotPreviewHtml() : renderSinglePlotPreviewHtml();
+  } else {
+    body.innerHTML = isAdv ? renderAdvancePortfolioPreviewHtml() : renderPortfolioPreviewHtml();
+  }
+}
+
+function renderSinglePlotPreviewHtml(): string {
+  const res = state.engineResult!;
+  const f = state.features!;
+  const cw = state.weatherData?.current;
+  const currentPlot = state.plots[state.fieldIndex];
+
+  return `
+    <div style="border-bottom: 2px solid #1E4D35; padding-bottom: 12px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-end">
       <div>
-        <h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-size: 24px">TaniAdapt &mdash; Lembar Rekomendasi Lahan</h1>
-        <div style="color: var(--muted); font-size: 13px">Hyperlocal Precision Agro-Advisory &bull; Terverifikasi Bukti Ilmiah</div>
+        <h1 style="margin: 0; font-family: 'Times New Roman', serif; font-size: 22px; color: #1E4D35">TaniAdapt &mdash; Lembar Rekomendasi Lahan</h1>
+        <div style="color: #555555; font-size: 13px">Hyperlocal Precision Agro-Advisory &bull; Terverifikasi Bukti Ilmiah (Mode Petani)</div>
       </div>
-      <div style="text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 12px">
+      <div style="text-align: right; font-family: 'Times New Roman', serif; font-size: 12px">
         <div>Tanggal: ${new Date().toLocaleDateString('id-ID', { dateStyle: 'full' })}</div>
-        <div>Lokasi: ${state.location.name} (${state.location.elevationMeters}m dpl)</div>
+        <div>Lokasi: ${state.location.name} (${state.location.elevationMeters} mdpl)</div>
       </div>
     </div>
 
-    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; background: var(--ground); padding: 12px; border-radius: 10px; margin-bottom: 18px">
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; background: #F4F7F4; padding: 12px; border-radius: 6px; margin-bottom: 18px; border: 1px solid #D3E0D6">
+      <div><strong>Petak:</strong> ${currentPlot?.name || 'Petak Aktif'} (${currentPlot?.areaHa || 1} Ha)</div>
       <div><strong>Komoditas:</strong> ${res.cropName} (<em>${res.scientificName}</em>)</div>
-      <div><strong>Fase Fenologi:</strong> ${res.stageName} (${state.currentHST} HST)</div>
-      <div><strong>Tingkat Risiko:</strong> <span style="font-weight: 700; color: ${res.overallRisk === 'TINGGI' ? 'var(--risk-strong)' : 'var(--green)'}">${res.overallRisk}</span></div>
+      <div><strong>Fase:</strong> ${res.stageName} (${state.currentHST} HST)</div>
+      <div><strong>Tingkat Risiko:</strong> <span style="font-weight: 700; color: ${res.overallRisk === 'TINGGI' ? '#B91C1C' : '#1E4D35'}">${res.overallRisk}</span></div>
+      <div><strong>Pengairan:</strong> ${res.irrigation.status === 'DRAINASE_MENDESAK' ? 'Drainase Mendesak' : 'Optimal'}</div>
+      <div><strong>Pemupukan:</strong> ${res.fertilization.safeToApply ? 'Aman' : 'Tunda'}</div>
     </div>
 
     <div style="margin-bottom: 18px">
-      <h3 style="margin: 0 0 8px; font-size: 16px">1. Ringkasan Kondisi Agroklimat</h3>
-      <p style="margin: 0; font-size: 13.5px">${res.temporalSummary}</p>
-      <div style="font-size: 13px; color: var(--muted); margin-top: 6px">
+      <h3 style="margin: 0 0 8px; font-size: 15px; color: #1E4D35">1. Ringkasan Kondisi Agroklimat</h3>
+      <p style="margin: 0; font-size: 13px">${res.temporalSummary}</p>
+      <div style="font-size: 12px; color: #555555; margin-top: 6px">
         Suhu: ${cw?.temperature.toFixed(1)}°C &bull; RH: ${Math.round(cw?.relativeHumidity || 0)}% &bull; Hujan Kumulatif 7 Hari: ${Math.round(f.rolling7dRain)} mm &bull; Tekanan Uap (VPD): ${f.currentVPD.toFixed(2)} kPa
       </div>
     </div>
 
     <div style="margin-bottom: 18px">
-      <h3 style="margin: 0 0 8px; font-size: 16px">2. Instruksi Tindakan Prioritas di Lahan</h3>
-      <ol style="margin: 0; padding-left: 20px; font-size: 13.5px">
+      <h3 style="margin: 0 0 8px; font-size: 15px; color: #1E4D35">2. Instruksi Tindakan Prioritas di Lahan</h3>
+      <ol style="margin: 0; padding-left: 20px; font-size: 13px">
         ${res.recommendations.map(r => `<li style="margin-bottom: 6px"><strong>[${r.urgency}] ${r.title}:</strong> ${r.action} (${r.rationale})</li>`).join('')}
       </ol>
     </div>
 
     <div style="margin-bottom: 18px">
-      <h3 style="margin: 0 0 8px; font-size: 16px">3. Status Manajemen Air &amp; Nutrisi</h3>
-      <div style="font-size: 13.5px">
+      <h3 style="margin: 0 0 8px; font-size: 15px; color: #1E4D35">3. Status Manajemen Air &amp; Nutrisi</h3>
+      <div style="font-size: 13px">
         <div><strong>Irigasi:</strong> ${res.irrigation.status === 'DRAINASE_MENDESAK' ? 'DRAINASE MENDESAK &mdash; Segera perdalam parit buangan' : 'LENGAS OPTIMAL'}</div>
-        <div><strong>Pemupukan:</strong> ${res.fertilization.safeToApply ? 'Aman diaplikasikan' : 'TUNDA PEMUPUKAN &mdash; Risiko pencucian/hanyut (rules.json RULE_FERT_RAIN_12H: CONVENTION_PENDING)'}</div>
+        <div><strong>Pemupukan:</strong> ${res.fertilization.safeToApply ? 'Aman diaplikasikan' : 'TUNDA PEMUPUKAN &mdash; Risiko pencucian/hanyut akibat kebasahan tanah tinggi'}</div>
       </div>
     </div>
 
-    <div style="border-top: 1px solid var(--line); padding-top: 12px; font-size: 12px; color: var(--muted); display: flex; justify-content: space-between">
+    <div style="border-top: 1px solid #D3E0D6; padding-top: 12px; font-size: 11px; color: #555555; display: flex; justify-content: space-between">
       <span>TaniAdapt Decision Support System &bull; Balitsa, BB Padi, IPB, BRIN, FAO-56</span>
-      <span>Dokumen Resmi Rekomendasi Lapangan</span>
+      <span>Dokumen Resmi Rekomendasi Lapangan (Cetak Biasa)</span>
+    </div>
+  `;
+}
+
+function renderAdvanceSinglePlotPreviewHtml(): string {
+  const plot = state.plots[state.fieldIndex];
+  const engine = state.engineResult;
+  const features = state.features;
+  const weather = state.weatherData?.current;
+  const f56 = engine?.fao56;
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  return `
+    <div style="font-family: 'Times New Roman', Times, serif; color: #111; line-height: 1.5; font-size: 11pt;">
+      <div style="border-bottom: 2px solid #1E4D35; padding-bottom: 8px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-end;">
+        <div>
+          <h2 style="font-size: 16pt; color: #1E4D35; margin: 0; text-transform: uppercase;">TaniAdapt &mdash; Dossier Biofisik &amp; Agrometeorologi</h2>
+          <p style="font-size: 10pt; color: #555; margin: 4px 0 0 0; font-style: italic;">Spesifikasi Komputasional Mekanistik FAO-56 Penman-Monteith (Mode Advance)</p>
+        </div>
+        <div style="text-align: right; font-size: 10pt; color: #555;">
+          Tanggal: ${dateStr}<br/>
+          Lokasi: ${state.location.name} (${state.location.elevationMeters} mdpl)
+        </div>
+      </div>
+      <div style="margin-bottom: 14px; font-size: 10.5pt;">
+        <strong>Petak:</strong> ${plot?.name || 'Petak Utama'} (${plot?.cropId || 'Tanaman'}) &bull; <strong>Fase:</strong> ${engine?.stageName || '-'} (${engine?.currentHST || 0} HST) &bull; <strong>Luas:</strong> ${plot?.areaHa || 1} Ha
+      </div>
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 10pt;">
+        <thead>
+          <tr style="background: #1E4D35; color: #fff;">
+            <th style="border: 1px solid #D3E0D6; padding: 6px 8px; text-align: left;">Parameter Biofisik FAO-56 PM</th>
+            <th style="border: 1px solid #D3E0D6; padding: 6px 8px; text-align: left;">Nilai Komputasi &amp; Satuan</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td style="border: 1px solid #D3E0D6; padding: 6px 8px;">Evapotranspirasi Acuan (ETo)</td><td style="border: 1px solid #D3E0D6; padding: 6px 8px;"><strong>${f56?.et0_daily_mm?.toFixed(2) || '-'} mm/hari</strong> (Penman-Monteith)</td></tr>
+          <tr><td style="border: 1px solid #D3E0D6; padding: 6px 8px;">Koefisien Tanaman (Kc Terverifikasi)</td><td style="border: 1px solid #D3E0D6; padding: 6px 8px;"><strong>${f56?.kc_current?.toFixed(2) || '-'}</strong> (${engine?.stageName || '-'})</td></tr>
+          <tr><td style="border: 1px solid #D3E0D6; padding: 6px 8px;">Kebutuhan Air Tanaman (ETc = ETo &times; Kc)</td><td style="border: 1px solid #D3E0D6; padding: 6px 8px;"><strong>${f56?.etc_daily_mm?.toFixed(2) || '-'} mm/hari</strong></td></tr>
+          <tr><td style="border: 1px solid #D3E0D6; padding: 6px 8px;">Kapasitas Air Siap Diserap (RAW)</td><td style="border: 1px solid #D3E0D6; padding: 6px 8px;"><strong>${f56?.raw_mm?.toFixed(2) || '-'} mm</strong> (p = ${f56?.p_fraction || 0.4})</td></tr>
+          <tr><td style="border: 1px solid #D3E0D6; padding: 6px 8px;">Total Air Tersedia (TAW)</td><td style="border: 1px solid #D3E0D6; padding: 6px 8px;"><strong>${f56?.taw_mm?.toFixed(2) || '-'} mm</strong></td></tr>
+          <tr><td style="border: 1px solid #D3E0D6; padding: 6px 8px;">Deplesi Lengas Tanah Saat Ini (Dr)</td><td style="border: 1px solid #D3E0D6; padding: 6px 8px;"><strong>${f56?.depletion_dr_mm?.toFixed(2) || '-'} mm</strong> ${f56 && f56.depletion_dr_mm > f56.raw_mm ? '<span style="color:#B91C1C; font-weight:bold;">[CEKAMAN AIR]</span>' : '<span style="color:#1E4D35;">[LENGAS AMAN]</span>'}</td></tr>
+          <tr><td style="border: 1px solid #D3E0D6; padding: 6px 8px;">Defisit Tekanan Uap (VPD Tetens)</td><td style="border: 1px solid #D3E0D6; padding: 6px 8px;"><strong>${features?.currentVPD.toFixed(2) || '-'} kPa</strong> (Suhu: ${weather?.temperature.toFixed(1)}°C, RH: ${Math.round(weather?.relativeHumidity || 0)}%)</td></tr>
+          <tr><td style="border: 1px solid #D3E0D6; padding: 6px 8px;">Akumulasi Hujan 7 Hari</td><td style="border: 1px solid #D3E0D6; padding: 6px 8px;"><strong>${features?.rolling7dRain?.toFixed(1) || '-'} mm</strong> (Spell hujan: ${features?.consecutiveRainyDays || 0} hari)</td></tr>
+        </tbody>
+      </table>
+      <div style="font-size: 9.5pt; color: #555; font-style: italic; border-top: 1px dashed #ccc; padding-top: 8px;">
+        Dihasilkan secara deterministik oleh Engine TaniAdapt. Sesuai FAO Irrigation &amp; Drainage Paper No. 56.
+      </div>
+    </div>
+  `;
+}
+
+function renderPortfolioPreviewHtml(): string {
+  const rows = state.plots.map(p => {
+    const res = state.plotEngineResults[p.id]?.engineResult;
+    const crop = CROPS_LIST.find(c => c.id === p.cropId);
+    return `
+      <tr>
+        <td style="border: 1px solid #D3E0D6; padding: 6px 8px;"><strong>${p.name}</strong><br/><small style="color:#666;">${p.placeName}</small></td>
+        <td style="border: 1px solid #D3E0D6; padding: 6px 8px;">${crop?.label || p.cropId} (${p.hst} HST)</td>
+        <td style="border: 1px solid #D3E0D6; padding: 6px 8px;">${p.stageName}</td>
+        <td style="border: 1px solid #D3E0D6; padding: 6px 8px; font-weight: bold; color: ${p.risk === 'TINGGI' ? '#B91C1C' : '#1E4D35'};">${p.risk}</td>
+        <td style="border: 1px solid #D3E0D6; padding: 6px 8px;">${res ? (res.irrigation.status === 'DRAINASE_MENDESAK' ? 'Drainase Mendesak' : 'Optimal') : '-'}</td>
+        <td style="border: 1px solid #D3E0D6; padding: 6px 8px;">${res ? (res.fertilization.safeToApply ? 'Aman' : 'Tunda') : '-'}</td>
+        <td style="border: 1px solid #D3E0D6; padding: 6px 8px; font-size: 9pt;">${res?.recommendations[0]?.action || '-'}</td>
+      </tr>
+    `;
+  }).join('');
+
+  return `
+    <div style="font-family: 'Times New Roman', Times, serif; color: #111; line-height: 1.5; font-size: 11pt;">
+      <div style="border-bottom: 2px solid #1E4D35; padding-bottom: 8px; margin-bottom: 16px;">
+        <h2 style="font-size: 16pt; color: #1E4D35; margin: 0; text-transform: uppercase;">TaniAdapt &mdash; Ikhtisar Portofolio Seluruh Lahan</h2>
+        <p style="font-size: 10pt; color: #555; margin: 4px 0 0 0; font-style: italic;">Rangkuman Operasional Harian Lapangan (Mode Petani / Mandor)</p>
+      </div>
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 9.5pt;">
+        <thead>
+          <tr style="background: #1E4D35; color: #fff;">
+            <th style="border: 1px solid #D3E0D6; padding: 6px 8px; text-align: left;">Petak Lahan</th>
+            <th style="border: 1px solid #D3E0D6; padding: 6px 8px; text-align: left;">Komoditas</th>
+            <th style="border: 1px solid #D3E0D6; padding: 6px 8px; text-align: left;">Fase</th>
+            <th style="border: 1px solid #D3E0D6; padding: 6px 8px; text-align: left;">Risiko</th>
+            <th style="border: 1px solid #D3E0D6; padding: 6px 8px; text-align: left;">Irigasi</th>
+            <th style="border: 1px solid #D3E0D6; padding: 6px 8px; text-align: left;">Pupuk</th>
+            <th style="border: 1px solid #D3E0D6; padding: 6px 8px; text-align: left;">Tindakan Prioritas</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderAdvancePortfolioPreviewHtml(): string {
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+  const rows = state.plots.map(p => {
+    const res = state.plotEngineResults[p.id]?.engineResult;
+    const f56 = res?.fao56;
+    const crop = CROPS_LIST.find(c => c.id === p.cropId);
+    return `
+      <tr>
+        <td style="border: 1px solid #D3E0D6; padding: 6px 8px;"><strong>${p.name}</strong><br/><small style="color:#666;">${p.placeName}</small></td>
+        <td style="border: 1px solid #D3E0D6; padding: 6px 8px;">${crop?.label || p.cropId}<br/>(${p.hst} HST)</td>
+        <td style="border: 1px solid #D3E0D6; padding: 6px 8px;">${f56?.et0_daily_mm?.toFixed(1) || '-'}</td>
+        <td style="border: 1px solid #D3E0D6; padding: 6px 8px;">${f56?.kc_current?.toFixed(2) || '-'}</td>
+        <td style="border: 1px solid #D3E0D6; padding: 6px 8px;">${f56?.etc_daily_mm?.toFixed(1) || '-'}</td>
+        <td style="border: 1px solid #D3E0D6; padding: 6px 8px;">${f56 ? `${f56.depletion_dr_mm.toFixed(1)} / ${f56.raw_mm.toFixed(1)}` : '-'}</td>
+        <td style="border: 1px solid #D3E0D6; padding: 6px 8px; font-weight: bold; color: ${p.risk === 'TINGGI' ? '#B91C1C' : '#1E4D35'};">${p.risk}</td>
+      </tr>
+    `;
+  }).join('');
+
+  return `
+    <div style="font-family: 'Times New Roman', Times, serif; color: #111; line-height: 1.5; font-size: 11pt;">
+      <div style="border-bottom: 2px solid #1E4D35; padding-bottom: 8px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-end;">
+        <div>
+          <h2 style="font-size: 16pt; color: #1E4D35; margin: 0; text-transform: uppercase;">TaniAdapt &mdash; Matriks Biofisik Portofolio Lintas Petak</h2>
+          <p style="font-size: 10pt; color: #555; margin: 4px 0 0 0; font-style: italic;">Kompilasi Agrometeorologi FAO-56 &amp; Mikroklimat Komparatif (Mode Advance)</p>
+        </div>
+        <div style="text-align: right; font-size: 10pt; color: #555;">
+          Pengelola: ${state.authUser?.full_name || 'Petani Mandiri'}<br/>
+          Terbit: ${dateStr}
+        </div>
+      </div>
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 9.5pt;">
+        <thead>
+          <tr style="background: #1E4D35; color: #fff;">
+            <th style="border: 1px solid #D3E0D6; padding: 6px 8px; text-align: left;">Petak</th>
+            <th style="border: 1px solid #D3E0D6; padding: 6px 8px; text-align: left;">Komoditas</th>
+            <th style="border: 1px solid #D3E0D6; padding: 6px 8px; text-align: left;">ETo (mm)</th>
+            <th style="border: 1px solid #D3E0D6; padding: 6px 8px; text-align: left;">Kc</th>
+            <th style="border: 1px solid #D3E0D6; padding: 6px 8px; text-align: left;">ETc (mm)</th>
+            <th style="border: 1px solid #D3E0D6; padding: 6px 8px; text-align: left;">Dr / RAW</th>
+            <th style="border: 1px solid #D3E0D6; padding: 6px 8px; text-align: left;">Risiko</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+      </table>
     </div>
   `;
 }
@@ -1785,7 +2009,6 @@ function setupEventListeners() {
         state.currentHST = plot.hst;
         const loc = INDONESIAN_LOCATIONS.find(l => l.id === plot.locationId);
         if (loc) state.location = loc;
-        // Load cached engine result into global state for biofisik view
         const pr = state.plotEngineResults[plot.id];
         if (pr) {
           state.weatherData = pr.weatherData;
@@ -1799,11 +2022,12 @@ function setupEventListeners() {
       return;
     }
 
-    // Field Open in Ringkasan
+    // Field Open in Lahan Saya (Buka Analisis Detail Lahan)
     const fieldOpen = target.closest('[data-field-open]') as HTMLElement;
     if (fieldOpen && fieldOpen.dataset.fieldOpen !== undefined) {
       const idx = Number(fieldOpen.dataset.fieldOpen);
       state.fieldIndex = idx;
+      state.activePlotForBiofisik = idx;
       const plot = state.plots[idx];
       if (plot) {
         state.cropId = plot.cropId;
@@ -1818,11 +2042,16 @@ function setupEventListeners() {
         }
         const loc = INDONESIAN_LOCATIONS.find(l => l.id === plot.locationId);
         if (loc) state.location = loc;
+        const pr = state.plotEngineResults[plot.id];
+        if (pr) {
+          state.weatherData = pr.weatherData;
+          state.engineResult = pr.engineResult;
+          state.features = pr.features;
+        }
       }
-      state.view = 'ringkasan';
-      render(); // Instantly switch view to Ringkasan and update nav highlight!
+      state.view = 'cuaca';
+      render();
       window.scrollTo({ top: 0, behavior: 'smooth' });
-      recomputeEngine();
       return;
     }
 
@@ -1911,9 +2140,126 @@ function setupEventListeners() {
       renderPrintModal();
       return;
     }
+    const printThisPlot = target.closest('[data-print-this-plot]') as HTMLElement;
+    if (printThisPlot && printThisPlot.dataset.printThisPlot) {
+      const mode = printThisPlot.dataset.printThisPlot as 'default' | 'advance';
+      state.reportExportMode = mode;
+      state.reportExportScope = 'single';
+      state.isPrintModalOpen = true;
+      renderPrintModal();
+      return;
+    }
     if (target.id === 'close-print-modal') {
       state.isPrintModalOpen = false;
       renderPrintModal();
+      return;
+    }
+
+    // Print Modal Scope Selector Buttons
+    if (target.id === 'report-scope-single') {
+      state.reportExportScope = 'single';
+      renderPrintModal();
+      return;
+    }
+    if (target.id === 'report-scope-portfolio') {
+      state.reportExportScope = 'portfolio';
+      renderPrintModal();
+      return;
+    }
+
+    // Print Modal Mode Selector Buttons
+    if (target.id === 'report-mode-default') {
+      state.reportExportMode = 'default';
+      renderPrintModal();
+      return;
+    }
+    if (target.id === 'report-mode-advance') {
+      state.reportExportMode = 'advance';
+      renderPrintModal();
+      return;
+    }
+
+    // Print Modal PDF Export Button (Native Print with A4 Times New Roman @media print)
+    if (target.closest('#btn-export-pdf')) {
+      window.print();
+      return;
+    }
+
+    // Print Modal DOCX Export Button (4-variant Word Generator)
+    if (target.closest('#btn-export-docx')) {
+      const isSingle = state.reportExportScope === 'single';
+      const isAdv = state.reportExportMode === 'advance';
+
+      if (isSingle) {
+        if (state.engineResult && state.features) {
+          const exportInput = {
+            engineResult: state.engineResult,
+            features: state.features,
+            currentWeather: state.weatherData?.current || null,
+            location: state.location,
+            plotName: state.plots[state.fieldIndex]?.name,
+            userName: state.authUser?.full_name,
+            userType: state.authUser?.user_type,
+            dailyForecast: state.weatherData?.dailyForecast,
+          };
+          if (isAdv) {
+            generateSinglePlotAdvanceWordReport(exportInput);
+          } else {
+            generateAndDownloadWordReport(exportInput);
+          }
+        }
+      } else {
+        // Portfolio Scope
+        if (isAdv) {
+          const portfolioAdvancePlots: PortfolioAdvancePlot[] = state.plots.map(p => {
+            const pr = state.plotEngineResults[p.id];
+            const res = pr?.engineResult;
+            const f56 = res?.fao56;
+            const crop = CROPS_LIST.find(c => c.id === p.cropId);
+            return {
+              name: p.name,
+              cropName: crop?.label || p.cropId,
+              scientificName: crop?.scientific || '',
+              placeName: p.placeName,
+              hst: p.hst,
+              stageName: p.stageName,
+              risk: p.risk,
+              irrigationStatus: res ? (res.irrigation.status === 'DRAINASE_MENDESAK' ? 'Drainase Mendesak' : 'Optimal') : '-',
+              fertilizationStatus: res ? (res.fertilization.safeToApply ? 'Aman' : 'Tunda') : '-',
+              topRecommendation: res?.recommendations[0]?.action || '-',
+              etcMmDay: f56?.etc_daily_mm,
+              etoMmDay: f56?.et0_daily_mm,
+              kc: f56?.kc_current,
+              drMm: f56?.depletion_dr_mm,
+              rawMm: f56?.raw_mm,
+              vpdKpa: pr?.features?.currentVPD,
+              tempC: state.weatherData?.current?.temperature,
+              rhPercent: state.weatherData?.current?.relativeHumidity,
+              rolling7dRain: pr?.features?.rolling7dRain,
+            };
+          });
+          generatePortfolioAdvanceWordReport(portfolioAdvancePlots, state.authUser?.full_name);
+        } else {
+          const portfolioPlots: PortfolioReportPlot[] = state.plots.map(p => {
+            const pr = state.plotEngineResults[p.id];
+            const res = pr?.engineResult;
+            const crop = CROPS_LIST.find(c => c.id === p.cropId);
+            return {
+              name: p.name,
+              cropName: crop?.label || p.cropId,
+              scientificName: crop?.scientific || '',
+              placeName: p.placeName,
+              hst: p.hst,
+              stageName: p.stageName,
+              risk: p.risk,
+              irrigationStatus: res ? (res.irrigation.status === 'DRAINASE_MENDESAK' ? 'Drainase Mendesak' : res.irrigation.status === 'BUTUH_PENGAIRAN' ? 'Perlu Air' : 'Optimal') : 'Memuat...',
+              fertilizationStatus: res ? (res.fertilization.safeToApply ? 'Aman' : 'Tunda') : 'Memuat...',
+              topRecommendation: res?.recommendations[0]?.action || 'Pantau perkembangan tanaman',
+            };
+          });
+          generatePortfolioWordReport(portfolioPlots, state.authUser?.full_name);
+        }
+      }
       return;
     }
 
@@ -1950,15 +2296,15 @@ function setupEventListeners() {
       return;
     }
 
-    // Save Custom KB button
-    if (target.id === 'btn-save-custom-kb') {
-      const input = $('#custom-kb-input') as HTMLTextAreaElement;
+    // Save Custom KB button (from Settings or from Chat View)
+    if (target.id === 'btn-save-custom-kb' || target.id === 'btn-save-chat-custom-kb') {
+      const input = (target.id === 'btn-save-chat-custom-kb' ? $('#chat-custom-kb-input') : $('#custom-kb-input')) as HTMLTextAreaElement;
       if (!input || !input.value.trim()) return;
       state.customKnowledgeBase.push(input.value.trim());
       localStorage.setItem('taniadapt_custom_kb', JSON.stringify(state.customKnowledgeBase));
       input.value = '';
       renderSettings();
-      alert('Catatan kebun mandiri berhasil disimpan ke Knowledge Base Tania!');
+      renderChat();
       return;
     }
 
@@ -1969,6 +2315,7 @@ function setupEventListeners() {
       state.customKnowledgeBase.splice(idx, 1);
       localStorage.setItem('taniadapt_custom_kb', JSON.stringify(state.customKnowledgeBase));
       renderSettings();
+      renderChat();
       return;
     }
 

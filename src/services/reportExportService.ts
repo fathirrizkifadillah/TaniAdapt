@@ -450,6 +450,387 @@ export interface PortfolioReportPlot {
   topRecommendation: string;
 }
 
+export interface PortfolioAdvancePlot extends PortfolioReportPlot {
+  etcMmDay?: number;
+  etoMmDay?: number;
+  kc?: number;
+  vpdKpa?: number;
+  drMm?: number;
+  rawMm?: number;
+  rhPercent?: number;
+  tempC?: number;
+  rolling7dRain?: number;
+}
+
+export async function generateSinglePlotAdvanceWordReport(input: ReportExportInput): Promise<void> {
+  const { engineResult, features, currentWeather, location, plotName, userName, userType } = input;
+  const now = new Date();
+  const dateFormatted = now.toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+  const timeFormatted = now.toLocaleTimeString('id-ID', {
+    hour: '2-digit',
+    minute: '2-digit',
+  }) + ' WIB';
+
+  const greenDark = '1E4D35';
+  const borderLight = 'D3E0D6';
+  const grayText = '555555';
+
+  const cellBorder = {
+    top: { style: BorderStyle.SINGLE, size: 1, color: borderLight },
+    bottom: { style: BorderStyle.SINGLE, size: 1, color: borderLight },
+    left: { style: BorderStyle.SINGLE, size: 1, color: borderLight },
+    right: { style: BorderStyle.SINGLE, size: 1, color: borderLight },
+  };
+
+  function createHeaderCell(text: string, widthPercent: number): TableCell {
+    return new TableCell({
+      width: { size: widthPercent, type: WidthType.PERCENTAGE },
+      shading: { fill: greenDark, type: ShadingType.CLEAR },
+      borders: cellBorder,
+      children: [
+        new Paragraph({
+          children: [
+            new TextRun({
+              text,
+              bold: true,
+              color: 'FFFFFF',
+              size: 20,
+              font: 'Times New Roman',
+            }),
+          ],
+        }),
+      ],
+    });
+  }
+
+  function createDataCell(text: string, widthPercent: number, isBold: boolean = false): TableCell {
+    return new TableCell({
+      width: { size: widthPercent, type: WidthType.PERCENTAGE },
+      borders: cellBorder,
+      children: [
+        new Paragraph({
+          children: [
+            new TextRun({
+              text,
+              bold: isBold,
+              size: 20,
+              font: 'Times New Roman',
+              color: '222222',
+            }),
+          ],
+        }),
+      ],
+    });
+  }
+
+  const f56 = engineResult.fao56;
+  const faoRows = [
+    new TableRow({
+      children: [
+        createHeaderCell('Parameter Biofisik FAO-56 PM', 50),
+        createHeaderCell('Nilai Komputasi & Satuan', 50),
+      ],
+    }),
+    new TableRow({
+      children: [
+        createDataCell('Evapotranspirasi Acuan (ETo)', 50, true),
+        createDataCell(`${f56?.et0_daily_mm?.toFixed(2) || '-'} mm/hari (Metode Penman-Monteith)`, 50),
+      ],
+    }),
+    new TableRow({
+      children: [
+        createDataCell('Koefisien Tanaman (Kc Terverifikasi)', 50, true),
+        createDataCell(`${f56?.kc_current?.toFixed(2) || '-'} (${engineResult.stageName})`, 50),
+      ],
+    }),
+    new TableRow({
+      children: [
+        createDataCell('Kebutuhan Air Tanaman (ETc = ETo × Kc)', 50, true),
+        createDataCell(`${f56?.etc_daily_mm?.toFixed(2) || '-'} mm/hari`, 50),
+      ],
+    }),
+    new TableRow({
+      children: [
+        createDataCell('Kapasitas Air Siap Diserap (RAW)', 50, true),
+        createDataCell(`${f56?.raw_mm?.toFixed(2) || '-'} mm (p = ${f56?.p_fraction || 0.4})`, 50),
+      ],
+    }),
+    new TableRow({
+      children: [
+        createDataCell('Total Air Tersedia (TAW)', 50, true),
+        createDataCell(`${f56?.taw_mm?.toFixed(2) || '-'} mm`, 50),
+      ],
+    }),
+    new TableRow({
+      children: [
+        createDataCell('Deplesi Lengas Tanah Saat Ini (Dr)', 50, true),
+        createDataCell(`${f56?.depletion_dr_mm?.toFixed(2) || '-'} mm ${f56 && f56.depletion_dr_mm > f56.raw_mm ? '[CEKAMAN AIR]' : '[LENGAS AMAN]'}`, 50),
+      ],
+    }),
+    new TableRow({
+      children: [
+        createDataCell('Defisit Tekanan Uap (VPD Tetens)', 50, true),
+        createDataCell(`${features?.currentVPD.toFixed(2) || '-'} kPa (Suhu: ${currentWeather?.temperature.toFixed(1)}°C, RH: ${Math.round(currentWeather?.relativeHumidity || 0)}%)`, 50),
+      ],
+    }),
+    new TableRow({
+      children: [
+        createDataCell('Akumulasi Hujan 7 Hari', 50, true),
+        createDataCell(`${features?.rolling7dRain?.toFixed(1) || '-'} mm (Hari Hujan Berturut-turut: ${features?.consecutiveRainyDays || 0} hari)`, 50),
+      ],
+    }),
+    new TableRow({
+      children: [
+        createDataCell('Status Evaluasi Cekaman (Stress Flag)', 50, true),
+        createDataCell(f56?.is_stressed ? 'CEKAMAN AIR TERDETEKSI' : 'LENGAS TANAH OPTIMAL', 50),
+      ],
+    }),
+  ];
+
+  const doc = new Document({
+    sections: [
+      {
+        properties: {},
+        children: [
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            children: [
+              new TextRun({
+                text: 'TANIADAPT — DOSSIER BIOFISIK & AGROMETEOROLOGI LANJUTAN',
+                bold: true,
+                size: 30,
+                color: greenDark,
+                font: 'Times New Roman',
+              }),
+            ],
+          }),
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            children: [
+              new TextRun({
+                text: 'Laporan Spesifikasi Mekanistik Lahan Tunggal (Mode Riset / Universitas / Pengelola Kebun)',
+                italics: true,
+                size: 20,
+                color: grayText,
+                font: 'Times New Roman',
+              }),
+            ],
+          }),
+          new Paragraph({ text: '' }),
+          new Paragraph({
+            heading: HeadingLevel.HEADING_2,
+            children: [
+              new TextRun({
+                text: `1. Identitas Lahan: ${plotName || 'Petak Utama'} — ${engineResult.cropName} (${engineResult.currentHST} HST)`,
+                bold: true,
+                size: 24,
+                color: greenDark,
+                font: 'Times New Roman',
+              }),
+            ],
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `Lokasi: ${location.name} (${location.elevationMeters} mdpl) | Pengguna: ${userName || 'Petani Mandiri'} | Terbit: ${dateFormatted}, ${timeFormatted}`,
+                size: 19,
+                color: grayText,
+                font: 'Times New Roman',
+              }),
+            ],
+          }),
+          new Paragraph({ text: '' }),
+          new Paragraph({
+            heading: HeadingLevel.HEADING_2,
+            children: [
+              new TextRun({
+                text: '2. Neraca Air & Parameter Biofisik Komputasional (FAO-56 Penman-Monteith)',
+                bold: true,
+                size: 24,
+                color: greenDark,
+                font: 'Times New Roman',
+              }),
+            ],
+          }),
+          new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            rows: faoRows,
+          }),
+          new Paragraph({ text: '' }),
+          new Paragraph({
+            heading: HeadingLevel.HEADING_2,
+            children: [
+              new TextRun({
+                text: '3. Evaluasi Risiko Patogen & Tindakan Adaptif',
+                bold: true,
+                size: 24,
+                color: greenDark,
+                font: 'Times New Roman',
+              }),
+            ],
+          }),
+          ...engineResult.recommendations.map(r => new Paragraph({
+            children: [
+              new TextRun({ text: `• [${r.urgency}] ${r.title}: `, bold: true, font: 'Times New Roman' }),
+              new TextRun({ text: `${r.action} — Rasional: ${r.rationale}`, font: 'Times New Roman' }),
+            ],
+          })),
+          new Paragraph({ text: '' }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: 'Metodologi & Ketentuan Riset: Dihitung secara deterministik tanpa resep kimia sintetis komersial. Berpedoman pada Balitsa Lembang, BB Padi Sukamandi, dan FAO Irrigation and Drainage Paper No. 56.',
+                italics: true,
+                size: 18,
+                color: grayText,
+                font: 'Times New Roman',
+              }),
+            ],
+          }),
+        ],
+      },
+    ],
+  });
+
+  const blob = await Packer.toBlob(doc);
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const fileNameCrop = engineResult.cropId || 'tanaman';
+  a.download = `Dossier_Advance_TaniAdapt_${fileNameCrop}_HST${engineResult.currentHST}_${now.toISOString().slice(0, 10)}.docx`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+}
+
+export async function generatePortfolioAdvanceWordReport(plots: PortfolioAdvancePlot[], userName?: string): Promise<void> {
+  const now = new Date();
+  const dateFormatted = now.toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+  const greenDark = '1E4D35';
+  const greenLight = 'EAF2EC';
+  const grayText = '555555';
+
+  const rows = [
+    new TableRow({
+      tableHeader: true,
+      children: [
+        new TableCell({
+          children: [new Paragraph({ children: [new TextRun({ text: 'Petak Lahan', bold: true, font: 'Times New Roman' })] })],
+          shading: { fill: greenLight, type: ShadingType.CLEAR, color: 'auto' },
+        }),
+        new TableCell({
+          children: [new Paragraph({ children: [new TextRun({ text: 'Komoditas & HST', bold: true, font: 'Times New Roman' })] })],
+          shading: { fill: greenLight, type: ShadingType.CLEAR, color: 'auto' },
+        }),
+        new TableCell({
+          children: [new Paragraph({ children: [new TextRun({ text: 'ETo (mm)', bold: true, font: 'Times New Roman' })] })],
+          shading: { fill: greenLight, type: ShadingType.CLEAR, color: 'auto' },
+        }),
+        new TableCell({
+          children: [new Paragraph({ children: [new TextRun({ text: 'Kc', bold: true, font: 'Times New Roman' })] })],
+          shading: { fill: greenLight, type: ShadingType.CLEAR, color: 'auto' },
+        }),
+        new TableCell({
+          children: [new Paragraph({ children: [new TextRun({ text: 'ETc (mm)', bold: true, font: 'Times New Roman' })] })],
+          shading: { fill: greenLight, type: ShadingType.CLEAR, color: 'auto' },
+        }),
+        new TableCell({
+          children: [new Paragraph({ children: [new TextRun({ text: 'Dr / RAW', bold: true, font: 'Times New Roman' })] })],
+          shading: { fill: greenLight, type: ShadingType.CLEAR, color: 'auto' },
+        }),
+        new TableCell({
+          children: [new Paragraph({ children: [new TextRun({ text: 'VPD (kPa)', bold: true, font: 'Times New Roman' })] })],
+          shading: { fill: greenLight, type: ShadingType.CLEAR, color: 'auto' },
+        }),
+        new TableCell({
+          children: [new Paragraph({ children: [new TextRun({ text: 'Risiko', bold: true, font: 'Times New Roman' })] })],
+          shading: { fill: greenLight, type: ShadingType.CLEAR, color: 'auto' },
+        }),
+      ],
+    }),
+    ...plots.map((p) => new TableRow({
+      children: [
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: p.name, bold: true, font: 'Times New Roman' })] }), new Paragraph({ children: [new TextRun({ text: p.placeName, size: 18, color: grayText, font: 'Times New Roman' })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${p.cropName} (${p.hst} HST)`, font: 'Times New Roman' })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: p.etoMmDay !== undefined ? p.etoMmDay.toFixed(1) : '-', font: 'Times New Roman' })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: p.kc !== undefined ? p.kc.toFixed(2) : '-', font: 'Times New Roman' })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: p.etcMmDay !== undefined ? p.etcMmDay.toFixed(1) : '-', font: 'Times New Roman' })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: p.drMm !== undefined && p.rawMm !== undefined ? `${p.drMm.toFixed(1)} / ${p.rawMm.toFixed(1)}` : '-', font: 'Times New Roman' })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: p.vpdKpa !== undefined ? p.vpdKpa.toFixed(2) : '-', font: 'Times New Roman' })] })] }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: p.risk, bold: true, color: p.risk === 'TINGGI' ? 'B91C1C' : greenDark, font: 'Times New Roman' })] })] }),
+      ],
+    })),
+  ];
+
+  const doc = new Document({
+    sections: [
+      {
+        properties: {},
+        children: [
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: 'TaniAdapt — Matriks Biofisik Portofolio Lintas Petak (Mode Advance)',
+                bold: true,
+                size: 26,
+                color: greenDark,
+                font: 'Times New Roman',
+              }),
+            ],
+            heading: HeadingLevel.TITLE,
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `Kompilasi Agrometeorologi FAO-56 & Mikroklimat Komparatif | Pemilik: ${userName || 'Pengguna TaniAdapt'} | Terbit: ${dateFormatted}`,
+                size: 19,
+                color: grayText,
+                font: 'Times New Roman',
+              }),
+            ],
+          }),
+          new Paragraph({ text: '' }),
+          new Table({
+            rows,
+            width: { size: 100, type: WidthType.PERCENTAGE },
+          }),
+          new Paragraph({ text: '' }),
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: 'Dihasilkan secara deterministik oleh Decision Engine TaniAdapt. Seluruh parameter disesuaikan dengan elevasi, mikroklimat hyperlocal, dan fase fenologi masing-masing petak.',
+                italics: true,
+                size: 18,
+                color: grayText,
+                font: 'Times New Roman',
+              }),
+            ],
+          }),
+        ],
+      },
+    ],
+  });
+
+  const blob = await Packer.toBlob(doc);
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Matriks_Portofolio_Advance_TaniAdapt_${now.toISOString().slice(0, 10)}.docx`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+}
+
 export async function generatePortfolioWordReport(plots: PortfolioReportPlot[], userName?: string): Promise<void> {
   const now = new Date();
   const dateFormatted = now.toLocaleDateString('id-ID', {

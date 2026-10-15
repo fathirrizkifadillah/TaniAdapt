@@ -74,15 +74,69 @@ html { scroll-behavior: smooth; }
   cursor: help;
 }
 
-/* Print styling */
+/* Print styling for professional PDF & physical printing (Times New Roman, clear tables, no UI fluff) */
 @media print {
-  aside, nav, button, .no-print {
+  @page {
+    size: A4;
+    margin: 18mm 15mm 18mm 15mm;
+  }
+  aside, nav, header, button, .no-print, #auth-status-container, .ta-nav-item, #evidence-modal, #auth-modal {
     display: none !important;
   }
   body, main {
     background: #FFFFFF !important;
-    color: #000000 !important;
+    color: #111111 !important;
     padding: 0 !important;
+    margin: 0 !important;
+    font-family: 'Times New Roman', Times, serif !important;
+  }
+  /* Show only the print modal content when printing from print modal */
+  #print-modal {
+    display: block !important;
+    position: static !important;
+    background: transparent !important;
+    width: 100% !important;
+    height: auto !important;
+    padding: 0 !important;
+  }
+  #print-modal .ta-modal-card {
+    max-width: 100% !important;
+    width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+  #print-modal > .ta-modal-card > div:first-child,
+  #print-modal [id^="report-scope-"],
+  #print-modal [id^="report-mode-"],
+  #print-modal #btn-export-pdf,
+  #print-modal #btn-export-docx,
+  #print-modal #close-print-modal,
+  #print-modal > .ta-modal-card > div:nth-child(2) {
+    display: none !important;
+  }
+  #print-report-body {
+    padding: 0 !important;
+    font-family: 'Times New Roman', Times, serif !important;
+  }
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+    page-break-inside: avoid !important;
+  }
+  th, td {
+    border: 1px solid #777777 !important;
+    padding: 6px 8px !important;
+    font-size: 10pt !important;
+  }
+  th {
+    background-color: #EAF2EC !important;
+    color: #1E4D35 !important;
+    font-weight: bold !important;
+  }
+  h1, h2, h3, h4 {
+    page-break-after: avoid !important;
+    color: #111111 !important;
   }
   .ta-print-only {
     display: block !important;
