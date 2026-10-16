@@ -41,8 +41,9 @@ let isDbConnected = false;
 let lastConnectionAttempt = 0;
 
 // Fallback local storage files if PostgreSQL is not yet configured or offline
-const LOCAL_DB_PATH = path.resolve(process.cwd(), 'data', 'local_users_db.json');
-const LOCAL_PLOTS_PATH = path.resolve(process.cwd(), 'data', 'local_plots.json');
+const isVercel = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+const LOCAL_DB_PATH = isVercel ? path.resolve('/tmp', 'local_users_db.json') : path.resolve(process.cwd(), 'data', 'local_users_db.json');
+const LOCAL_PLOTS_PATH = isVercel ? path.resolve('/tmp', 'local_plots.json') : path.resolve(process.cwd(), 'data', 'local_plots.json');
 
 interface UserRecord {
   id: number;
@@ -220,7 +221,8 @@ async function initPgPool(): Promise<boolean> {
 }
 
 // Start pool initialization at boot
-initPoolPromise = initPgPool();
+// Lazy initialization on request
+initPoolPromise = null;
 
 // Auto-reconnect helper (throttled every 6 seconds)
 async function ensureDbConnection(): Promise<boolean> {
@@ -692,5 +694,7 @@ export async function authMiddleware(req: IncomingMessage, res: ServerResponse, 
       sendJson(res, 500, { error: 'Internal Server Error', message: err.message });
     }
 }
+
+
 
 
