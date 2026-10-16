@@ -1,4 +1,4 @@
-import { getPgPool, ensureDbSchema } from '../dbHelper';
+import { getPgPool, ensureDbSchema } from '../dbHelper.js';
 
 export default async function handler(req: any, res: any) {
   res.setHeader('Access-Control-Allow-Origin', '*');
