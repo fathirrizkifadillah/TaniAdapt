@@ -1,10 +1,21 @@
 import type { IncomingMessage, ServerResponse } from 'http';
-import { authMiddleware } from '../src/server/authApi';
+import { authMiddleware } from '../src/server/authApi.ts';
 
-export default function handler(req: IncomingMessage, res: ServerResponse) {
-  return authMiddleware(req, res, () => {
-    res.statusCode = 404;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({ error: 'Endpoint API tidak ditemukan' }));
+export default async function handler(req: any, res: any) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+
+  if (req.method === 'OPTIONS') {
+    res.statusCode = 204;
+    return res.end();
+  }
+
+  await authMiddleware(req, res, () => {
+    if (!res.writableEnded) {
+      res.statusCode = 404;
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ error: 'Endpoint API tidak ditemukan' }));
+    }
   });
 }
