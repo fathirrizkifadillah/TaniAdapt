@@ -271,6 +271,25 @@ function parseJsonBody(req: IncomingMessage): Promise<any> {
   });
 }
 
+function sanitizeChatOutput(raw: string): string {
+  if (!raw) return '';
+  let text = raw;
+  text = text.replace(/^[ \t]*\|?[\s\-:|]+\|[ \t]*$/gm, '');
+  text = text.replace(/^[ \t]*\|(.+)\|[ \t]*$/gm, (_m, row) => {
+    const parts = row.split('|').map((c: string) => c.trim()).filter(Boolean);
+    if (parts.length === 0) return '';
+    const firstLower = parts[0].toLowerCase();
+    if (firstLower.includes('nama petak') || firstLower.includes('komoditas') || firstLower.includes('parameter')) return '';
+    return `- ${parts.join(' - ')}`;
+  });
+  text = text.replace(/```[a-zA-Z]*\n?/g, '').replace(/```/g, '');
+  text = text.replace(/<[^>]*>/g, '');
+  text = text.replace(/^[ \t]*>[ \t]?/gm, '');
+  text = text.replace(/[\u2010-\u2015—–]/g, '-').replace(/&mdash;|&ndash;/g, '-');
+  text = text.replace(/\n{3,}/g, '\n\n');
+  return text.trim();
+}
+
 export async function authMiddleware(req: IncomingMessage, res: ServerResponse, next: () => void): Promise<void> {
   const urlObj = new URL(req.url || '/', 'http://localhost');
   let pathname = urlObj.pathname;
@@ -281,13 +300,138 @@ export async function authMiddleware(req: IncomingMessage, res: ServerResponse, 
     return;
   }
 
-  // Handle /api/auth and /api/plots
-  if (!pathname.startsWith('/api/auth') && !pathname.startsWith('/api/plots')) {
+  // Handle /api/auth, /api/plots, and /api/chat
+  if (!pathname.startsWith('/api/auth') && !pathname.startsWith('/api/plots') && !pathname.startsWith('/api/chat')) {
     next();
     return;
   }
 
   try {
+    // ========================================================================
+    // 0. CHAT ASSISTANT ENDPOINT (/api/chat)
+    // ========================================================================
+    if (req.method === 'POST' && pathname === '/api/chat') {
+      const body = await parseJsonBody(req);
+      const { question, context = {}, history = [] } = body;
+      const apiKey = process.env.GROQ_API_KEY;
+
+      if (!apiKey) {
+        return sendJson(res, 503, { error: 'GROQ_API_KEY belum dikonfigurasi di server.' });
+      }
+
+      const systemPrompt = `Kamu adalah Tania, asisten agronomis cerdas dan bersahabat dari TaniAdapt untuk petani dan pengelola kebun di Indonesia.
+Tugasmu adalah menjelaskan keputusan Decision Engine TaniAdapt, memberikan panduan budidaya praktis, dan menjawab pertanyaan pengguna dengan lugas dan ramah.
+
+PEDOMAN UTAMA:
+1. Jawab secara langsung, padat, dan solutif (1-3 paragraf ringkas).
+2. Hindari sapaan kaku seperti 'Pak/Bu' atau 'Bapak/Ibu', gunakan nada bersahabat dan netral.
+3. DILARANG menggunakan karakter em-dash (—), gunakan tanda hubung biasa (-) atau titik dua (:).
+4. DILARANG menyebut merek dagang pestisida sintetis tertentu (seperti Antracol, Daconil, Regent, Roundup, Curacron, Decis, dll.). Jika ada hama/penyakit, sarankan konsultasi dengan Petugas Penyuluh Lapangan (PPL).
+5. DILARANG menyebut takaran dosis bahan kimia berbahaya; utamakan prinsip pencegahan agronomis, sanitasi lahan, aerasi bedengan, dan pengaturan air.
+6. Jika pengguna bertanya tentang tanaman lain (misal Padi, Jagung, Cabai, Tomat), berikan penjelasan agronomis relevan sesuai karakter tanaman tersebut.
+7. Jika pengguna menanyakan kepemilikan lahan atau meminta analisis lahan ("analisis dong", "lahan saya apa?"), rujuk konteks lahan di bawah:
+- Jika pengguna sudah memiliki lahan terdaftar, HANYA analisis dan bahas petak lahan milik pengguna tersebut. DILARANG memunculkan atau menyebut simulasi tanaman lain (seperti cabai merah) yang tidak dimiliki pengguna.
+- Jika pengguna belum mendaftarkan lahan, sampaikan dengan jujur bahwa belum ada lahan terdaftar dan ajak mendaftarkan lahan pertama lewat "+ Tambah Petak".
+8. FORMAT RESPON WAJIB HANYA TEKS BIASA:
+- DILARANG KERAS membuat tabel markdown (garis berisi karakter pipa '|' dan '---'), tabel HTML, atau kisi-kisi kolom apapun. Antarmuka web TIDAK BISA merender tabel dan akan rusak.
+- DILARANG KERAS menggunakan tag HTML (seperti table, tr, td, div, span, dll.), blok kode pagar triple-backtick, rumus LaTeX, simbol ASCII rumit, atau kutipan blok (>).
+- Format jawaban HANYA boleh berupa teks mengalir (paragraf), daftar berbutir menggunakan tanda strip (-), atau penomoran angka (1., 2., 3.).
+- Jika menyajikan informasi beberapa lahan atau ringkasan data, tulis dalam bentuk poin berbutir (- Lahan: ..., Komoditas: ...) atau kalimat paragraf rapi, BUKAN TABEL.`;
+
+      const hasPlots = Boolean(context.hasRegisteredPlots && Array.isArray(context.userPlots) && context.userPlots.length > 0);
+      const customKbBlock = context.customKnowledge && context.customKnowledge.length > 0
+        ? `\nCatatan Khusus Petani / SOP Lahan Tambahan:\n${context.customKnowledge.map((k: string, i: number) => `${i + 1}. ${k}`).join('\n')}`
+        : '';
+
+      let agronomicContext = '';
+
+      if (hasPlots) {
+        const activePlot = context.userPlots[0];
+        agronomicContext = `DATA PETAK LAHAN PENGGUNA (SUMBER KEBUN RESMI):
+Pengguna memiliki ${context.userPlots.length} petak lahan terdaftar di akun TaniAdapt:
+${context.userPlots.map((p: any, i: number) => `${i + 1}. "${p.name}" (Komoditas: ${p.crop}, Lokasi: ${p.location}, Umur: ${p.hst} HST, Luas: ${p.areaHa || 1} ha)`).join('\n')}
+
+Lahan Aktif Pengguna Saat Ini:
+- Nama Petak: "${activePlot.name}"
+- Komoditas: ${context.cropName || activePlot.crop} (${context.scientificName || ''})
+- Lokasi Kebun: ${context.locationName || activePlot.location}
+- Umur Tanaman: ${context.hst || activePlot.hst} Hari Setelah Tanam (Fase: ${context.stageName || activePlot.stage || 'Aktif'})
+- Status Risiko Lapangan: ${context.overallRisk || 'RENDAH'}
+- Rekomendasi Lapangan Engine: ${Array.isArray(context.recommendations) && context.recommendations.length > 0 ? context.recommendations.join('; ') : 'Pantau perkembangan lahan rutin.'}
+${context.features ? `- Ringkasan Cuaca: Hujan berturut-turut = ${context.features.consecutiveRainyDays || 0} hari, Hujan 3d = ${context.features.rolling3dRain || 0} mm, Hujan 7d = ${context.features.rolling7dRain || 0} mm, RH = ${context.features.rolling7dRH || 80}%, VPD = ${context.features.currentVPD || 1.8} kPa` : ''}
+${customKbBlock}`;
+      } else {
+        agronomicContext = `STATUS KEPEMILIKAN LAHAN PENGGUNA:
+Pengguna BELUM memiliki atau BELUM mendaftarkan petak lahan apapun di akun TaniAdapt (Total petak terdaftar: 0).
+PANDUAN KHUSUS KEPEMILIKAN:
+- Pengguna belum mendaftarkan lahan. JANGAN PERNAH mengarang atau mengasumsikan pengguna mengelola kebun cabai, padi, atau tanaman apapun.
+- Jika pengguna meminta analisis ("analisis dong"), menanyakan tentang lahannya, atau meminta rekomendasi tindakan kebunnya, sampaikan secara ramah dan terus terang bahwa belum ada petak lahan yang terdaftar di akunnya.
+- Ajak pengguna mendaftarkan lahan pertama mereka lewat tombol "+ Tambah Petak" di bilah navigasi atas atau menu "Petak Lahan Saya".`;
+      }
+
+      const messages: any[] = [
+        { role: 'system', content: `${systemPrompt}\n\n${agronomicContext}` }
+      ];
+
+      if (Array.isArray(history)) {
+        for (const h of history.slice(-6)) {
+          if (h && h.text) {
+            messages.push({
+              role: h.me ? 'user' : 'assistant',
+              content: h.text
+            });
+          }
+        }
+      }
+
+      messages.push({ role: 'user', content: question });
+
+      let content = '';
+      let usedModel = 'openai/gpt-oss-120b';
+
+      for (const modelToTry of ['openai/gpt-oss-120b', 'openai/gpt-oss-20b']) {
+        try {
+          const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${apiKey}`,
+              'Content-Type': 'application/json',
+              'User-Agent': 'TaniAdapt/1.0'
+            },
+            body: JSON.stringify({
+              model: modelToTry,
+              messages,
+              max_tokens: 1200,
+              temperature: 0.3
+            })
+          });
+
+          if (groqRes.ok) {
+            const data = (await groqRes.json()) as any;
+            const candidate = data?.choices?.[0]?.message?.content?.trim();
+            if (candidate) {
+              content = candidate;
+              usedModel = modelToTry;
+              break;
+            }
+          }
+        } catch (callErr) {
+          console.warn(`Groq model ${modelToTry} failed:`, callErr);
+        }
+      }
+
+      if (!content) {
+        return sendJson(res, 502, { error: 'Gagal mendapatkan jawaban dari model AI.' });
+      }
+
+      const cleanedText = sanitizeChatOutput(content);
+      return sendJson(res, 200, {
+        success: true,
+        text: cleanedText,
+        sourceDoc: `Tania AI (${usedModel.replace('openai/', '')})`
+      });
+    }
+
     await ensureDbConnection();
 
       // ========================================================================
@@ -585,7 +729,23 @@ export async function authMiddleware(req: IncomingMessage, res: ServerResponse, 
               : 'SELECT * FROM plots ORDER BY created_at ASC';
             const params = userId ? [userId] : [];
             const result = await pool.query(query, params);
-            return sendJson(res, 200, { success: true, plots: result.rows, db: 'postgresql' });
+            
+            // Map snake_case dari PostgreSQL ke camelCase untuk frontend
+            const mappedPlots = result.rows.map(r => ({
+              id: r.id,
+              name: r.name,
+              locationId: r.location_id,
+              placeName: r.place_name,
+              cropId: r.crop_id,
+              plantDate: r.plant_date,
+              hst: r.hst,
+              stageName: r.stage_name,
+              risk: r.risk,
+              areaHa: r.area_ha,
+              trail: Array.isArray(r.trail) ? r.trail : (typeof r.trail === 'string' ? JSON.parse(r.trail) : []),
+            }));
+            
+            return sendJson(res, 200, { success: true, plots: mappedPlots, db: 'postgresql' });
           }
 
           const localPlots = ensureLocalPlots();

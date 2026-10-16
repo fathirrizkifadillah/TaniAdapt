@@ -22,119 +22,164 @@ export interface ExplanationContext {
     currentVPD?: number;
   } | null;
   customKnowledge?: string[];
-  language?: 'id' | 'su';
   imageBase64?: string;
+  history?: Array<{ me: boolean; text: string }>;
+  hasRegisteredPlots?: boolean;
+  userPlots?: Array<{
+    id: string;
+    name: string;
+    crop: string;
+    location: string;
+    hst: number;
+    stage?: string;
+    areaHa?: number;
+  }>;
+  user?: {
+    name: string;
+    email?: string;
+  } | null;
 }
 
 export async function askGroqAgronomist(
   question: string,
   context: ExplanationContext
 ): Promise<{ text: string; sourceDoc: string } | null> {
-  const apiKey = (import.meta as any).env?.VITE_GROQ_API_KEY;
-  const isSunda = context.language === 'su';
+  // 1. Try secure server-side endpoint (/api/chat) first
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 18000);
 
-  if (!apiKey) {
-    if (context.imageBase64) {
-      return {
-        text: isSunda
-          ? `Simkuring parantos mariksa foto tutuwuhan ${context.cropName} anjeun. Dumasar kana fase ${context.stageName} (${context.hst} dinten sanggeus melak) sareng kondisi cuaca (risiko ${context.overallRisk}), perhatikeun tanda-tanda bercak daun atawa busuk buah. Pastikeun aerasi taneuh sae tur pancegkeun konsultasi sareng PPL satempat.`
-          : `Saya telah memeriksa gambar tanaman ${context.cropName} Anda. Berdasarkan fase ${context.stageName} (Umur ${context.hst} Hari Setelah Tanam) dan indikasi cuaca saat ini (risiko ${context.overallRisk}), gejala visual pada daun/batang mengarah pada kelembapan tinggi mikro. Segera perbaiki aerasi, pangkas daun bawah yang menyentuh tanah, dan konsultasikan sampel fisik ke Petugas Penyuluh Lapangan (PPL).`,
-        sourceDoc: 'Tania Vision Diagnostic Fallback'
-      };
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        question,
+        context,
+        history: context.history || []
+      }),
+      signal: controller.signal
+    });
+    clearTimeout(timer);
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.text) {
+        return {
+          text: data.text,
+          sourceDoc: data.sourceDoc || 'Tania AI (Groq gpt-oss-120b)'
+        };
+      }
     }
-    return null;
+  } catch (apiErr) {
+    // Backend endpoint unreachable or timeout, proceed to direct client fallback
   }
 
-  const systemPrompt = isSunda
-    ? `Anjeun nyaeta Tania, Asistén Agronomis pinter tur bageur ti TaniAdapt pikeun patani di Jawa Barat.
-Tugas anjeun nyaeta ngajelaskeun kaputusan ti Decision Engine TaniAdapt dumasar kana data anu disadiakeun.
+  // 2. Direct client fallback if VITE_GROQ_API_KEY is configured in browser
+  const apiKey = (import.meta as any).env?.VITE_GROQ_API_KEY;
 
-ATURAN KUKUH:
-1. Ulah ngarang angka atawa data cuaca di luar kontéks.
-2. ULAH nyebutkeun mérék dagang péstisida kimia sintétik naon waé. Upami aya hama/panyakit, salawasna piwarang konsultasi ka Petugas Penyuluh Lapangan (PPL).
-3. Ulah nyebutkeun takaran dosis bahan kimia (sapertos ml/liter, kg/ha).
-4. Ulah ngira-ngira atawa ngajanjikeun hasil panén (yield).
-5. Ulah maké kecap 'pasti', 'kabuktian', 'dijamin', '100%'.
-6. Gunakeun Basa Sunda anu lemes, sopan, haneut, tur gampil kahartos ku patani di kebon.`
-    : `Kamu adalah Tania, Asisten Agronomis cerdas dan bersahabat dari TaniAdapt untuk petani dan pengelola kebun di Indonesia.
-Tugasmu HANYA menjelaskan keputusan dari Decision Engine TaniAdapt berdasarkan data ilmiah yang diberikan.
+  if (apiKey) {
+    const systemPrompt = `Kamu adalah Tania, asisten agronomis cerdas dan bersahabat dari TaniAdapt untuk petani dan pengelola kebun di Indonesia.
+Tugasmu adalah menjelaskan keputusan Decision Engine TaniAdapt, memberikan panduan budidaya praktis, dan menjawab pertanyaan pengguna dengan lugas dan ramah.
+PEDOMAN UTAMA:
+1. Jawab secara langsung, padat, dan solutif (1-3 paragraf ringkas).
+2. Hindari sapaan kaku seperti 'Pak/Bu' atau 'Bapak/Ibu', gunakan nada bersahabat dan netral.
+3. DILARANG menggunakan karakter em-dash (—), gunakan tanda hubung biasa (-) atau titik dua (:).
+4. DILARANG menyebut merek dagang pestisida sintetis tertentu. Jika ada hama/penyakit, sarankan konsultasi dengan Petugas Penyuluh Lapangan (PPL).
+5. DILARANG menyebut takaran dosis bahan kimia berbahaya; utamakan pencegahan agronomis, sanitasi lahan, aerasi, dan drainase.
+6. Jika pengguna bertanya tentang tanaman lain (misal Padi, Jagung, Cabai, Tomat), jelaskan sesuai karakter tanaman tersebut.
+7. Jika pengguna menanyakan kepemilikan lahan atau meminta analisis lahan ("analisis dong", "lahan saya apa?"), rujuk konteks lahan di bawah:
+- Jika pengguna sudah memiliki lahan terdaftar, HANYA analisis dan bahas petak lahan milik pengguna tersebut. DILARANG memunculkan atau menyebut simulasi tanaman lain (seperti cabai merah) yang tidak dimiliki pengguna.
+- Jika pengguna belum mendaftarkan lahan, sampaikan dengan jujur bahwa belum ada lahan terdaftar dan ajak mendaftarkan lahan pertama lewat "+ Tambah Petak".
+8. FORMAT RESPON WAJIB HANYA TEKS BIASA:
+- DILARANG KERAS membuat tabel markdown (garis berisi karakter pipa '|' dan '---'), tabel HTML, atau kisi-kisi kolom apapun. Antarmuka web TIDAK BISA merender tabel dan akan rusak.
+- DILARANG KERAS menggunakan tag HTML (seperti table, tr, td, div, span, dll.), blok kode pagar triple-backtick, rumus LaTeX, simbol ASCII rumit, atau kutipan blok (>).
+- Format jawaban HANYA boleh berupa teks mengalir (paragraf), daftar berbutir menggunakan tanda strip (-), atau penomoran angka (1., 2., 3.).
+- Jika menyajikan informasi beberapa lahan atau ringkasan data, tulis dalam bentuk poin berbutir (- Lahan: ..., Komoditas: ...) atau kalimat paragraf rapi, BUKAN TABEL.`;
 
-ATURAN KERAS:
-1. DILARANG mengarang angka atau data cuaca di luar konteks.
-2. DILARANG menyebut merek dagang pestisida sintetis apa pun (seperti Antracol, Daconil, Regent, Roundup, Curacron, Decis, dll.). Jika ada hama/penyakit, selalu sarankan konsultasi dengan Petugas Penyuluh Lapangan (PPL).
-3. DILARANG menyebut takaran dosis bahan kimia sintetik (seperti ml/liter, kg/ha, sendok makan).
-4. DILARANG menebak atau menjanjikan tonase hasil panen (yield).
-5. DILARANG menggunakan kata 'pasti', 'terbukti', 'dijamin', '100%'.
-6. Gunakan bahasa Indonesia yang santun, lugas, bersahabat, dan mudah dipahami petani di kebun.`;
+    const hasPlots = Boolean(context.hasRegisteredPlots && Array.isArray(context.userPlots) && context.userPlots.length > 0);
+    const customKbBlock = context.customKnowledge && context.customKnowledge.length > 0
+      ? `\nCatatan Khusus Petani / SOP Lahan Tambahan:\n${context.customKnowledge.map((k, i) => `${i + 1}. ${k}`).join('\n')}`
+      : '';
 
-  const customKbBlock = context.customKnowledge && context.customKnowledge.length > 0
-    ? `\nCatatan Khusus Petani / SOP Lahan Tambahan (Custom Knowledge Base):\n${context.customKnowledge.map((k, i) => `${i + 1}. ${k}`).join('\n')}`
-    : '';
+    let agronomicContext = '';
 
-  const userPrompt = isSunda
-    ? `Data ti Decision Engine TaniAdapt:
-- Tutuwuhan: ${context.cropName} (${context.scientificName})
-- Lokasi Kebon: ${context.locationName}
-- Umur: ${context.hst} HST (Fase: ${context.stageName})
-- Tingkat Risiko: ${context.overallRisk}
-- Rekomendasi Utama: ${context.recommendations.join('; ')}
-${context.features ? `- Fitur Cuaca: Hujan ngaruntuy = ${context.features.consecutiveRainyDays || 0} dinten, Hujan 3 dinten = ${context.features.rolling3dRain || 0} mm, Hujan 7 dinten = ${context.features.rolling7dRain || 0} mm, RH 7 dinten = ${context.features.rolling7dRH || 0}%, VPD = ${context.features.currentVPD?.toFixed(2) || 0} kPa` : ''}
-${customKbBlock}
+    if (hasPlots) {
+      const activePlot = context.userPlots![0];
+      agronomicContext = `DATA PETAK LAHAN PENGGUNA (SUMBER KEBUN RESMI):
+Pengguna memiliki ${context.userPlots!.length} petak lahan terdaftar di akun TaniAdapt:
+${context.userPlots!.map((p, i) => `${i + 1}. "${p.name}" (Komoditas: ${p.crop}, Lokasi: ${p.location}, Umur: ${p.hst} HST, Luas: ${p.areaHa || 1} ha)`).join('\n')}
 
-Patarosan Patani: "${question}"
+Lahan Aktif Pengguna Saat Ini:
+- Nama Petak: "${activePlot.name}"
+- Komoditas: ${context.cropName || activePlot.crop} (${context.scientificName || ''})
+- Lokasi Kebun: ${context.locationName || activePlot.location}
+- Umur Tanaman: ${context.hst || activePlot.hst} Hari Setelah Tanam (Fase: ${context.stageName || activePlot.stage || 'Aktif'})
+- Status Risiko Lapangan: ${context.overallRisk || 'RENDAH'}
+- Rekomendasi Lapangan Engine: ${Array.isArray(context.recommendations) && context.recommendations.length > 0 ? context.recommendations.join('; ') : 'Pantau perkembangan lahan rutin.'}
+${context.features ? `- Ringkasan Cuaca: Hujan berturut-turut = ${context.features.consecutiveRainyDays || 0} hari, Hujan 3d = ${context.features.rolling3dRain || 0} mm, Hujan 7d = ${context.features.rolling7dRain || 0} mm, RH = ${context.features.rolling7dRH || 80}%, VPD = ${context.features.currentVPD || 1.8} kPa` : ''}
+${customKbBlock}`;
+    } else {
+      agronomicContext = `STATUS KEPEMILIKAN LAHAN PENGGUNA:
+Pengguna BELUM memiliki atau BELUM mendaftarkan petak lahan apapun di akun TaniAdapt (Total petak terdaftar: 0).
+PANDUAN KHUSUS KEPEMILIKAN:
+- Pengguna belum mendaftarkan lahan. JANGAN PERNAH mengarang atau mengasumsikan pengguna mengelola kebun cabai, padi, atau tanaman apapun.
+- Jika pengguna meminta analisis ("analisis dong"), menanyakan tentang lahannya, atau meminta rekomendasi tindakan kebunnya, sampaikan secara ramah dan terus terang bahwa belum ada petak lahan yang terdaftar di akunnya.
+- Ajak pengguna mendaftarkan lahan pertama mereka lewat tombol "+ Tambah Petak" di bilah navigasi atas atau menu "Petak Lahan Saya".`;
+    }
 
-Pasihan waleran anu saé, écés (1-2 paragraf), tur praktis dumasar kana data di luhur dina Basa Sunda anu merenah.`
-    : `Data dari Decision Engine TaniAdapt:
-- Tanaman: ${context.cropName} (${context.scientificName})
-- Lokasi: ${context.locationName}
-- Umur: ${context.hst} HST (Fase: ${context.stageName})
-- Status Risiko Keseluruhan: ${context.overallRisk}
-- Rekomendasi Utama: ${context.recommendations.join('; ')}
-${context.features ? `- Fitur Cuaca: Hujan berurutan = ${context.features.consecutiveRainyDays || 0} hari, Hujan 3 hari = ${context.features.rolling3dRain || 0} mm, Hujan 7 hari = ${context.features.rolling7dRain || 0} mm, RH 7 hari = ${context.features.rolling7dRH || 0}%, VPD = ${context.features.currentVPD?.toFixed(2) || 0} kPa` : ''}
-${customKbBlock}
+    const userPrompt = `${agronomicContext}
 
 Pertanyaan Petani: "${question}"
 
 Berikan jawaban yang ramah, ringkas (1-2 paragraf), dan aplikatif berdasarkan data di atas.`;
 
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 12000);
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 12000);
 
-    const res = await fetch(GROQ_API_URL, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: GROQ_MODEL,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-        max_tokens: 350,
-        temperature: 0.2,
-      }),
-      signal: controller.signal,
-    });
-    clearTimeout(timer);
+      const res = await fetch(GROQ_API_URL, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'User-Agent': 'TaniAdapt/1.0'
+        },
+        body: JSON.stringify({
+          model: GROQ_MODEL,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt },
+          ],
+          max_tokens: 1200,
+          temperature: 0.2,
+        }),
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
 
-    if (!res.ok) {
-      console.warn(`Groq HTTP error: ${res.status}`);
-      return null;
+      if (res.ok) {
+        const data = await res.json();
+        const content = data?.choices?.[0]?.message?.content?.trim();
+        if (content) {
+          return {
+            text: content.replace(/[—–]/g, '-').replace(/&mdash;|&ndash;/g, '-'),
+            sourceDoc: 'Groq (openai/gpt-oss-120b)',
+          };
+        }
+      }
+    } catch (directErr) {
+      console.warn('Direct Groq call failed:', directErr);
     }
-
-    const data = await res.json();
-    const content = data?.choices?.[0]?.message?.content?.trim();
-    if (!content) return null;
-
-    return {
-      text: content,
-      sourceDoc: 'Groq (openai/gpt-oss-120b)',
-    };
-  } catch (err) {
-    console.warn('Groq fetch failed, fallback to local agronomic rule:', err);
-    return null;
   }
+
+  // 3. Vision check fallback
+  if (context.imageBase64) {
+    return {
+      text: `Saya telah memeriksa gambar tanaman ${context.cropName} Anda. Berdasarkan fase ${context.stageName} (Umur ${context.hst} Hari Setelah Tanam) dan indikasi cuaca saat ini (risiko ${context.overallRisk}), gejala visual pada daun/batang mengarah pada kelembapan tinggi mikro. Segera perbaiki aerasi, pangkas daun bawah yang menyentuh tanah, dan konsultasikan sampel fisik ke Petugas Penyuluh Lapangan (PPL).`,
+      sourceDoc: 'Tania Vision Diagnostic Fallback'
+    };
+  }
+
+  // No LLM response, proceed to dynamic local agronomic engine
+  return null;
 }

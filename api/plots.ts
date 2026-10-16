@@ -26,21 +26,32 @@ export default async function handler(req: any, res: any) {
         params = [parseInt(userId, 10)];
       }
       const qRes = await pool.query(plotsQuery, params);
-      const plots = qRes.rows.map(r => ({
-        id: r.id,
-        userId: r.user_id,
-        name: r.name,
-        locationId: r.location_id,
-        placeName: r.place_name,
-        cropId: r.crop_id,
-        plantDate: r.plant_date,
-        hst: r.hst,
-        stageName: r.stage_name,
-        risk: r.risk,
-        areaHa: r.area_ha,
-        trail: r.trail || [],
-        updatedAt: r.updated_at,
-      }));
+      console.log('GET /api/plots - Raw DB rows:', qRes.rows.length);
+      if (qRes.rows.length > 0) {
+        console.log('First row sample:', JSON.stringify(qRes.rows[0], null, 2));
+        console.log('First row crop_id:', qRes.rows[0].crop_id, 'type:', typeof qRes.rows[0].crop_id);
+      }
+      const plots = qRes.rows.map(r => {
+        const mapped = {
+          id: r.id,
+          name: r.name,
+          locationId: r.location_id,
+          placeName: r.place_name,
+          cropId: r.crop_id,
+          plantDate: r.plant_date,
+          hst: r.hst,
+          stageName: r.stage_name,
+          risk: r.risk,
+          areaHa: r.area_ha,
+          trail: Array.isArray(r.trail) ? r.trail : (typeof r.trail === 'string' ? JSON.parse(r.trail) : []),
+        };
+        if (!mapped.cropId) {
+          console.error('WARNING: cropId is missing for plot:', r.id, r.name);
+        }
+        return mapped;
+      });
+      console.log('GET /api/plots - Mapped plots count:', plots.length);
+      console.log('GET /api/plots - First mapped plot cropId:', plots[0]?.cropId);
       res.statusCode = 200;
       return res.end(JSON.stringify({ success: true, plots }));
     }
@@ -49,6 +60,7 @@ export default async function handler(req: any, res: any) {
     if (req.method === 'POST') {
       const body = await parseReqBody(req);
       const { plot, user_id } = body;
+      console.log('POST /api/plots - Received plot:', JSON.stringify(plot, null, 2));
       if (!plot || !plot.name) {
         res.statusCode = 400;
         return res.end(JSON.stringify({ error: 'Data petak lahan wajib diisi.' }));
@@ -56,6 +68,7 @@ export default async function handler(req: any, res: any) {
       const plotId = plot.id || `plot-${Date.now().toString(36)}`;
       const plantDate = plot.plantDate || new Date().toISOString().split('T')[0];
 
+      console.log('Saving to DB with cropId:', plot.cropId);
       await pool.query(
         `INSERT INTO plots (id, user_id, name, location_id, place_name, crop_id, plant_date, hst, stage_name, risk, area_ha, trail, updated_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
