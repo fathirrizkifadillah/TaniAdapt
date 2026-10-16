@@ -269,23 +269,24 @@ function parseJsonBody(req: IncomingMessage): Promise<any> {
   });
 }
 
-export function authMiddleware(req: IncomingMessage, res: ServerResponse, next: () => void): Promise<void> {
+export async function authMiddleware(req: IncomingMessage, res: ServerResponse, next: () => void): Promise<void> {
   const urlObj = new URL(req.url || '/', 'http://localhost');
-let pathname = urlObj.pathname;
+  let pathname = urlObj.pathname;
   if (!pathname.startsWith('/api') && (pathname.startsWith('/auth') || pathname.startsWith('/plots'))) { pathname = '/api' + pathname; }
 
   if (req.method === 'OPTIONS') {
-    return sendJson(res, 204, {});
+    sendJson(res, 204, {});
+    return;
   }
 
   // Handle /api/auth and /api/plots
   if (!pathname.startsWith('/api/auth') && !pathname.startsWith('/api/plots')) {
-    return next();
+    next();
+    return;
   }
 
-  return (async () => {
-    try {
-      await ensureDbConnection();
+  try {
+    await ensureDbConnection();
 
       // ========================================================================
       // 1. STATUS DATABASE ENDPOINT (/api/auth/status)
@@ -690,7 +691,6 @@ let pathname = urlObj.pathname;
       console.error('[TaniAdapt Backend Error]', err);
       sendJson(res, 500, { error: 'Internal Server Error', message: err.message });
     }
-  })();
 }
 
 
