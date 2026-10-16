@@ -207,3 +207,4 @@ export async function updateUserProfile(userId: number, profile: Partial<UserPro
   }
   return { success: true, profile: mergedProfile };
 }
+

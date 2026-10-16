@@ -156,7 +156,7 @@ async function initPgPool(): Promise<boolean> {
                   (!dbUrl.includes('localhost') && !dbUrl.includes('127.0.0.1'));
 
     pool = new Pool({
-      connectionString: dbUrl,
+      connectionString: dbUrl.replace('&channel_binding=require', '').replace('channel_binding=require&', ''),
       connectionTimeoutMillis: 10000,
       idleTimeoutMillis: 10000,
       max: 10,
@@ -251,6 +251,10 @@ function sendJson(res: ServerResponse, statusCode: number, data: any) {
 }
 
 function parseJsonBody(req: IncomingMessage): Promise<any> {
+  if ((req as any).body) {
+    if (typeof (req as any).body === 'string') { try { return Promise.resolve(JSON.parse((req as any).body)); } catch { return Promise.resolve({}); } }
+    return Promise.resolve((req as any).body);
+  }
   return new Promise((resolve, reject) => {
     let body = '';
     req.on('data', chunk => (body += chunk));
@@ -265,9 +269,10 @@ function parseJsonBody(req: IncomingMessage): Promise<any> {
   });
 }
 
-export function authMiddleware(req: IncomingMessage, res: ServerResponse, next: () => void) {
+export function authMiddleware(req: IncomingMessage, res: ServerResponse, next: () => void): Promise<void> {
   const urlObj = new URL(req.url || '/', 'http://localhost');
-  const pathname = urlObj.pathname;
+let pathname = urlObj.pathname;
+  if (!pathname.startsWith('/api') && (pathname.startsWith('/auth') || pathname.startsWith('/plots'))) { pathname = '/api' + pathname; }
 
   if (req.method === 'OPTIONS') {
     return sendJson(res, 204, {});
@@ -278,7 +283,7 @@ export function authMiddleware(req: IncomingMessage, res: ServerResponse, next: 
     return next();
   }
 
-  (async () => {
+  return (async () => {
     try {
       await ensureDbConnection();
 
@@ -687,3 +692,5 @@ export function authMiddleware(req: IncomingMessage, res: ServerResponse, next: 
     }
   })();
 }
+
+
