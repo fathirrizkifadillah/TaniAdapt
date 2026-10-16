@@ -1,4 +1,4 @@
-import { getPgPool, ensureDbSchema, parseReqBody } from './dbHelper.ts';
+import { getPgPool, ensureDbSchema, parseReqBody } from './dbHelper';
 
 export default async function handler(req: any, res: any) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -22,7 +22,7 @@ export default async function handler(req: any, res: any) {
       let plotsQuery = 'SELECT * FROM plots ORDER BY updated_at DESC';
       let params: any[] = [];
       if (userId) {
-        plotsQuery = 'SELECT * FROM plots WHERE user_id =  ORDER BY updated_at DESC';
+        plotsQuery = 'SELECT * FROM plots WHERE user_id = $1 ORDER BY updated_at DESC';
         params = [parseInt(userId, 10)];
       }
       const qRes = await pool.query(plotsQuery, params);
@@ -53,12 +53,12 @@ export default async function handler(req: any, res: any) {
         res.statusCode = 400;
         return res.end(JSON.stringify({ error: 'Data petak lahan wajib diisi.' }));
       }
-      const plotId = plot.id || plot-;
+      const plotId = plot.id || `plot-${Date.now().toString(36)}`;
       const plantDate = plot.plantDate || new Date().toISOString().split('T')[0];
 
       await pool.query(
-        INSERT INTO plots (id, user_id, name, location_id, place_name, crop_id, plant_date, hst, stage_name, risk, area_ha, trail, updated_at)
-         VALUES (, , , , , , , , , , , , NOW())
+        `INSERT INTO plots (id, user_id, name, location_id, place_name, crop_id, plant_date, hst, stage_name, risk, area_ha, trail, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
          ON CONFLICT (id) DO UPDATE SET
            name = EXCLUDED.name,
            location_id = EXCLUDED.location_id,
@@ -70,7 +70,7 @@ export default async function handler(req: any, res: any) {
            risk = EXCLUDED.risk,
            area_ha = EXCLUDED.area_ha,
            trail = EXCLUDED.trail,
-           updated_at = NOW(),
+           updated_at = NOW()`,
         [
           plotId,
           user_id || null,
@@ -80,27 +80,28 @@ export default async function handler(req: any, res: any) {
           plot.cropId || 'cabai',
           plantDate,
           plot.hst || 0,
-          plot.stageName || 'Vegetatif',
+          plot.stageName || 'Vegetatif Awal',
           plot.risk || 'RENDAH',
           plot.areaHa || 1.0,
           JSON.stringify(plot.trail || []),
         ]
       );
+
       res.statusCode = 200;
-      return res.end(JSON.stringify({ success: true, id: plotId }));
+      return res.end(JSON.stringify({ success: true, plot: { ...plot, id: plotId } }));
     }
 
     // DELETE /api/plots
     if (req.method === 'DELETE') {
-      const urlObj = new URL(req.url, 'http://localhost');
-      const plotId = urlObj.searchParams.get('id');
-      if (!plotId) {
+      const body = await parseReqBody(req);
+      const { id } = body;
+      if (!id) {
         res.statusCode = 400;
-        return res.end(JSON.stringify({ error: 'ID petak lahan wajib disertakan.' }));
+        return res.end(JSON.stringify({ error: 'ID lahan wajib disertakan.' }));
       }
-      await pool.query('DELETE FROM plots WHERE id = ', [plotId]);
+      await pool.query('DELETE FROM plots WHERE id = $1', [id]);
       res.statusCode = 200;
-      return res.end(JSON.stringify({ success: true, deleted: plotId }));
+      return res.end(JSON.stringify({ success: true, id }));
     }
 
     res.statusCode = 405;

@@ -1,8 +1,8 @@
 import { defineConfig } from 'vitest/config';
 import { resolve } from 'path';
 import { fileURLToPath } from 'url';
-import { authMiddleware } from './src/server/authApi.ts';
-import { setupTelemetryWebSocketServer } from './src/server/wsServer.ts';
+import { authMiddleware } from './src/server/authApi';
+import { setupTelemetryWebSocketServer } from './src/server/wsServer';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 

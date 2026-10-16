@@ -1,4 +1,4 @@
-import { getPgPool, ensureDbSchema, parseReqBody } from '../dbHelper.ts';
+import { getPgPool, ensureDbSchema, parseReqBody } from '../dbHelper';
 
 export default async function handler(req: any, res: any) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -22,7 +22,7 @@ export default async function handler(req: any, res: any) {
         res.statusCode = 400;
         return res.end(JSON.stringify({ error: 'user_id wajib disertakan' }));
       }
-      const profRes = await pool.query('SELECT * FROM farmer_profiles WHERE user_id = ', [parseInt(userId, 10)]);
+      const profRes = await pool.query('SELECT * FROM user_profiles WHERE user_id = $1 ORDER BY updated_at DESC LIMIT 1', [parseInt(userId, 10)]);
       res.statusCode = 200;
       return res.end(JSON.stringify({ success: true, profile: profRes.rows[0] || null }));
     }
@@ -36,8 +36,8 @@ export default async function handler(req: any, res: any) {
       }
 
       const profRes = await pool.query(
-        INSERT INTO farmer_profiles (user_id, commodity, location_name, latitude, longitude, planting_date, hst, farm_area_ha, organization_name, updated_at)
-         VALUES (, , , , , , , , , NOW())
+        `INSERT INTO user_profiles (user_id, commodity, location_name, latitude, longitude, planting_date, hst, farm_area_ha, organization_name, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
          ON CONFLICT (user_id) DO UPDATE SET
            commodity = EXCLUDED.commodity,
            location_name = EXCLUDED.location_name,
@@ -48,7 +48,7 @@ export default async function handler(req: any, res: any) {
            farm_area_ha = EXCLUDED.farm_area_ha,
            organization_name = EXCLUDED.organization_name,
            updated_at = NOW()
-         RETURNING *,
+         RETURNING *`,
         [
           user_id,
           profile.commodity || 'cabai',

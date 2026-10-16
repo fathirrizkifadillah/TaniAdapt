@@ -1,11 +1,10 @@
-import { Pool } from 'pg';
-
-let pool: Pool | null = null;
+import { getPgPool, ensureDbSchema } from '../dbHelper';
 
 export default async function handler(req: any, res: any) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Content-Type', 'application/json');
 
   if (req.method === 'OPTIONS') {
     res.statusCode = 204;
@@ -15,26 +14,34 @@ export default async function handler(req: any, res: any) {
   const dbUrl = process.env.DATABASE_URL;
   if (!dbUrl) {
     res.statusCode = 200;
-    return res.end(JSON.stringify({ connected: false, error: 'DATABASE_URL not set' }));
+    return res.end(JSON.stringify({
+      db_engine: 'Persistent Local Storage (PostgreSQL Fallback)',
+      is_postgres: false,
+      database_url_configured: false,
+    }));
   }
 
   try {
-    if (!pool) {
-      const cleanDbUrl = dbUrl.replace('&channel_binding=require', '').replace('channel_binding=require&', '');
-      pool = new Pool({
-        connectionString: cleanDbUrl,
-        ssl: { rejectUnauthorized: false }
-      });
-    }
+    await ensureDbSchema();
+    const pool = getPgPool();
     const client = await pool.connect();
     const result = await client.query('SELECT NOW()');
     client.release();
+
     res.statusCode = 200;
-    res.setHeader('Content-Type', 'application/json');
-    return res.end(JSON.stringify({ connected: true, server_time: result.rows[0].now }));
+    return res.end(JSON.stringify({
+      db_engine: 'Neon Cloud PostgreSQL',
+      is_postgres: true,
+      database_url_configured: true,
+      server_time: result.rows[0].now,
+    }));
   } catch (err: any) {
-    res.statusCode = 500;
-    res.setHeader('Content-Type', 'application/json');
-    return res.end(JSON.stringify({ connected: false, error: err.message }));
+    res.statusCode = 200;
+    return res.end(JSON.stringify({
+      db_engine: 'Persistent Local Storage (PostgreSQL Fallback)',
+      is_postgres: false,
+      database_url_configured: true,
+      error: err.message,
+    }));
   }
 }

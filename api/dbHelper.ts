@@ -23,7 +23,7 @@ export async function ensureDbSchema() {
   const p = getPgPool();
   const client = await p.connect();
   try {
-    await client.query(
+    await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         email VARCHAR(255) UNIQUE NOT NULL,
@@ -33,9 +33,8 @@ export async function ensureDbSchema() {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
 
-      CREATE TABLE IF NOT EXISTS farmer_profiles (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+      CREATE TABLE IF NOT EXISTS user_profiles (
+        user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
         commodity VARCHAR(100) DEFAULT 'cabai',
         location_name VARCHAR(255) DEFAULT 'Lembang, Kab. Bandung Barat',
         latitude DOUBLE PRECISION DEFAULT -6.8167,
@@ -66,7 +65,7 @@ export async function ensureDbSchema() {
 
       CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
       CREATE INDEX IF NOT EXISTS idx_plots_user_id ON plots(user_id);
-    );
+    `);
     tablesInitialized = true;
   } finally {
     client.release();
