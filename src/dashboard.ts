@@ -2471,6 +2471,7 @@ function renderAuthModal() {
   const modal = $('#auth-modal');
   if (!modal) return;
   modal.hidden = !state.isAuthModalOpen;
+  if (!state.isAuthModalOpen) return;
 
   const regPlantDate = document.getElementById('reg-plantdate') as HTMLInputElement;
   if (regPlantDate && !regPlantDate.value) {
@@ -4218,65 +4219,74 @@ function setupEventListeners() {
       const email = ($('#reg-email') as HTMLInputElement)?.value.trim();
       const password = ($('#reg-password') as HTMLInputElement)?.value;
       const userType = (document.querySelector('input[name="reg-user-type"]:checked') as HTMLInputElement)?.value as 'petani' | 'farm_organisasi' || 'petani';
-      const plotName = ($('#reg-plot-name') as HTMLInputElement)?.value.trim() || 'Lahan Sentra Petani';
-      const commodity = ($('#reg-commodity') as HTMLSelectElement)?.value as CropId || 'cabai';
-      const plantDate = ($('#reg-plantdate') as HTMLInputElement)?.value || new Date().toISOString().split('T')[0];
-      const farmArea = parseFloat(($('#reg-area') as HTMLInputElement)?.value || '1.0');
+      const plotName = ($('#reg-plot-name') as HTMLInputElement)?.value.trim();
+      const commodity = ($('#reg-commodity') as HTMLSelectElement)?.value as CropId || '';
+      const plantDateInput = ($('#reg-plantdate') as HTMLInputElement)?.value;
+      const farmAreaInput = parseFloat(($('#reg-area') as HTMLInputElement)?.value || '0');
 
       const errBox = $('#reg-error');
       if (errBox) errBox.style.display = 'none';
 
       try {
-        const computedHst = Math.max(1, Math.floor((Date.now() - new Date(plantDate).getTime()) / 86400000));
-        const stage = resolveActiveGrowthStage(commodity, computedHst);
+        const hasCustomPlot = Boolean(plotName || commodity);
+        const finalCommodity = (commodity || 'cabai') as CropId;
+        const finalPlantDate = plantDateInput || new Date().toISOString().split('T')[0];
+        const finalFarmArea = farmAreaInput > 0 ? farmAreaInput : 1.0;
+        const computedHst = Math.max(1, Math.floor((Date.now() - new Date(finalPlantDate).getTime()) / 86400000));
+        const stage = resolveActiveGrowthStage(finalCommodity, computedHst);
         const stageName = stage ? stage.name : 'Vegetatif Awal';
 
-        const res = await registerUser(email, password, fullName, userType, {
-          commodity,
+        const res = await registerUser(email, password, fullName, userType, hasCustomPlot ? {
+          commodity: finalCommodity,
           location_name: state.location.name,
           latitude: state.location.latitude,
           longitude: state.location.longitude,
-          planting_date: plantDate,
+          planting_date: finalPlantDate,
           hst: computedHst,
-          farm_area_ha: farmArea,
-          organization_name: plotName,
-        });
+          farm_area_ha: finalFarmArea,
+          organization_name: plotName || 'Lahan Sentra Petani',
+        } : {});
 
         if (res.success && res.user) {
           // Automatic login upon sign up
           state.authUser = res.user;
           state.authProfile = res.profile || null;
-          state.cropId = commodity;
+          if (hasCustomPlot) {
+            state.cropId = finalCommodity;
+          }
           state.uiMode = userType === 'farm_organisasi' ? 'pro' : 'default';
           setStoredUIMode(state.uiMode);
 
-          // Add newly registered plot to state.plots
-          const newPlotId = `plot-${Date.now().toString(36)}`;
-          const cropObj = CROPS_LIST.find(c => c.id === commodity);
-          const newPlot: PlotItem = {
-            id: newPlotId,
-            name: plotName,
-            locationId: state.location.id,
-            placeName: state.location.name,
-            cropId: commodity,
-            plantDate: plantDate,
-            hst: computedHst,
-            stageName,
-            risk: 'RENDAH',
-            areaHa: farmArea,
-            trail: [
-              { dayLabel: 'HST 1', status: 'Catatan Petani', note: `Registrasi lahan ${plotName} (${cropObj?.label || commodity})`, weather: 'Cerah' }
-            ]
-          };
-          state.plots.unshift(newPlot);
-          localStorage.setItem('taniadapt_user_plots_v1', JSON.stringify(state.plots));
-          state.fieldIndex = 0;
+          // Only create and add new plot if user chose to define one
+          if (hasCustomPlot) {
+            const finalPlotName = plotName || 'Lahan Sentra Petani';
+            const newPlotId = `plot-${Date.now().toString(36)}`;
+            const cropObj = CROPS_LIST.find(c => c.id === finalCommodity);
+            const newPlot: PlotItem = {
+              id: newPlotId,
+              name: finalPlotName,
+              locationId: state.location.id,
+              placeName: state.location.name,
+              cropId: finalCommodity,
+              plantDate: finalPlantDate,
+              hst: computedHst,
+              stageName,
+              risk: 'RENDAH',
+              areaHa: finalFarmArea,
+              trail: [
+                { dayLabel: 'HST 1', status: 'Catatan Petani', note: `Registrasi lahan ${finalPlotName} (${cropObj?.label || finalCommodity})`, weather: 'Cerah' }
+              ]
+            };
+            state.plots.unshift(newPlot);
+            localStorage.setItem('taniadapt_user_plots_v1', JSON.stringify(state.plots));
+            state.fieldIndex = 0;
 
-          fetch('/api/plots', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newPlot)
-          }).catch(e => console.warn('Sync registered plot to backend skipped:', e));
+            fetch('/api/plots', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(newPlot)
+            }).catch(e => console.warn('Sync registered plot to backend skipped:', e));
+          }
 
           // Close modal and synchronize entire UI state
           state.isAuthModalOpen = false;
@@ -4449,13 +4459,24 @@ function setupEventListeners() {
 }
 
 function initWebSocketClient() {
+  // WebSocket hanya diinisialisasi pada environment lokal yang mendukung koneksi WS persisten
+  const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const pulseDot = $('#ws-pulse-dot');
+  const statusText = $('#ws-status-text');
+
+  if (!isLocalHost) {
+    if (statusText) statusText.textContent = 'Telemetri Live (Polling HTTP Aktif)';
+    if (pulseDot) {
+      pulseDot.style.background = '#10B981';
+      pulseDot.style.boxShadow = '0 0 8px rgba(16,185,129,0.8)';
+    }
+    return;
+  }
+
   try {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/ws/telemetry`;
     const ws = new WebSocket(wsUrl);
-
-    const pulseDot = $('#ws-pulse-dot');
-    const statusText = $('#ws-status-text');
 
     ws.onopen = () => {
       if (statusText) statusText.textContent = 'Telemetri Live Aktif (WebSocket)';

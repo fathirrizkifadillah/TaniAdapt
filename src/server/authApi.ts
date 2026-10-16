@@ -88,7 +88,7 @@ function ensureLocalDb(): { users: UserRecord[]; profiles: ProfileRecord[] } {
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     if (!fs.existsSync(LOCAL_DB_PATH)) {
       const initial = { users: [], profiles: [] };
-      fs.writeFileSync(LOCAL_DB_PATH, JSON.stringify(initial, null, 2));
+      try { fs.writeFileSync(LOCAL_DB_PATH, JSON.stringify(initial, null, 2)); } catch {}
       return initial;
     }
     return JSON.parse(fs.readFileSync(LOCAL_DB_PATH, 'utf-8'));
@@ -102,8 +102,9 @@ function saveLocalDb(data: { users: UserRecord[]; profiles: ProfileRecord[] }) {
     const dir = path.dirname(LOCAL_DB_PATH);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(LOCAL_DB_PATH, JSON.stringify(data, null, 2));
-  } catch (err) {
-    console.warn('Failed to save local db:', err);
+  } catch (err: any) {
+    // In serverless / read-only filesystem environments, don't crash
+    console.warn('[TaniAdapt Backend] Read-only filesystem, skipping local db file write:', err?.message || err);
   }
 }
 
@@ -112,7 +113,7 @@ function ensureLocalPlots(): PlotRecord[] {
     const dir = path.dirname(LOCAL_PLOTS_PATH);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     if (!fs.existsSync(LOCAL_PLOTS_PATH)) {
-      fs.writeFileSync(LOCAL_PLOTS_PATH, JSON.stringify([], null, 2));
+      try { fs.writeFileSync(LOCAL_PLOTS_PATH, JSON.stringify([], null, 2)); } catch {}
       return [];
     }
     return JSON.parse(fs.readFileSync(LOCAL_PLOTS_PATH, 'utf-8'));
@@ -126,8 +127,9 @@ function saveLocalPlots(plots: PlotRecord[]) {
     const dir = path.dirname(LOCAL_PLOTS_PATH);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(LOCAL_PLOTS_PATH, JSON.stringify(plots, null, 2));
-  } catch (err) {
-    console.warn('Failed to save local plots:', err);
+  } catch (err: any) {
+    // In serverless / read-only filesystem environments, don't crash
+    console.warn('[TaniAdapt Backend] Read-only filesystem, skipping local plots file write:', err?.message || err);
   }
 }
 
